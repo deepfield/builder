@@ -34,6 +34,7 @@ class DeepyTest(unittest.TestCase):
 
         build = builder.build.BuildGraph(jobs, config=config)
         build.construct_build_graph(build_context)
+
         (build.node
                 ["target01-2014-12-05-00-01"]
                 ["object"].exists) = True
@@ -53,10 +54,10 @@ class DeepyTest(unittest.TestCase):
                 ["target02-2014-12-05-00-01"]
                 ["object"].mtime) = 1
         # when
-        build.write_build_graph("graph.dot")
         command = (build.node
                 ["job_2014-12-05-00-00"]["object"].get_command(build))
 
+        # Then
         self.assertEqual(" dimension1,dimension2 target01-2014-12-05-00-01 target01-2014-12-05-00-02 target02-2014-12-05-00-01", command)
 
     @testing.unit

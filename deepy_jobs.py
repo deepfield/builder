@@ -96,15 +96,10 @@ class DeepyTimestampExpandedJobState(
         object_dict = {}
         dependency_dict = collections.defaultdict(list)
         for item in string_formatter.parse(command):
-            object_string = "{}:{}".format(item[1], item[2])
-            actual_object = deepy.util.object_from_string(object_string)
-            if actual_object is None:
-                continue
-            try:
-                unexpanded_id = getattr(actual_object, "unexpanded_id")
-            except AttributeError:
-                continue
-            replace_string = "{" + object_string + "}"
+            job_id = item[1]
+            actual_object = build_graph.get_job(job_id)
+            unexpanded_id = getattr(actual_object, "unexpanded_id")
+            replace_string = "{" + job_id + "}"
             replacement_string = "{" + unexpanded_id + "}"
             command = command.replace(replace_string, replacement_string)
             targets = actual_object.get_targets()

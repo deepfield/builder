@@ -153,6 +153,11 @@ class RuleDependencyGraph(networkx.DiGraph):
             dependant_ids = dependant_ids + self.filter_job_ids(job_ids)
         return dependant_ids
 
+    def get_job(self, job_id):
+        """
+        Get job by id
+        """
+        return self.node[job_id]['object']
 
 
 class BuildGraph(networkx.DiGraph):
@@ -496,6 +501,18 @@ class BuildGraph(networkx.DiGraph):
                 if job.get_should_run(self):
                     should_run_list.append(job)
         return should_run_list
+
+    def get_job(self, job_id):
+        """
+        Fetch job with the given ID
+        """
+        return self.rule_dep_graph.get_job(job_id)
+
+    def get_job_state(self, job_state_id):
+        """
+        Fetch job state with the given ID
+        """
+        return self.node[job_state_id]['object']
 
     def get_next_jobs_to_run(self, job_id, update_set=None):
         """Returns the jobs that are below job_id that need to run"""

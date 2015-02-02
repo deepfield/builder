@@ -24,8 +24,8 @@ class TestGetCommandMiddle(builder.deepy_jobs.DeepyTimestampExpandedJob,
         }
 
     def get_command(self):
-        return ("$A $D {deepy.build.deepy_test_jobs:TestGetCommandTop01} "
-                "{deepy.build.deepy_test_jobs:TestGetCommandTop02}")
+        return ("$A $D {top_01} "
+                "{top_02}")
 
     def get_dimensions(self, build_context=None):
         print "here"
