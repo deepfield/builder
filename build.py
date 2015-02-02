@@ -426,9 +426,6 @@ class Build(networkx.DiGraph):
         if self.rule_dep_graph is None:
             self.construct_rule_dependency_graph()
 
-        if self is None:
-            self = networkx.DiGraph()
-
         current_depth = 0
         if build_context.get("exact", False):
             depth = 1
