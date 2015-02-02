@@ -322,6 +322,9 @@ class DeepyDictJob(DeepyTimestampExpandedJob):
 
         return targets
 
+    def get_dimensions(self, build_context=None):
+        return self.rule.get('dimensions') or []
+
 
 class DeepyHourJob(DeepyJob):
 

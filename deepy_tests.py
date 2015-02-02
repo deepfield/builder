@@ -68,3 +68,14 @@ class DeepyTest(unittest.TestCase):
 
         # Then
         self.assertEquals(job.get_type(), 'target')
+
+    @testing.unit
+    def test_drill1_hour_has_dimensions(self):
+        # Given
+        rules_db = deepy.make.construct_rules()
+
+        # When
+        job = builder.deepy_jobs.DeepyDictJob('cube_drill1_hour', rules_db)
+
+        # Then
+        self.assertTrue(len(job.get_dimensions())>0)
