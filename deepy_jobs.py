@@ -66,7 +66,9 @@ class DeepyTimestampExpandedJobState(
             dimensions = ",".join(dimensions)
             command = command.replace("$D", dimensions)
         if "$A" in command:
-            command = command.replace("$A", "")
+            user_args = self.build_context.get('user_args') or []
+            user_args = " ".join(user_args)
+            command = command.replace("$A", user_args)
             # command = command.replace("$A", " ".join(user_args))
 
         command = str(command)

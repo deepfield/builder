@@ -443,7 +443,7 @@ class Build(networkx.DiGraph):
             start_datetime = build_context["start_time"].datetime
             start_datetime = start_datetime - timedelta
             build_context["start_time"] = arrow.get(start_datetime)
-        if build_context.get("force") is None:
+        if not build_context.get("force"):
             build_context["force"] = False
 
         unexpanded_id = build_context["start_job"]
