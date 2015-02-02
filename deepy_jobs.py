@@ -4,12 +4,18 @@ import datetime
 import inspect
 import string
 import sys
+import time
+import re
 
 import dateutil
+import arrow
 
 import builder.deepy_targets
+from builder.deepy_util import _basic_subst, _subst_deepy_str
 import builder.jobs
-import deepy.make
+import deepy.cfg
+import deepy.log
+
 
 class DeepyJobState(builder.jobs.JobState):
     """A wrapper for the job state, might never be used"""
@@ -24,6 +30,8 @@ class DeepyTimestampExpandedJobState(
         super(DeepyTimestampExpandedJobState, self).__init__(unexpanded_id,
                 unique_id, build_context, command, cache_time, curfew,
                 config=config)
+        if not config:
+            self.config = deepy.cfg
         self.dimensions = dimensions
 
     def _replace_command(self, command, build_graph):
@@ -43,8 +51,10 @@ class DeepyTimestampExpandedJobState(
                 dependency_id = dependencies.append(dependency_id)
 
         while True:
-            new_command = deepy.make._basic_subst(
+            new_command = _basic_subst(
                 command, self.build_context["start_time"])
+            new_command = _subst_deepy_str(new_command, config=deepy.cfg)
+
             try:
                 new_command = new_command.format()
                 command = new_command
@@ -619,7 +629,7 @@ class Snmp5Min(DeepyTimestampExpandedJob, DeepyJob):
         }
 
     def get_command(self):
-        return self._replace_command("cube_from_snmp_new.py $A -t %Y-%m-%d-%H-%M", build)
+        return self._replace_command("cube_from_snmp_new.py $A -t %Y-%m-%d-%H-%M")
 
     def get_enable(config=None):
         return False
