@@ -80,7 +80,7 @@ class GraphTest(unittest.TestCase):
              {"label": "produces"}),
         )
 
-        graph = builder.build.Build(jobs)
+        graph = builder.build.BuildGraph(jobs)
 
         # When
         graph.construct_rule_dependency_graph()
@@ -149,7 +149,7 @@ class GraphTest(unittest.TestCase):
         expected_number_of_targets5 = 12
 
         # When
-        build = builder.build.Build(jobs)
+        build = builder.build.BuildGraph(jobs)
 
         build.construct_build_graph(build_context1)
         build.construct_build_graph(build_context2)
@@ -268,8 +268,8 @@ class GraphTest(unittest.TestCase):
                 "start_job": "backbone_dependant_bottom_job",
         }
 
-        build1 = builder.build.Build(jobs1, config=config1)
-        build2 = builder.build.Build(jobs2, config=config2)
+        build1 = builder.build.BuildGraph(jobs1, config=config1)
+        build2 = builder.build.BuildGraph(jobs2, config=config2)
 
         expected_build_count1 = 18
         expected_build_count2 = 10
@@ -315,7 +315,7 @@ class GraphTest(unittest.TestCase):
            "start_job": "diamond_redundant_bottom_job",
         }
 
-        build = builder.build.Build(jobs)
+        build = builder.build.BuildGraph(jobs)
 
         expected_call_count1 = 1
         expected_call_count2 = 1
@@ -371,13 +371,13 @@ class GraphTest(unittest.TestCase):
             "start_job": "stale_ignore_mtime_job", # StaleIgnoreMtimeJobTester,
         }
 
-        build1 = builder.build.Build(jobs1)
-        build2 = builder.build.Build(jobs1)
-        build3 = builder.build.Build(jobs1)
-        build4 = builder.build.Build(jobs1)
-        build5 = builder.build.Build(jobs1)
-        build6 = builder.build.Build(jobs2)
-        build7 = builder.build.Build(jobs2)
+        build1 = builder.build.BuildGraph(jobs1)
+        build2 = builder.build.BuildGraph(jobs1)
+        build3 = builder.build.BuildGraph(jobs1)
+        build4 = builder.build.BuildGraph(jobs1)
+        build5 = builder.build.BuildGraph(jobs1)
+        build6 = builder.build.BuildGraph(jobs2)
+        build7 = builder.build.BuildGraph(jobs2)
 
         build1.construct_build_graph(copy.deepcopy(build_context1))
         build2.construct_build_graph(copy.deepcopy(build_context1))
@@ -749,10 +749,10 @@ class GraphTest(unittest.TestCase):
             "start_job": "stale_alternate_bottom_job", # StaleAlternateBottomJobTester,
         }
 
-        build1 = builder.build.Build(jobs1)
-        build2 = builder.build.Build(jobs1)
-        build3 = builder.build.Build(jobs1)
-        build4 = builder.build.Build(jobs1)
+        build1 = builder.build.BuildGraph(jobs1)
+        build2 = builder.build.BuildGraph(jobs1)
+        build3 = builder.build.BuildGraph(jobs1)
+        build4 = builder.build.BuildGraph(jobs1)
 
         build1.construct_build_graph(copy.deepcopy(build_context1))
         build2.construct_build_graph(copy.deepcopy(build_context1))
@@ -1097,10 +1097,10 @@ class GraphTest(unittest.TestCase):
             "start_job": "stale_alternate_update_bottom_job", # StaleAlternateUpdateBottomJobTester,
         }
 
-        build1 = builder.build.Build(jobs1)
-        build2 = builder.build.Build(jobs1)
-        build3 = builder.build.Build(jobs1)
-        build4 = builder.build.Build(jobs1)
+        build1 = builder.build.BuildGraph(jobs1)
+        build2 = builder.build.BuildGraph(jobs1)
+        build3 = builder.build.BuildGraph(jobs1)
+        build4 = builder.build.BuildGraph(jobs1)
 
         build1.construct_build_graph(copy.deepcopy(build_context1))
         build2.construct_build_graph(copy.deepcopy(build_context1))
@@ -1476,12 +1476,12 @@ class GraphTest(unittest.TestCase):
             "start_job": "buildable_job", # BuildableJobTester,
         }
 
-        build1 = builder.build.Build(jobs1)
-        build2 = builder.build.Build(jobs1)
-        build3 = builder.build.Build(jobs1)
-        build4 = builder.build.Build(jobs1)
-        build5 = builder.build.Build(jobs1)
-        build6 = builder.build.Build(jobs1)
+        build1 = builder.build.BuildGraph(jobs1)
+        build2 = builder.build.BuildGraph(jobs1)
+        build3 = builder.build.BuildGraph(jobs1)
+        build4 = builder.build.BuildGraph(jobs1)
+        build5 = builder.build.BuildGraph(jobs1)
+        build6 = builder.build.BuildGraph(jobs1)
 
         build1.construct_build_graph(copy.deepcopy(build_context1))
         build2.construct_build_graph(copy.deepcopy(build_context1))
@@ -1839,9 +1839,9 @@ class GraphTest(unittest.TestCase):
             PastCacheTimeJobTester(),
         ]
 
-        build1 = builder.build.Build(jobs1)
-        build2 = builder.build.Build(jobs1)
-        build3 = builder.build.Build(jobs1)
+        build1 = builder.build.BuildGraph(jobs1)
+        build2 = builder.build.BuildGraph(jobs1)
+        build3 = builder.build.BuildGraph(jobs1)
 
         build1.construct_build_graph(copy.deepcopy(build_context1))
         build2.construct_build_graph(copy.deepcopy(build_context1))
@@ -1952,10 +1952,10 @@ class GraphTest(unittest.TestCase):
             "start_job": "all_dependencies_job", # AllDependenciesJobTester,
         }
 
-        build1 = builder.build.Build(jobs1)
-        build2 = builder.build.Build(jobs1)
-        build3 = builder.build.Build(jobs1)
-        build4 = builder.build.Build(jobs1)
+        build1 = builder.build.BuildGraph(jobs1)
+        build2 = builder.build.BuildGraph(jobs1)
+        build3 = builder.build.BuildGraph(jobs1)
+        build4 = builder.build.BuildGraph(jobs1)
 
         build1.construct_build_graph(copy.deepcopy(build_context1))
         build2.construct_build_graph(copy.deepcopy(build_context1))
@@ -2445,16 +2445,16 @@ class GraphTest(unittest.TestCase):
             "start_job": "should_run_recurse_job_10", # ShouldRunRecurseJob10Tester,
         }
 
-        build1 = builder.build.Build(jobs1)
-        build2 = builder.build.Build(jobs1)
-        build3 = builder.build.Build(jobs1)
-        build4 = builder.build.Build(jobs1)
-        build5 = builder.build.Build(jobs1)
-        build6 = builder.build.Build(jobs1)
-        build7 = builder.build.Build(jobs1)
-        build8 = builder.build.Build(jobs1)
-        build9 = builder.build.Build(jobs1)
-        build10 = builder.build.Build(jobs1)
+        build1 = builder.build.BuildGraph(jobs1)
+        build2 = builder.build.BuildGraph(jobs1)
+        build3 = builder.build.BuildGraph(jobs1)
+        build4 = builder.build.BuildGraph(jobs1)
+        build5 = builder.build.BuildGraph(jobs1)
+        build6 = builder.build.BuildGraph(jobs1)
+        build7 = builder.build.BuildGraph(jobs1)
+        build8 = builder.build.BuildGraph(jobs1)
+        build9 = builder.build.BuildGraph(jobs1)
+        build10 = builder.build.BuildGraph(jobs1)
 
         build1.construct_build_graph(copy.deepcopy(build_context1))
         build2.construct_build_graph(copy.deepcopy(build_context1))
@@ -2550,7 +2550,7 @@ class GraphTest(unittest.TestCase):
                 GetStartingJobs03Tester(),
                 GetStartingJobs04Tester()]
 
-        build1 = builder.build.Build(jobs)
+        build1 = builder.build.BuildGraph(jobs)
 
         build_context = {}
         for job in jobs:
@@ -2607,7 +2607,7 @@ class GraphTest(unittest.TestCase):
             UpdateLowerNodesShouldRunMiddle02(),
         ]
 
-        build = builder.build.Build(jobs)
+        build = builder.build.BuildGraph(jobs)
 
         build_context = {
                 "start_job": "update_lower_nodes_should_run_lowest", # UpdateLowerNodesShouldRunLowest,
@@ -2714,7 +2714,7 @@ class GraphTest(unittest.TestCase):
             GetNextJobsToRunMiddle02(),
         ]
 
-        build = builder.build.Build(jobs)
+        build = builder.build.BuildGraph(jobs)
 
         build_context = {
                 "start_job": "get_next_jobs_to_run_lowest", # GetNextJobsToRunLowest,
@@ -2813,7 +2813,7 @@ class GraphTest(unittest.TestCase):
             UpdateJobCacheBottom(),
         ]
 
-        build = builder.build.Build(jobs)
+        build = builder.build.BuildGraph(jobs)
 
         build_context = {
                 "start_job": "update_job_cache_bottom", # UpdateJobCacheBottom,
@@ -3012,7 +3012,7 @@ class GraphTest(unittest.TestCase):
                 "exact": True,
         }
 
-        build = builder.build.Build(jobs)
+        build = builder.build.BuildGraph(jobs)
 
         # When
         build.construct_build_graph(build_context)
@@ -3038,7 +3038,7 @@ class GraphTest(unittest.TestCase):
                 "depth": 2,
         }
 
-        build = builder.build.Build(jobs)
+        build = builder.build.BuildGraph(jobs)
 
         # When
         build.construct_build_graph(build_context)
@@ -3068,7 +3068,7 @@ class GraphTest(unittest.TestCase):
             UpdateTargetCacheTop(),
         ]
 
-        build = builder.build.Build(jobs)
+        build = builder.build.BuildGraph(jobs)
 
         build_context = {
                 "start_job": "update_target_cache_bottom", # UpdateTargetCacheBottom,
@@ -3260,7 +3260,7 @@ class GraphTest(unittest.TestCase):
             UpdateJobCacheBottom(),
         ]
 
-        build = builder.build.Build(jobs)
+        build = builder.build.BuildGraph(jobs)
 
         build_context = {
                 "start_job": "update_job_cache_bottom", # UpdateJobCacheBottom,
@@ -3461,7 +3461,7 @@ class GraphTest(unittest.TestCase):
             UpdateTargetCacheTop(),
         ]
 
-        build = builder.build.Build(jobs)
+        build = builder.build.BuildGraph(jobs)
 
         build_context = {
                 "start_job": "update_target_cache_bottom", # UpdateTargetCacheBottom,
@@ -3656,7 +3656,7 @@ class GraphTest(unittest.TestCase):
             builder.tests_large_jobs.LargeJobExpanderTest,
         ]
 
-        build = builder.build.Build(jobs)
+        build = builder.build.BuildGraph(jobs)
 
         build_context = {
             "start_job": "large_job_expander", # deepy.build.tests_large_jobs.LargeJobExpanderTest

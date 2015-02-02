@@ -8,7 +8,7 @@ import deepy.cfg
 import builder.build
 import builder.deepy_jobs
 
-class DeepyBuild(builder.build.Build):
+class DeepyBuild(builder.build.BuildGraph):
     """Used to run the default deepy constructions"""
     def __init__(self, jobs=None, config=None):
         if config is None:

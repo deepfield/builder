@@ -30,7 +30,7 @@ class DeepyTest(unittest.TestCase):
                 "start_job": "job", # deepy.build.deepy_test_jobs.TestGetCommandMiddle,
         }
 
-        build = builder.build.Build(jobs, config=config)
+        build = builder.build.BuildGraph(jobs, config=config)
         build.construct_build_graph(build_context)
         (build.node
                 ["target01-2014-12-05-00-01"]

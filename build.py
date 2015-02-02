@@ -155,11 +155,11 @@ class RuleDependencyGraph(networkx.DiGraph):
 
 
 
-class Build(networkx.DiGraph):
+class BuildGraph(networkx.DiGraph):
     """The build object will control the rule dependency graph and the
     build graph"""
     def __init__(self, jobs, config=None):
-        super(Build, self).__init__()
+        super(BuildGraph, self).__init__()
         if config is None:
             config = {}
 
@@ -205,7 +205,7 @@ class Build(networkx.DiGraph):
         node_data.update(kwargs)
         node_data["object"] = node
 
-        super(Build, self).add_node(node.unique_id, attr_dict=node_data)
+        super(BuildGraph, self).add_node(node.unique_id, attr_dict=node_data)
         return node
 
     def _connect_targets(self, node, target_type, targets):
