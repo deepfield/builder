@@ -7,7 +7,8 @@ import arrow
 import testing
 import builder.build
 import builder.deepy_test_jobs
-
+import builder.deepy_jobs
+import deepy.make
 
 class DeepyTest(unittest.TestCase):
     """Used to test the general graph construction of the deepy jobs"""
@@ -56,3 +57,14 @@ class DeepyTest(unittest.TestCase):
                 ["job_2014-12-05-00-00"]["object"].get_command(build))
 
         self.assertEqual(" dimension1,dimension2 target01-2014-12-05-00-01 target01-2014-12-05-00-02 target02-2014-12-05-00-01", command)
+
+    @testing.unit
+    def test_cube_sub_count_ip_version_5min(self):
+        # Given
+        rules_db = deepy.make.construct_rules()
+
+        # When
+        job = builder.deepy_jobs.DeepyDictJob('cube_sub_count_ip_version_5min', rules_db)
+
+        # Then
+        self.assertEquals(job.get_type(), 'target')
