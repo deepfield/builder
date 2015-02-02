@@ -104,3 +104,23 @@ class DeepyTest(unittest.TestCase):
         # Then
         self.assertTrue(len(states) == 1)
         command = states[0].get_command(build_graph)
+
+    @testing.unit
+    def test_basic_command_substitution(self):
+        # Given
+        command = ('cube_op.py $A -o '
+                   '/Users/matt/env/deepfield-deploy/pipedream/cache/cubes/drill_small/minutes/cube.2014-01-27-08-55.h5 '
+                   '-t 300  -A group_other(origin_asn.local,null,<c.top_origins>)  '
+                   '-A group_other(aspaths.local,null,<c.top_aspaths>) -A group_other(origin_asn.remote,null,<c.top_origins>) '
+                   '--arg_join c.top_origins=\'$(cubes_dir)/origin_asn.remote2/months/top_list.2014-01.json.gz\' '
+                   '-A group_other(aspaths.remote,null,<c.top_aspaths>) --arg_join '
+                   'c.top_aspaths=\'$(cubes_dir)/aspaths.remote2/months/top_list.2014-01.json.gz\' '
+                   '-A group_other(sites,null,<c.top_sites>) -A group_other(company,null,<c.top_companies>) '
+                   '--arg_join c.top_companies=\'$(cubes_dir)/company2/months/top_list.2014-01.json.gz\' '
+                   '--arg_join c.top_sites=\'$(cubes_dir)/sites2/months/top_list.2014-01.json.gz\' {cube_drill1_5min}')
+        ts = arrow.get("2014-01-01")
+        # When
+        substituted = builder.deepy_util.basic_command_substitution(command, ts)
+
+        # Then
+        self.assertEquals(substituted, """cube_op.py $A -o /Users/matt/env/deepfield-deploy/pipedream/cache/cubes/drill_small/minutes/cube.2014-01-27-08-55.h5 -t 300  -A group_other(origin_asn.local,null,<c.top_origins>)  -A group_other(aspaths.local,null,<c.top_aspaths>) -A group_other(origin_asn.remote,null,<c.top_origins>) --arg_join c.top_origins='$(cubes_dir)/origin_asn.remote2/months/top_list.2014-01.json.gz' -A group_other(aspaths.remote,null,<c.top_aspaths>) --arg_join c.top_aspaths='$(cubes_dir)/aspaths.remote2/months/top_list.2014-01.json.gz' -A group_other(sites,null,<c.top_sites>) -A group_other(company,null,<c.top_companies>) --arg_join c.top_companies='$(cubes_dir)/company2/months/top_list.2014-01.json.gz' --arg_join c.top_sites='$(cubes_dir)/sites2/months/top_list.2014-01.json.gz' {cube_drill1_5min}""")
