@@ -11,7 +11,7 @@ import dateutil
 import arrow
 
 import builder.deepy_targets
-from builder.deepy_util import _basic_subst, _subst_deepy_str
+from builder.deepy_util import basic_command_substitution, deepy_command_substitution
 import builder.jobs
 import deepy.cfg
 import deepy.log
@@ -19,6 +19,7 @@ import deepy.log
 
 class DeepyJobState(builder.jobs.JobState):
     """A wrapper for the job state, might never be used"""
+
 
 class DeepyTimestampExpandedJobState(
         builder.jobs.TimestampExpandedJobState, DeepyJobState):
@@ -51,9 +52,9 @@ class DeepyTimestampExpandedJobState(
                 dependency_id = dependencies.append(dependency_id)
 
         while True:
-            new_command = _basic_subst(
+            new_command = basic_command_substitution(
                 command, self.build_context["start_time"])
-            new_command = _subst_deepy_str(new_command, config=deepy.cfg)
+            new_command = deepy_command_substitution(new_command, config=deepy.cfg)
 
             try:
                 new_command = new_command.format()

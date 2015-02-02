@@ -5,7 +5,7 @@ import re
 import deepy.cfg
 
 
-def _basic_subst(fmt_str, timestamp):
+def basic_command_substitution(fmt_str, timestamp):
     """
     Does the $() (deepy.cfg) subst and timestamp subst.
     These are the substitutions needed to form target and prereqs.
@@ -19,7 +19,7 @@ def _basic_subst(fmt_str, timestamp):
 
     return time_str
 
-def _subst_deepy_str(fmt_str, config=deepy.cfg):
+def deepy_command_substitution(fmt_str, config=deepy.cfg):
     """
     Used to replace the $() (deepy.cfg) subst
     """

@@ -5,7 +5,7 @@ import pandas as pd
 
 import builder.targets
 import deepy.impala.tables as impala_tables
-from builder.deepy_util import _basic_subst, _subst_deepy_str
+from builder.deepy_util import basic_command_substitution, deepy_command_substitution
 
 
 class DeepyLocalFileSystemTarget(builder.targets.LocalFileSystemTarget):
@@ -14,7 +14,7 @@ class DeepyLocalFileSystemTarget(builder.targets.LocalFileSystemTarget):
         super(DeepyLocalFileSystemTarget, self).__init__(
                 unexpanded_id, local_path, build_context,
                 config=config)
-        self.unique_id = _subst_deepy_str(self.unique_id)
+        self.unique_id = deepy_command_substitution(self.unique_id)
 
 class DeepyGlobLocalFileSystemTarget(
         builder.targets.GlobLocalFileSystemTarget):
@@ -23,7 +23,7 @@ class DeepyGlobLocalFileSystemTarget(
         super(DeepyGlobLocalFileSystemTarget, self).__init__(
                 unexpanded_id, pattern, build_context,
                 config=config)
-        self.unique_id = _subst_deepy_str(self.unique_id)
+        self.unique_id = deepy_command_substitution(self.unique_id)
 
 class DeepyS3BackedLocalFileSystemTarget(
         builder.targets.S3BackedLocalFileSystemTarget):
@@ -32,7 +32,7 @@ class DeepyS3BackedLocalFileSystemTarget(
         super(DeepyS3BackedLocalFileSystemTarget, self).__init__(
                 unexpanded_id, local_path, build_context,
                 config=config)
-        self.unique_id = _subst_deepy_str(self.unique_id)
+        self.unique_id = deepy_command_substitution(self.unique_id)
 
 class DeepyS3BackedGlobLocalFileSystemTarget(
         builder.targets.S3BackedGlobLocalFileSystemTarget):
@@ -41,7 +41,7 @@ class DeepyS3BackedGlobLocalFileSystemTarget(
         super(DeepyS3BackedGlobLocalFileSystemTarget, self).__init__(
                 unexpanded_id, pattern, build_context,
                 config=config)
-        self.unique_id = _subst_deepy_str(self.unique_id)
+        self.unique_id = deepy_command_substitution(self.unique_id)
 
 
 class ImpalaTimePartitionedTarget(builder.targets.Target):
