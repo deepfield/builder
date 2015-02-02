@@ -8,6 +8,7 @@ import testing
 import builder.build
 import builder.deepy_test_jobs
 import builder.deepy_jobs
+import builder.deepy_build
 import deepy.make
 
 class DeepyTest(unittest.TestCase):
@@ -79,3 +80,26 @@ class DeepyTest(unittest.TestCase):
 
         # Then
         self.assertTrue(len(job.get_dimensions())>0)
+
+    @testing.unit
+    def test_get_command_with_format_args(self):
+        # Given
+        rules_db = deepy.make.construct_rules()
+        t = arrow.get()
+        build_context = {
+            'start_time':t,
+            'end_time': t,
+            'exact': True
+        }
+        build_graph = builder.deepy_build.DeepyBuild()
+
+        # When
+        job = builder.deepy_jobs.DeepyDictJob('cube_aspaths_remote3_hour', rules_db)
+        build_context['start_job'] = job.unexpanded_id
+        build_graph.construct_build_graph(build_context)
+        states = job.expand(build_context)
+
+
+        # Then
+        self.assertTrue(len(states) == 1)
+        command = states[0].get_command(build_graph)
