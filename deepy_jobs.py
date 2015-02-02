@@ -4,11 +4,8 @@ import datetime
 import inspect
 import string
 import sys
-import time
-import re
 
 import dateutil
-import arrow
 
 import builder.deepy_targets
 from builder.deepy_util import basic_command_substitution, deepy_command_substitution
