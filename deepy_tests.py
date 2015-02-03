@@ -178,9 +178,39 @@ class DeepyTest(unittest.TestCase):
             if isinstance(obj, builder.jobs.JobState) and obj.get_should_run(build_graph):
                 commands.append(obj.get_command(build_graph))
 
-
         # Then
         correct = ('bundle2.py -M drill_day_cdn_summary -m '
                    '/Users/matt/env/deepfield-deploy/pipedream/cache/cubes/drill/cdn/days/markers/summary.2014-01-01.marker '
+                   '-t 2014-01-01')
+        self.assertEquals(commands[0], correct)
+
+    @testing.unit
+    def test_drill_commands(self):
+        #  Given
+        job_id = 'drill_cdn'
+        rules_db = deepy.make.construct_rules()
+        build_graph = builder.deepy_build.DeepyBuild()
+        t = arrow.get('2014-01-01')
+        build_context = {
+            'start_time':t,
+            'end_time': t,
+            'exact': True
+        }
+
+        # When
+        job = builder.deepy_jobs.DeepyDictJob(job_id, rules_db)
+        build_context['start_job'] = job.unexpanded_id
+        build_graph.construct_build_graph(build_context)
+        commands = []
+        for node_id, node in build_graph.node.iteritems():
+            obj = node['object']
+            if isinstance(obj, builder.jobs.JobState) and obj.get_should_run(build_graph):
+                commands.append(obj.get_command(build_graph))
+
+
+        # Then
+
+        correct = ('bundle2.py -M drill_day_cdn -m '
+                   '/Users/matt/env/deepfield-deploy/pipedream/cache/cubes/drill/cdn/days/markers/drill.2014-01-01.marker '
                    '-t 2014-01-01')
         self.assertEquals(commands[0], correct)
