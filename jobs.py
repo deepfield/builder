@@ -431,50 +431,6 @@ class Job(object):
         return {}
 
 
-class TemplatedJob(Job):
-    """A job that is expanded with the LargeJobExpander"""
-    def __init__(self, unexpanded_id=None, cache_time=None, dependencies=None,
-            targets=None, command=None, enable=None, config=None):
-        if config is None:
-            config = {}
-
-        super(TemplatedJob, self).__init__(config=config)
-
-        if unexpanded_id is None:
-            unexpanded_id = "blank job"
-        self.unexpanded_id = unexpanded_id
-
-        self.cache_time = cache_time
-
-        if dependencies is None:
-            dependencies = {}
-        self.dependencies = dependencies
-
-        if targets is None:
-            targets = {}
-        self.targets = targets
-
-        if command is None:
-            command = "blank command"
-        self.command = command
-
-        if enable is None:
-            enable = True
-        self.enable = enable
-
-    def get_targets(self, build_context=None):
-        return self.targets
-
-    def get_dependencies(self, build_context=None):
-        return self.dependencies
-
-    def get_command(self):
-        return self.command
-
-    def get_enable(self):
-        return self.enable
-
-
 class MetaJob(Job):
     """A job that should never run"""
     def get_state_type(self):
@@ -484,10 +440,6 @@ class MetaJob(Job):
         job_type = self.get_job_state()
         return [job_type(self.unexpanded_id, self.unexpanded_id,
                 build_context, self.get_command(), self.cache_time)]
-
-
-class TemplatedMetaJob(MetaJob, TemplatedJob):
-    """A templated job that has the meta rules"""
 
 
 class TimestampExpandedJob(Job):
@@ -520,6 +472,3 @@ class TimestampExpandedJob(Job):
 
         return expanded_nodes
 
-
-class TemplatedTimestampExpandedJob(TimestampExpandedJob, TemplatedJob):
-    """A templated job that has the timestamp rules"""
