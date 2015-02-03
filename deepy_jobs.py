@@ -313,15 +313,8 @@ class DeepyDictJob(DeepyTimestampExpandedJob):
                     builder.deepy_targets.DeepyS3BackedLocalFileSystemTarget,
                     rule['target'],
                     rule['file_step']),)
-
-        # Get all the query targets
-        for _, query in self.rule.get("queries", {}).iteritems():
-            target_id = query.get("target")
-            target = self.expander(
-                    builder.deepy_targets.DeepyS3BackedLocalFileSystemTarget,
-                    target_id,
-                    self.file_step)
-            targets["produces"].append(target)
+        if not targets["produces"]:
+            print self.rule_id
 
         return targets
 
