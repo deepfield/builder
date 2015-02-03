@@ -473,6 +473,8 @@ class BuildGraph(networkx.DiGraph):
                 top_job = self.node[top_job_id]["object"]
                 top_job.build_context["force"] = True
 
+        return self
+
     def _remove_sibilings_recurse(self, job_id, top_jobs, cache_set):
         if job_id in cache_set:
             return
