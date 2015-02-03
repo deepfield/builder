@@ -191,6 +191,7 @@ class BuildGraph(networkx.DiGraph):
         """Old"""
         self.rule_dep_graph = RuleDependencyGraph(self.jobs)
         self.rule_dep_graph.construct()
+        return self.rule_dep_graph
 
     def add_node(self, node, attr_dict=None, **kwargs):
         """Adds an expanded node to the graph"""
