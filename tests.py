@@ -3646,22 +3646,3 @@ class GraphTest(unittest.TestCase):
         build.run.assert_has_calls([mock.call("update_target_cache_middle_02")])
 
 
-    @testing.unit
-    def test_range(self):
-        # given
-        jobs = [
-            builder.tests_jobs.RangeJob(),
-        ]
-
-        build = builder.build.BuildGraph(jobs)
-
-        build_context = {
-            "start_job": "range_job",
-            "range_num": "3",
-        }
-
-        # when
-        build.construct_build_graph(build_context)
-
-        # then
-        self.assertEqual(len(build.node), 3)
