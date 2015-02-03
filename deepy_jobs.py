@@ -315,14 +315,8 @@ class DeepyDictJob(DeepyTimestampExpandedJob):
                     rule['target'],
                     rule['file_step']),)
 
-        # Get all the query targets
-        for _, query in self.rule.get("queries", {}).iteritems():
-            target_id = query.get("target")
-            target = self.expander(
-                    builder.deepy_targets.DeepyS3BackedLocalFileSystemTarget,
-                    target_id,
-                    self.file_step)
-            targets["produces"].append(target)
+        if not targets["produces"] and self.get_command() is not None:
+            print deepy.log.warn("{} has a recipe but no target".format(self.rule_id))
 
         return targets
 

@@ -183,7 +183,7 @@ class BuildGraph(networkx.DiGraph):
 
         self.rule_dep_graph.write_dot(file_name)
 
-    def write_build_graph(self, file_name):
+    def write_dot(self, file_name):
         """Writes the build graph to the file_name"""
         networkx.write_dot(self, file_name)
 
@@ -194,7 +194,7 @@ class BuildGraph(networkx.DiGraph):
         return self.rule_dep_graph
 
     def add_node(self, node, attr_dict=None, **kwargs):
-        """Adds an expanded node to the graph"""
+        """Adds a jobstate, target, dependency to the graph"""
         if attr_dict is None:
             attr_dict = {}
 

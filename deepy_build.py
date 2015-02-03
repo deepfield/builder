@@ -31,26 +31,26 @@ class DeepyBuild(builder.build.BuildGraph):
         """Compresses all the bundle targets"""
         if self.rule_dep_graph is None:
             self.construct_rule_dependency_graph()
-        write_graph = copy.deepcopy(self.rule_dep_graph)
-        for node_id in write_graph.node.keys():
-            if node_id not in write_graph:
-                continue
-            node = write_graph.node[node_id]["object"]
-            if not isinstance(node, builder.jobs.Job):
-                continue
-            if "bundle" in node.get_type():
-                neighbor_ids = write_graph.neighbors(node_id)
-                if not neighbor_ids:
-                    continue
-                new_neighbor_id = node_id + " targets"
-                write_graph.add_node(new_neighbor_id, style="filled",
-                        fillcolor="green", color="black")
-                for neighbor_id in neighbor_ids:
-                    dependant_ids = write_graph.neighbors(neighbor_id)
+        # write_graph = copy.deepcopy(self.rule_dep_graph)
+        # for node_id in write_graph.node.keys():
+        #     if node_id not in write_graph:
+        #         continue
+        #     node = write_graph.node[node_id]["object"]
+        #     if not isinstance(node, builder.jobs.Job):
+        #         continue
+        #     if "bundle" in node.get_type():
+        #         neighbor_ids = write_graph.neighbors(node_id)
+        #         if not neighbor_ids:
+        #             continue
+        #         new_neighbor_id = node_id + " targets"
+        #         networkx.DiGraph.add_node(write_graph, new_neighbor_id, style="filled",
+        #                 fillcolor="green", color="black")
+        #         for neighbor_id in neighbor_ids:
+        #             dependant_ids = write_graph.neighbors(neighbor_id)
 
-                    for dependant_id in dependant_ids:
-                        write_graph.add_edge(new_neighbor_id, dependant_id)
-                    write_graph.remove_node(neighbor_id)
-                write_graph.add_edge(node_id, new_neighbor_id)
-        networkx.write_dot(write_graph, file_name)
+        #             for dependant_id in dependant_ids:
+        #                 write_graph.add_edge(new_neighbor_id, dependant_id)
+        #             write_graph.remove_node(neighbor_id)
+        #         write_graph.add_edge(node_id, new_neighbor_id)
+        self.rule_dep_graph.write_dot(file_name)
 
