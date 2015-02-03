@@ -5,8 +5,6 @@ and the build graph
 import arrow
 import networkx
 
-import deepy.util
-
 import builder.dependencies
 
 
