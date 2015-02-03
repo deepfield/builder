@@ -2022,3 +2022,8 @@ class JobBackboneDependantDependsOneOrMore(Job):
             del depends_dict["depends_one_or_more"]
 
         return depends_dict
+
+class RangeJob(TimestampExpandedJob):
+    """Used to test that the range value is followed"""
+    unexpanded_id = "range_job"
+    file_step = "5min"
