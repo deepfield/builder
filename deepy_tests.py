@@ -8,7 +8,6 @@ import mock
 import testing
 import builder.build
 import builder.jobs
-import builder.deepy_test_jobs
 import builder.deepy_jobs
 import builder.deepy_build
 import deepy.make
@@ -24,9 +23,9 @@ class DeepyTest(unittest.TestCase):
         }
 
         jobs = [
-                builder.deepy_test_jobs.TestGetCommandTop01(config=config),
-                builder.deepy_test_jobs.TestGetCommandTop02(config=config),
-                builder.deepy_test_jobs.TestGetCommandMiddle(config=config),
+                TestGetCommandTop01(config=config),
+                TestGetCommandTop02(config=config),
+                TestGetCommandMiddle(config=config),
         ]
 
         build_context = {

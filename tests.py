@@ -3645,24 +3645,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(should_run_new3, expected_should_run_new3)
         build.run.assert_has_calls([mock.call("update_target_cache_middle_02")])
 
-    @unittest.skip("There was a file that was not added properly. When it's time"
-                  "to add large job expanders this will be fixed")
-    @testing.unit
-    def test_large_job_expander(self):
-        jobs = [
-            builder.tests_large_jobs.Job1Top,
-            builder.tests_large_jobs.Job2Top,
-            builder.tests_large_jobs.Job3Top,
-            builder.tests_large_jobs.LargeJobExpanderTest,
-        ]
-
-        build = builder.build.BuildGraph(jobs)
-
-        build_context = {
-            "start_job": "large_job_expander", # deepy.build.tests_large_jobs.LargeJobExpanderTest
-        }
-
-        build.construct_build_graph(build_context)
 
     @testing.unit
     def test_range(self):
