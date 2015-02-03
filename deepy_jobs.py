@@ -314,6 +314,9 @@ class DeepyDictJob(DeepyTimestampExpandedJob):
                     rule['target'],
                     rule['file_step']),)
 
+        if not targets["produces"] and self.get_command() is not None:
+            print deepy.log.warn("{} has a recipe but no target".format(self.rule_id))
+
         return targets
 
     def get_dimensions(self, build_context=None):
