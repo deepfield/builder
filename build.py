@@ -194,7 +194,7 @@ class BuildGraph(networkx.DiGraph):
         return self.rule_dep_graph
 
     def add_node(self, node, attr_dict=None, **kwargs):
-        """Adds an expanded node to the graph"""
+        """Adds a jobstate, target, dependency to the graph"""
         if attr_dict is None:
             attr_dict = {}
 
