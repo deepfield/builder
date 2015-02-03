@@ -442,14 +442,6 @@ class BuildGraph(networkx.DiGraph):
             build_context["start_time"] = arrow.get()
         if build_context.get("end_time") is None:
             build_context["end_time"] = build_context["start_time"]
-        if build_context.get("range_num") is not None:
-            range_num = int(build_context.get("range_num"))
-            file_step = self.rule_dep_graph.node[build_context.get("start_job")]["object"].file_step
-            timedelta = deepy.timerange.convert_to_timedelta(file_step)
-            timedelta = timedelta * (range_num)
-            start_datetime = build_context["start_time"].datetime
-            start_datetime = start_datetime - timedelta
-            build_context["start_time"] = arrow.get(start_datetime)
         if not build_context.get("force"):
             build_context["force"] = False
 
