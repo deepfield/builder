@@ -4,6 +4,7 @@ import datetime
 import inspect
 import string
 import sys
+import json
 
 import dateutil
 
@@ -327,6 +328,9 @@ class DeepyDictJob(DeepyTimestampExpandedJob):
 
     def get_dimensions(self, build_context=None):
         return self.rule.get('dimensions') or []
+
+    def __repr__(self):
+        return str(json.dumps(self.rules_db[self.rule_id], indent=2))
 
 
 class DeepyHourJob(DeepyJob):
