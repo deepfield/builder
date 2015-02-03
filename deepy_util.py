@@ -23,8 +23,8 @@ def deepy_command_substitution(fmt_str, config=deepy.cfg):
     """
     Used to replace the $() (deepy.cfg) subst
     """
-    cfg_subst_regex = re.compile(r"\$\((?P<deepy_cfg_attr>[^)]+)\)")
 
+    cfg_subst_regex = re.compile(r"\$\((?P<deepy_cfg_attr>[^)]+)\)")
     # '$(cubes_dir)/cube.2014-04-28-14.h5' -> '/pipedream/.../cube.2014-04-28-14.h5'
     out_str = fmt_str
     for match in re.finditer(cfg_subst_regex, out_str):
@@ -34,5 +34,6 @@ def deepy_command_substitution(fmt_str, config=deepy.cfg):
             deepy.log.error("deepy-cfg-missing-attribute %s" % (deepy_cfg_attr))
             return None
 
-        out_str = out_str.replace(match.group(), getattr(config, deepy_cfg_attr))
+        config_value = unicode(getattr(config, deepy_cfg_attr))
+        out_str = out_str.replace(match.group(), config_value)
     return out_str
