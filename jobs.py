@@ -30,6 +30,12 @@ class JobState(object):
         self.parents_should_not_run = None
         self.expanded_directions = {"up": False, "down": False}
 
+    def __str__(self):
+        return "{}:{}".format(self.unexpanded_id, self.unique_id)
+
+    def __repr__(self):
+        return "{}:{} {}".format(self.unexpanded_id, self.unique_id, self.command)
+
     def get_stale_alternates(self, build_graph):
         """Returns True if the job does not have an alternate or if any
         of it's alternates don't exist
