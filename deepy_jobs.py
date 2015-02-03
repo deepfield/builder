@@ -313,8 +313,6 @@ class DeepyDictJob(DeepyTimestampExpandedJob):
                     builder.deepy_targets.DeepyS3BackedLocalFileSystemTarget,
                     rule['target'],
                     rule['file_step']),)
-        if not targets["produces"]:
-            print self.rule_id
 
         return targets
 
