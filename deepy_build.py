@@ -43,7 +43,7 @@ class DeepyBuild(builder.build.BuildGraph):
                 if not neighbor_ids:
                     continue
                 new_neighbor_id = node_id + " targets"
-                write_graph.add_node(new_neighbor_id, style="filled",
+                networkx.DiGraph.add_node(write_graph, new_neighbor_id, style="filled",
                         fillcolor="green", color="black")
                 for neighbor_id in neighbor_ids:
                     dependant_ids = write_graph.neighbors(neighbor_id)

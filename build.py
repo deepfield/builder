@@ -183,7 +183,7 @@ class BuildGraph(networkx.DiGraph):
 
         self.rule_dep_graph.write_dot(file_name)
 
-    def write_build_graph(self, file_name):
+    def write_dot(self, file_name):
         """Writes the build graph to the file_name"""
         networkx.write_dot(self, file_name)
 
