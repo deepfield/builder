@@ -180,8 +180,8 @@ class DeepyTest(unittest.TestCase):
 
 
         # Then
-        correct = ('bundle2.py -M drill_day_cdn_summary -m '
-                   '/Users/matt/env/deepfield-deploy/pipedream/cache/cubes/drill/cdn/days/markers/summary.2014-01-01.marker '
+        correct = ('bundle2.py -M drill_day_cdn_summary -m ' +
+                   deepy.cfg.cubes_dir + '/drill/cdn/days/markers/summary.2014-01-01.marker '
                    '-t 2014-01-01')
         self.assertEquals(commands[0], correct)
         self.assertEquals(1, len(commands))
@@ -212,8 +212,8 @@ class DeepyTest(unittest.TestCase):
 
         # Then
 
-        correct = ('bundle2.py -M drill_day_cdn -m '
-                   '/Users/matt/env/deepfield-deploy/pipedream/cache/cubes/drill/cdn/days/markers/drill.2014-01-01.marker '
+        correct = ('bundle2.py -M drill_day_cdn -m ' +
+                   deepy.cfg.cubes_dir + '/drill/cdn/days/markers/drill.2014-01-01.marker '
                    '-t 2014-01-01')
         self.assertEquals(commands[0], correct)
         self.assertEquals(1, len(commands))
