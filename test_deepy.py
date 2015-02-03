@@ -1,8 +1,8 @@
 
 import unittest
 
-import builder.deepy_jobs as deepy_jobs
-import builder.deepy_targets as deepy_targets
+import deepy.build.deepy_jobs as deepy_jobs
+import deepy.build.deepy_targets as deepy_targets
 import deepy.query_rules
 import deepy.make
 import deepy.timerange
