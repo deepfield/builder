@@ -6,7 +6,7 @@ import arrow
 
 import builder.expanders
 import builder.targets
-import deepy.timerange
+from builder.util import convert_to_timedelta
 
 class JobState(object):
     """A job state is basically a job in the build graph. It is used to keep
@@ -195,7 +195,7 @@ class JobState(object):
         cache_time = self.cache_time
         if cache_time is None:
             return True
-        cache_delta = deepy.timerange.convert_to_timedelta(cache_time)
+        cache_delta = convert_to_timedelta(cache_time)
         current_time = arrow.get()
         for target_edge in build_graph.out_edges(self.unique_id, data=True):
             if target_edge[2]["label"] == "produces":
@@ -353,7 +353,7 @@ class TimestampExpandedJobState(JobState):
         self.curfew = curfew
 
     def past_curfew(self):
-        time_delta = deepy.timerange.convert_to_timedelta(self.curfew)
+        time_delta = convert_to_timedelta(self.curfew)
         end_time = self.build_context["end_time"]
         curfew_time = end_time + time_delta
         return curfew_time < arrow.get()

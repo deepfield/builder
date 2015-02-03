@@ -2,6 +2,8 @@
 
 import copy
 import unittest
+import datetime
+import dateutil
 
 import arrow
 import mock
@@ -11,6 +13,7 @@ from builder.tests_jobs import UpdateTargetCacheBottom, UpdateTargetCacheMiddle0
 import testing
 import builder.jobs
 import builder.build
+import builder.util
 
 
 class GraphTest(unittest.TestCase):
@@ -3646,3 +3649,64 @@ class GraphTest(unittest.TestCase):
         build.run.assert_has_calls([mock.call("update_target_cache_middle_02")])
 
 
+class UtilTest(unittest.TestCase):
+    def test_convert_to_timedelta(self):
+        truths = [
+            datetime.timedelta(0, 60*5),
+            datetime.timedelta(0, 60*5),
+            datetime.timedelta(0, 60*5),
+            datetime.timedelta(0, 60*5),
+            datetime.timedelta(0, 60),
+            datetime.timedelta(0, 1*5),
+            datetime.timedelta(0, 1*5),
+            datetime.timedelta(0, 1),
+            datetime.timedelta(0, 3600*5),
+            datetime.timedelta(0, 3600*5),
+            datetime.timedelta(0, 3600*5),
+            datetime.timedelta(0, 3600),
+            datetime.timedelta(0, 86400*5),
+            datetime.timedelta(0, 86400*5),
+            datetime.timedelta(0, 86400),
+            datetime.timedelta(-1, 79200),
+            datetime.timedelta(-4),
+            datetime.timedelta(-1, 86397),
+            datetime.timedelta(-1, 50400),
+            datetime.timedelta(-1, 85980),
+            dateutil.relativedelta.relativedelta(months=+1),
+            datetime.timedelta(0, 60*5),
+            datetime.timedelta(0, 60*5),
+        ]
+
+        # Given
+        frequencies = [
+            "5T",
+            "5min",
+            "5 minutes",
+            "5m",
+            "m",
+            "5s",
+            "5 seconds",
+            "s",
+            "5h",
+            "5      hours",
+            "    5 hours     ",
+            "h",
+            "5d",
+            "5 days",
+            "d",
+            "-2 hours",
+            "-4 days",
+            "-3s",
+            "-10     hours",
+            "-7T",
+            "month",
+            300,
+            '300'
+        ]
+
+        # When
+        converted_frequencies = [builder.util.convert_to_timedelta(freq) for freq in frequencies]
+
+        # Then
+        for truth, frequency in zip(truths, converted_frequencies):
+            self.assertEquals(truth, frequency)

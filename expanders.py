@@ -15,17 +15,6 @@ These strings can be used to implement them for different file types.
 import copy
 import deepy.timerange
 
-def is_recurse_subclass(lowerclass, upperclass):
-    """Returns true if lowerclass is lower than upperclass in the
-    class tree heirarchy
-    """
-    if issubclass(lowerclass, upperclass):
-        return True
-    else:
-        for subclass in upperclass.__subclasses__():
-            if is_recurse_subclass(lowerclass, subclass):
-                return True
-    return False
 
 class Expander(object):
     """This is the base class for an expander
