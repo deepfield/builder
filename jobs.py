@@ -30,9 +30,6 @@ class JobState(object):
         self.parents_should_not_run = None
         self.expanded_directions = {"up": False, "down": False}
 
-    def __str__(self):
-        return "{}:{}".format(self.unexpanded_id, self.unique_id)
-
     def __repr__(self):
         return "{}:{} {}".format(self.unexpanded_id, self.unique_id, self.command)
 

@@ -76,10 +76,8 @@ class Expander(object):
         """
 
     def __repr__(self):
-        return self.__str__()
-
-    def __str__(self):
         return "Expander({}, {})".format(self.base_class, self.unexpanded_id)
+
 
 class TimestampExpander(Expander):
     """This is the base for an expander that expands targets based off of
@@ -114,10 +112,7 @@ class TimestampExpander(Expander):
         }
         """
         start_time = build_context["start_time"]
-        end_time = build_context.get("end_time", None)
-        if end_time is None:
-            end_time = start_time
-
+        end_time = build_context.get("end_time") or start_time
 
         start_time = deepy.timerange.floor_timestamp_given_time_step(
                 start_time, file_step)
