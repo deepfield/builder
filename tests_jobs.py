@@ -2027,3 +2027,25 @@ class RangeJob(TimestampExpandedJob):
     """Used to test that the range value is followed"""
     unexpanded_id = "range_job"
     file_step = "5min"
+
+class IgnoreProduceJob(Job):
+    """A job that has a produced target that should be completely ignored in
+    stale checking
+    """
+    unexpanded_id = "ignore_produce_job"
+
+    def get_dependencies(self, build_context=None):
+        return {}
+
+    def get_targets(self, build_context=None):
+        return {
+            "produces": [
+                builder.expanders.Expander(
+                        builder.targets.Target,
+                        "ignore_produce_ignore_target",
+                        ignore_produce=True),
+                builder.expanders.Expander(
+                        builder.targets.Target,
+                        "ignore_produce_marker_target"),
+            ]
+        }

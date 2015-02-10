@@ -33,9 +33,14 @@ class Expander(object):
         config: A dictionary of config options
         ignore_mtime: Edge data that specifies that the mtime should be
             ignored when doing a stale check
+        ignore_produce: Makes the target act very similar to an alternate. This
+            is used to connect a job to the target but make it so the job does
+            not value the mtime or existance value of the target at all.
+            Potentially should be a different type of relationship.
     """
     def __init__(self, base_class, unexpanded_id, edge_data=None,
-            node_data=None, config=None, ignore_mtime=False):
+            node_data=None, config=None, ignore_mtime=False,
+            ignore_produce=False):
         """An unexpanded id is one that can be turned into a unique id
         provided that the correct build context is passed
 
@@ -50,6 +55,7 @@ class Expander(object):
         if config is None:
             config = {}
         edge_data["ignore_mtime"] = ignore_mtime
+        edge_data["ignore_produce"] = ignore_produce
 
         self.base_class = base_class
         self.unexpanded_id = unexpanded_id
@@ -92,10 +98,12 @@ class TimestampExpander(Expander):
         past: the number of timestamps previous to start time to include
     """
     def __init__(self, base_class, unexpanded_id, file_step, past=0,
-            edge_data=None, node_data=None, ignore_mtime=None, config=None):
+            edge_data=None, node_data=None, ignore_mtime=False,
+            ignore_produce=False, config=None):
         super(TimestampExpander, self).__init__(
                 base_class, unexpanded_id, edge_data=edge_data,
                 node_data=node_data, ignore_mtime=ignore_mtime,
+                ignore_produce=ignore_produce,
                 config=config)
         self.file_step = file_step
         self.past = past
@@ -103,7 +111,7 @@ class TimestampExpander(Expander):
 
     @staticmethod
     def expand_build_context(build_context, unexpanded_id, file_step,
-            past=0, log_it=False):
+            past=0):
         """Expands out the build_contexts and returns a dict of the form
         {
                 "expanded_id": expanded_build_contex,
@@ -147,7 +155,7 @@ class TimestampExpander(Expander):
         return expanded_dict
 
 
-    def expand(self, build_context, log_it=False):
+    def expand(self, build_context):
         """Expands out the targets based on timestamps.
 
         using the start_time floored to the file_step as the first timestamp
@@ -165,8 +173,7 @@ class TimestampExpander(Expander):
                 (exclusive) if equal to start_time inclusive.
         """
         expanded_dict = self.expand_build_context(build_context,
-                self.unexpanded_id, self.file_step, past=self.past,
-                log_it=log_it)
+                self.unexpanded_id, self.file_step, past=self.past)
         expanded_nodes = []
         for expanded_id, new_build_context in expanded_dict.iteritems():
             expanded_node = self.base_class(

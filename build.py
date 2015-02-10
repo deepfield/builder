@@ -127,12 +127,8 @@ class RuleDependencyGraph(networkx.DiGraph):
         job_id
         """
         self.assert_job(job_id)
-        dependency_target_ids = []
-        depends_ids = self.predecessors(job_id)
-        for depends_id in depends_ids:
-            target_ids = self.predecessors(depends_id)
-            dependency_target_ids = (dependency_target_ids +
-                    self.filter_target_ids(target_ids))
+        target_ids = self.predecessors(job_id)
+        dependency_target_ids = self.filter_target_ids(target_ids)
         return dependency_target_ids
 
     def get_creators(self, target_id):
@@ -144,12 +140,20 @@ class RuleDependencyGraph(networkx.DiGraph):
     def get_dependants(self, target_id):
         """Returns a list of the ids of all the dependants for the target_ids"""
         self.assert_target(target_id)
-        dependant_ids = []
-        depends_ids = self.neighbors(target_id)
-        for depends_id in depends_ids:
-            job_ids = self.neighbors(depends_id)
-            dependant_ids = dependant_ids + self.filter_job_ids(job_ids)
+        job_ids = self.neighbors(target_id)
+        dependant_ids = self.filter_job_ids(job_ids)
         return dependant_ids
+
+    def get_dependants_or_creators(self, target_id, direction):
+        """Returns the dependants or the creators of the targets depending on
+        the direction
+
+        direction can be up (creators) down (dependants)
+        """
+        if direction == "up":
+            return self.get_creators(target_id)
+        else:
+            return self.get_dependants(target_id)
 
     def get_job(self, job_id):
         """
@@ -212,35 +216,112 @@ class BuildGraph(networkx.DiGraph):
         super(BuildGraph, self).add_node(node.unique_id, attr_dict=node_data)
         return node
 
-    def _connect_targets(self, node, target_type, targets):
+    def assert_job(self, job_id):
+        """Raises a runtime error if the job_id doesn't correspond to a job"""
+        job = self.node[job_id]
+        if "object" not in job:
+            raise RuntimeError("{} is not a job node".format(job_id))
+        if not isinstance(job["object"], builder.jobs.JobState):
+            raise RuntimeError("{} is not a job node".format(job_id))
+
+    def assert_target(self, target_id):
+        """Raises a runtime error if the target_id doesn't correspond to a
+        target
+        """
+        target = self.node[target_id]
+        if "object" not in target:
+            raise RuntimeError("{} is not a target node".format(target_id))
+        if not isinstance(target["object"], builder.targets.Target):
+            raise RuntimeError("{} is not a target node".format(target_id))
+
+    def filter_target_ids(self, target_ids):
+        """Takes in a list of ids in the graph and returns all the ids that are
+        targets
+        """
+        output_target_ids = []
+        for target_id in target_ids:
+            target = self.node[target_id]
+            if "object" in target:
+                the_object = target["object"]
+                if isinstance(the_object, builder.targets.Target):
+                    output_target_ids.append(target_id)
+        return output_target_ids
+
+    def filter_job_ids(self, job_ids):
+        """Takes in a list of ids in the graph and returns all the ids that are
+        jobs
+        """
+        output_job_ids = []
+        for job_id in job_ids:
+            job = self.node[job_id]
+            if "object" in job:
+                the_object = job["object"]
+                if isinstance(the_object, builder.jobs.JobState):
+                    output_job_ids.append(job_id)
+        return output_job_ids
+
+    def get_targets(self, job_id):
+        """Returns a list of the ids of all the targets for the job_id"""
+        self.assert_job(job_id)
+        neighbor_ids = self.neighbors(job_id)
+        return self.filter_target_ids(neighbor_ids)
+
+    def get_dependencies(self, job_id):
+        """Returns a list of the ids of all the dependency targets for the
+        job_id
+        """
+        self.assert_job(job_id)
+        dependency_target_ids = []
+        depends_ids = self.predecessors(job_id)
+        for depends_id in depends_ids:
+            target_ids = self.predecessors(depends_id)
+            dependency_target_ids = (dependency_target_ids +
+                    self.filter_target_ids(target_ids))
+        return dependency_target_ids
+
+    def get_targets_or_dependencies(self, job_id, direction):
+        """Returns either the targets or the dependencies depending on the
+        direction
+
+        direction cane be "up" (dependencies) or "down" (targets)
+        """
+        if direction == "up":
+            return self.get_dependencies(job_id)
+        else:
+            return self.get_targets(job_id)
+
+    def get_creators(self, target_id):
+        """Returns a list of the ids of all the creators for the target_id"""
+        self.assert_target(target_id)
+        parent_ids = self.predecessors(target_id)
+        return self.filter_job_ids(parent_ids)
+
+    def get_dependants(self, target_id):
+        """Returns a list of the ids of all the dependants for the target_ids"""
+        self.assert_target(target_id)
+        dependant_ids = []
+        depends_ids = self.neighbors(target_id)
+        for depends_id in depends_ids:
+            job_ids = self.neighbors(depends_id)
+            dependant_ids = dependant_ids + self.filter_job_ids(job_ids)
+        return dependant_ids
+
+    def get_dependants_or_creators(self, target_id, direction):
+        """Returns the dependants or the creators of the targets depending on
+        the direction
+
+        direction can be up (creators) down (dependants)
+        """
+        if direction == "up":
+            return self.get_creators(target_id)
+        else:
+            return self.get_dependants(target_id)
+
+    def _connect_targets(self, node, target_type, targets, edge_data):
         """Connets the node to it's targets"""
         for target in targets:
             target = self.add_node(target)
-            self.add_edge(node.unique_id, target.unique_id,
-                                      label=target_type)
-
-    def _expand_targets(self, node):
-        """Expands out the targets of the node"""
-        if node.expanded_directions["down"]:
-            next_nodes = []
-            for node_id in self.neighbors(node.unique_id):
-                next_nodes.append(self.node[node_id]["object"])
-            return next_nodes
-
-        expanded_target_list = []
-        unexpanded_node = (self.rule_dep_graph
-                                 .node[node.unexpanded_id]["object"])
-        targets = unexpanded_node.get_targets(build_context=node.build_context)
-
-        for target_type, target_group in targets.iteritems():
-            for target in target_group:
-                expanded_targets = target.expand(node.build_context)
-                expanded_target_list = (expanded_target_list +
-                                        expanded_targets)
-                self._connect_targets(node, target_type, expanded_targets)
-
-        node.expanded_directions["down"] = True
-        return expanded_target_list
+            self.add_edge(node.unique_id, target.unique_id, edge_data, label=target_type)
 
     def _connect_dependencies(self, node, dependency_type, dependencies, data):
         """connects the node to all of the dependencies"""
@@ -262,88 +343,67 @@ class BuildGraph(networkx.DiGraph):
                 dependency.unique_id, dependency_node_id, data,
                 label=dependency_type.func_name)
 
-    def _expand_dependencies(self, node):
-        """Expands out the dependencies of the node"""
-        if node.expanded_directions["up"]:
-            next_nodes = []
-            for depends_id in self.predecessors(node.unique_id):
-                for node_id in self.predecessors(depends_id):
-                    next_nodes.append(self.node[node_id]["object"])
-            return next_nodes
+    def _expand_direction(self, node, direction):
+        """Expands out the targets or depenencies depending on the direction"""
+        if node.expanded_directions[direction]:
+            return self.get_targets_or_dependencies(node.unique_id, direction)
 
-        expanded_dependency_list = []
-        unexpanded_node = (self.rule_dep_graph
-                               .node[node.unexpanded_id]["object"])
-        dependencies = unexpanded_node.get_dependencies(
-                build_context=node.build_context)
+        target_depends = {}
+        unexpanded_node = self.rule_dep_graph.node[node.unexpanded_id]["object"]
+        if direction == "up":
+            target_depends = unexpanded_node.get_dependencies(
+                    build_context=node.build_context)
+        else:
+            target_depends = unexpanded_node.get_targets(
+                    build_context=node.build_context)
 
-        for dependency_type, dependency_group in dependencies.iteritems():
-            dependency_type = (builder.dependencies
-                               .get_dependencies(dependency_type))
-            for dependency in dependency_group:
+        expanded_targets_list = []
+        for target_type, target_group in target_depends.iteritems():
+            for target in target_group:
                 build_context = node.build_context
-                edge_data = dependency.edge_data
-                expanded_dependencies = dependency.expand(build_context)
-                self._connect_dependencies(node, dependency_type,
-                                           expanded_dependencies, edge_data)
-                expanded_dependency_list = (expanded_dependency_list +
-                                            expanded_dependencies)
+                edge_data = target.edge_data
+                expanded_targets = target.expand(build_context)
+                if direction == "up":
+                    dependency_type = (builder.dependencies
+                            .get_dependencies(target_type))
+                    self._connect_dependencies(node, dependency_type,
+                            expanded_targets, edge_data)
 
-        node.expanded_directions["up"] = True
-        return expanded_dependency_list
+                if direction == "down":
+                    self._connect_targets(node, target_type, expanded_targets, edge_data)
+                expanded_targets_list = expanded_targets_list + expanded_targets
+        return expanded_targets_list
 
-    def _self_expand_down_next(self, node, expanded_targets,
-                               depth, current_depth, top_jobs, cache_set):
+    def _self_expand_next_direction(self, node, expanded_directions, depth,
+            current_depth, top_jobs, cache_set, direction):
         """Gets the next nodes to expand and expands them"""
         next_nodes = []
-        for expanded_target in expanded_targets:
-            if expanded_target.unique_id in cache_set:
+        for expanded_direction in expanded_directions:
+            if expanded_direction.unique_id in cache_set:
                 continue
-            if expanded_target.expanded_directions["down"]:
-                for node_id in self.neighbors(node.unique_id):
-                    next_nodes.append(self.node[node_id]["object"])
+            if expanded_direction.expanded_directions[direction]:
+                next_node_ids = self.get_dependants_or_creators(
+                        expanded_direction.unique_id, direction)
+                for next_node_id in next_node_ids:
+                    next_nodes.append(self.node[next_node_id]["object"])
                 continue
-            neighbor_ids = self.rule_dep_graph.get_dependants(
-                expanded_target.unexpanded_id)
-            for node_id in neighbor_ids:
-                node = self.rule_dep_graph[node_id]
-                expanded_nodes = node.expand(
-                    expanded_target.build_context)
-                next_nodes = next_nodes + expanded_nodes
-            cache_set.add(expanded_target.unique_id)
-            expanded_target.expanded_directions["down"] = True
-        for expanded_node in next_nodes:
-            self._self_expand(expanded_node, "down", depth, current_depth,
-                              top_jobs, cache_set)
-        return next_nodes
-
-    def _self_expand_up_next(self, node, expanded_dependencies,
-                             depth, current_depth, top_jobs, cache_set):
-        """Gets the next nodes to expand and expands them"""
-        next_nodes = []
-        for expanded_dependency in expanded_dependencies:
-            if expanded_dependency.unique_id in cache_set:
-                continue
-            if expanded_dependency.expanded_directions["up"]:
-                parent_node_ids = self.predecessors(
-                    expanded_dependency.unique_id)
-                for node_id in parent_node_ids:
-                    next_nodes.append(self.node[node_id]["object"])
-                continue
-            parent_ids = self.rule_dep_graph.get_creators(
-                expanded_dependency.unexpanded_id)
-            for parent_node_id in parent_ids:
-                parent_node = (self.rule_dep_graph
-                                   .node[parent_node_id]["object"])
-                expanded_nodes = parent_node.expand(
-                    expanded_dependency.build_context)
-                next_nodes = next_nodes + expanded_nodes
-            cache_set.add(expanded_dependency.unique_id)
-            expanded_dependency.expanded_directions["up"] = True
-        for expanded_node in next_nodes:
+            unexpanded_next_node_ids = (
+                    self.rule_dep_graph
+                        .get_dependants_or_creators(
+                                expanded_direction.unexpanded_id, direction))
+            for unexpanded_next_node_id in unexpanded_next_node_ids:
+                unexpanded_next_node = (self.rule_dep_graph
+                                            .node[unexpanded_next_node_id]
+                                                 ["object"])
+                next_nodes = next_nodes + unexpanded_next_node.expand(
+                        expanded_direction.build_context)
+            cache_set.add(expanded_direction.unique_id)
+            expanded_direction.expanded_directions[direction] = True
+        for next_node in next_nodes:
             self._self_expand(
-                expanded_node, "up", depth, current_depth, top_jobs, cache_set)
-        return next_nodes
+                    next_node, direction, depth, current_depth, top_jobs,
+                    cache_set)
+
 
     def _self_expand(self, node, direction, depth, current_depth, top_jobs,
                      cache_set=None):
@@ -356,8 +416,8 @@ class BuildGraph(networkx.DiGraph):
 
         self.add_node(node)
 
-        expanded_targets = self._expand_targets(node)
-        expanded_dependencies = self._expand_dependencies(node)
+        expanded_targets = self._expand_direction(node, "down")
+        expanded_dependencies = self._expand_direction(node, "up")
         cache_set.add(node.unique_id)
 
         next_nodes = []
@@ -368,16 +428,16 @@ class BuildGraph(networkx.DiGraph):
                 top_jobs.add(node.unique_id)
                 return
 
-        if direction == "down":
-            next_nodes = self._self_expand_down_next(node, expanded_targets,
-                                                     depth, current_depth,
-                                                     top_jobs, cache_set)
+        if direction == "up":
+            next_nodes = self._self_expand_next_direction(
+                    node, expanded_dependencies, depth, current_depth,
+                    top_jobs, cache_set, direction)
             if not next_nodes:
                 top_jobs.add(node.unique_id)
-        else:
-            next_nodes = self._self_expand_up_next(node, expanded_dependencies,
-                                                   depth, current_depth,
-                                                   top_jobs, cache_set)
+        if direction == "down":
+            next_nodes = self._self_expand_next_direction(
+                    node, expanded_targets, depth, current_depth, top_jobs,
+                    cache_set, direction)
 
 
     def construct_build_graph(self, build_context):

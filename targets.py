@@ -41,7 +41,6 @@ class Target(object):
 
         self.expanded_directions = {"up": False, "down": False}
 
-    @abc.abstractmethod
     def get_exists(self, cached=True):
         """returns whether or not the target has been built before
         on a local file system it is simply the exists, in impala it might
@@ -50,8 +49,8 @@ class Target(object):
         args:
             cached: True if the cached value is wanted
         """
+        return self.exists
 
-    @abc.abstractmethod
     def get_mtime(self, cached=True):
         """returns whether or not the target has been built before
         on a local file system it is simply the mtime, in impala it might
@@ -60,6 +59,7 @@ class Target(object):
         args:
             cached: True if the cached value is wanted
         """
+        return self.mtime
 
     @staticmethod
     @abc.abstractmethod

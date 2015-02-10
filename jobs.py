@@ -93,17 +93,21 @@ class JobState(object):
         """
         alt_check = False
         target_mtimes = [float("inf")]
+        print build_graph.out_edges(self.unique_id, data=True)
         for target_edge in build_graph.out_edges(self.unique_id, data=True):
             # edge is form (src_node_id, dest_node_id, data_dict)
             if target_edge[2]["label"] == "produces":
-                if target_edge[2].get("ignore_mtime", False):
+                if target_edge[2].get("ignore_produce", False):
                     continue
                 target_id = target_edge[1]
                 target = build_graph.node[target_id]["object"]
                 if not target.get_exists() and not alt_check:
+                    print "target missing", target.unexpanded_id
                     if self.get_stale_alternates(build_graph):
                         return True
                 else:
+                    if target_edge[2].get("ignore_mtime", False):
+                        continue
                     target_mtimes.append(target.get_mtime())
         min_target_mtime = min(target_mtimes)
         return min_target_mtime
@@ -143,6 +147,7 @@ class JobState(object):
 
         minimum_target_mtime = self.get_minimum_target_mtime(build_graph)
         if minimum_target_mtime is True:
+            print "missing target"
             self.update_stale(True, build_graph)
             return True
 

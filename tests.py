@@ -9,7 +9,7 @@ import arrow
 import mock
 import networkx
 
-from builder.tests_jobs import UpdateTargetCacheBottom, UpdateTargetCacheMiddle03, UpdateTargetCacheMiddle02, UpdateTargetCacheMiddle01, ForceBuildBottom, ForceBuildMiddle, ForceBuildTop, ExpandExactBottom, ExpandExactMiddle, ExpandExactTop, UpdateJobCacheBottom, UpdateJobCacheMiddle03, UpdateJobCacheMiddle02, UpdateJobCacheMiddle01, UpdateJobCacheTop, GetNextJobsToRunLowest, GetNextJobsToRunBottom, GetNextJobsToRunMiddle02, GetNextJobsToRunMiddle01, GetNextJobsToRunTop, UpdateLowerNodesShouldRunLowest, UpdateLowerNodesShouldRunBottom, UpdateLowerNodesShouldRunMiddle02, UpdateLowerNodesShouldRunMiddle01, UpdateLowerNodesShouldRunTop, GetStartingJobs04Tester, GetStartingJobs03Tester, GetStartingJobs02Tester, GetStartingJobs01Tester, ShouldRunRecurseJob10Tester, ShouldRunRecurseJob09Tester, ShouldRunRecurseJob08Tester, ShouldRunRecurseJob07Tester, ShouldRunRecurseJob06Tester, ShouldRunRecurseJob05Tester, ShouldRunRecurseJob04Tester, ShouldRunRecurseJob03Tester, ShouldRunRecurseJob02Tester, ShouldRunRecurseJob01Tester, ShouldRunCacheLogicJobTester, ShouldRunLogicJobTester, PastCurfewJobTester, AllDependenciesJobTester, PastCacheTimeJobTester, BuildableJobTester, StaleAlternateUpdateBottomJobTester, StaleAlternateUpdateTopJobTester, StaleAlternateBottomJobTester, StaleAlternateTopJobTester, StaleIgnoreMtimeJobTester, StaleStandardJobTester, DiamondRedundancyHighestJobTester, DiamondRedundancyTopJobTester, DiamondRedundancyMiddleJob02Tester, DiamondRedundancyMiddleJob01Tester, DiamondRedundancyBottomJobTester, BackboneDependantTopJob02Tester, BackboneDependantTopJob01Tester, BackboneDependantMiddleJob02Tester, BackboneDependantMiddleJob01Tester, BackboneDependantBottomJobTester, BuildGraphConstructionJobBottom01Tester, BuildGraphConstructionJobTop02Tester, BuildGraphConstructionJobTop01Tester, RuleDepConstructionJobBottom01Tester, RuleDepConstructionJobTop02Tester, RuleDepConstructionJobTop01Tester, UpdateTargetCacheTop, PastCurfewTimestampJobTester
+from builder.tests_jobs import UpdateTargetCacheBottom, UpdateTargetCacheMiddle03, UpdateTargetCacheMiddle02, UpdateTargetCacheMiddle01, ForceBuildBottom, ForceBuildMiddle, ForceBuildTop, ExpandExactBottom, ExpandExactMiddle, ExpandExactTop, UpdateJobCacheBottom, UpdateJobCacheMiddle03, UpdateJobCacheMiddle02, UpdateJobCacheMiddle01, UpdateJobCacheTop, GetNextJobsToRunLowest, GetNextJobsToRunBottom, GetNextJobsToRunMiddle02, GetNextJobsToRunMiddle01, GetNextJobsToRunTop, UpdateLowerNodesShouldRunLowest, UpdateLowerNodesShouldRunBottom, UpdateLowerNodesShouldRunMiddle02, UpdateLowerNodesShouldRunMiddle01, UpdateLowerNodesShouldRunTop, GetStartingJobs04Tester, GetStartingJobs03Tester, GetStartingJobs02Tester, GetStartingJobs01Tester, ShouldRunRecurseJob10Tester, ShouldRunRecurseJob09Tester, ShouldRunRecurseJob08Tester, ShouldRunRecurseJob07Tester, ShouldRunRecurseJob06Tester, ShouldRunRecurseJob05Tester, ShouldRunRecurseJob04Tester, ShouldRunRecurseJob03Tester, ShouldRunRecurseJob02Tester, ShouldRunRecurseJob01Tester, ShouldRunCacheLogicJobTester, ShouldRunLogicJobTester, PastCurfewJobTester, AllDependenciesJobTester, PastCacheTimeJobTester, BuildableJobTester, StaleAlternateUpdateBottomJobTester, StaleAlternateUpdateTopJobTester, StaleAlternateBottomJobTester, StaleAlternateTopJobTester, StaleIgnoreMtimeJobTester, StaleStandardJobTester, DiamondRedundancyHighestJobTester, DiamondRedundancyTopJobTester, DiamondRedundancyMiddleJob02Tester, DiamondRedundancyMiddleJob01Tester, DiamondRedundancyBottomJobTester, BackboneDependantTopJob02Tester, BackboneDependantTopJob01Tester, BackboneDependantMiddleJob02Tester, BackboneDependantMiddleJob01Tester, BackboneDependantBottomJobTester, BuildGraphConstructionJobBottom01Tester, BuildGraphConstructionJobTop02Tester, BuildGraphConstructionJobTop01Tester, RuleDepConstructionJobBottom01Tester, RuleDepConstructionJobTop02Tester, RuleDepConstructionJobTop01Tester, UpdateTargetCacheTop, PastCurfewTimestampJobTester, IgnoreProduceJob
 import testing
 import builder.jobs
 import builder.build
@@ -3647,6 +3647,74 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(should_run_new2, expected_should_run_new2)
         self.assertEqual(should_run_new3, expected_should_run_new3)
         build.run.assert_has_calls([mock.call("update_target_cache_middle_02")])
+
+    @testing.unit
+    def test_ignore_produce(self):
+        # Given
+        jobs = [
+            IgnoreProduceJob()
+        ]
+
+        build1 = builder.build.BuildGraph(jobs)
+        build2 = builder.build.BuildGraph(jobs)
+        build3 = builder.build.BuildGraph(jobs)
+        build4 = builder.build.BuildGraph(jobs)
+
+        build_context1 = {
+            "start_job": "ignore_produce_job",
+        }
+        build_context2 = {
+            "start_job": "ignore_produce_job",
+        }
+        build_context3 = {
+            "start_job": "ignore_produce_job",
+        }
+        build_context4 = {
+            "start_job": "ignore_produce_job",
+        }
+
+        build1.construct_build_graph(build_context1);
+        build1.write_dot("graph.dot")
+        build2.construct_build_graph(build_context2);
+        build3.construct_build_graph(build_context3);
+        build4.construct_build_graph(build_context4);
+
+        expected_stale1 = True
+        build1.node["ignore_produce_ignore_target"]["object"].exists = False
+        build1.node["ignore_produce_ignore_target"]["object"].mtime = None
+        build1.node["ignore_produce_marker_target"]["object"].exists = False
+        build1.node["ignore_produce_marker_target"]["object"].mtime = None
+
+        expected_stale2 = True
+        build2.node["ignore_produce_ignore_target"]["object"].exists = True
+        build2.node["ignore_produce_ignore_target"]["object"].mtime = 100
+        build2.node["ignore_produce_marker_target"]["object"].exists = False
+        build2.node["ignore_produce_marker_target"]["object"].mtime = None
+
+        expected_stale3 = False
+        build3.node["ignore_produce_ignore_target"]["object"].exists = True
+        build3.node["ignore_produce_ignore_target"]["object"].mtime = 100
+        build3.node["ignore_produce_marker_target"]["object"].exists = True
+        build3.node["ignore_produce_marker_target"]["object"].mtime = 100
+
+        expected_stale4 = False
+        build4.node["ignore_produce_ignore_target"]["object"].exists = False
+        build4.node["ignore_produce_ignore_target"]["object"].mtime = None
+        build4.node["ignore_produce_marker_target"]["object"].exists = True
+        build4.node["ignore_produce_marker_target"]["object"].mtime = 100
+
+        # When
+        actual_stale1 = build1.node["ignore_produce_job"]["object"].get_stale(build1)
+        actual_stale2 = build2.node["ignore_produce_job"]["object"].get_stale(build2)
+        actual_stale3 = build3.node["ignore_produce_job"]["object"].get_stale(build3)
+        actual_stale4 = build4.node["ignore_produce_job"]["object"].get_stale(build4)
+
+        # Then
+        self.assertEqual(actual_stale1, expected_stale1)
+        self.assertEqual(actual_stale2, expected_stale2)
+        self.assertEqual(actual_stale3, expected_stale3)
+        self.assertEqual(actual_stale4, expected_stale4)
+
 
 
 class UtilTest(unittest.TestCase):
