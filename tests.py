@@ -3674,7 +3674,6 @@ class GraphTest(unittest.TestCase):
         }
 
         build1.construct_build_graph(build_context1);
-        build1.write_dot("graph.dot")
         build2.construct_build_graph(build_context2);
         build3.construct_build_graph(build_context3);
         build4.construct_build_graph(build_context4);
