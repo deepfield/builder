@@ -49,7 +49,7 @@ class RuleDependencyGraph(networkx.DiGraph):
         node_data.update(attr_dict)
 
         super(RuleDependencyGraph, self).add_node(node.unexpanded_id,
-                attr_dict=attr_dict)
+                attr_dict=node_data)
 
     def add_job(self, job):
         """Adds a job and it's targets and dependencies to the rule dependency
@@ -755,13 +755,13 @@ class BuildGraph(networkx.DiGraph):
 
         if direction == "up":
             next_nodes = self._self_expand_next_direction(
-                    node, expanded_dependencies, depth, current_depth,
+                    expanded_dependencies, depth, current_depth,
                     top_jobs, cache_set, direction)
             if not next_nodes:
                 top_jobs.add(node.unique_id)
         if direction == "down":
             next_nodes = self._self_expand_next_direction(
-                    node, expanded_targets, depth, current_depth, top_jobs,
+                    expanded_targets, depth, current_depth, top_jobs,
                     cache_set, direction)
 
 
@@ -830,9 +830,9 @@ class BuildGraph(networkx.DiGraph):
 
         unexpanded_id = build_context["start_job"]
         del build_context["start_job"]
+        self.rule_dep_graph.write_dot("graph.dot")
         start_node = (self.rule_dep_graph
-                          .node
-                          [unexpanded_id]["object"])
+                          .node[unexpanded_id]["object"])
         expanded_nodes = start_node.expand(build_context)
         cache_set = set([])
         top_jobs = set([])
