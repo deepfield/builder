@@ -830,7 +830,6 @@ class BuildGraph(networkx.DiGraph):
 
         unexpanded_id = build_context["start_job"]
         del build_context["start_job"]
-        self.rule_dep_graph.write_dot("graph.dot")
         start_node = (self.rule_dep_graph
                           .node[unexpanded_id]["object"])
         expanded_nodes = start_node.expand(build_context)
