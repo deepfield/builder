@@ -18,6 +18,7 @@ class RuleDependencyGraph(networkx.DiGraph):
             config = {}
 
         self.jobs = jobs
+        self.config = config
 
     def add_node(self, node, attr_dict=None, **attr):
         """Add a job instance, expander instance, or meta node to the graph
@@ -986,6 +987,4 @@ class BuildGraph(networkx.DiGraph):
                         self.run(next_job)
 
     def run(self, job_id):
-        """For now returns immediatlly"""
-        job_id = job_id
-        return
+        raise NotImplementedError()
