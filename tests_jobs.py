@@ -34,7 +34,7 @@ class JobTest(unittest.TestCase):
                              "%Y-%m-%d-%H-%M")
 
         # when
-        command1 = job1_state.get_command(build_graph)
+        command1 = job1.get_command("timestamp_expanded_job", job1_state, None)
 
         # then
         self.assertEqual(command1, expected_command1)
@@ -59,7 +59,7 @@ class JobTest(unittest.TestCase):
         # when
         expanded_nodes1 = job_type1.expand(build_context1)
         unique_id1 = expanded_nodes1[0].unique_id
-        command1 = expanded_nodes1[0].get_command("blank command")
+        command1 = job_type1.get_command("unique_id", {}, None)
 
         # then
         self.assertEqual(len(expanded_nodes1), 1)
@@ -701,10 +701,10 @@ class GetNextJobsToRunTop(GetNextJobsCounter):
 class GetShouldRunCounterState(builder.jobs.JobState):
     """Used to count how many times the should run is returned"""
 
-    def __init__(self, unexpanded_id, unique_id, build_context, command,
+    def __init__(self, unexpanded_id, unique_id, build_context,
             cache_time, config=None):
         super(GetShouldRunCounterState, self).__init__(
-                unexpanded_id, unique_id, build_context, command, cache_time,
+                unexpanded_id, unique_id, build_context, cache_time,
                 config=config)
         self.count = 0
 
@@ -725,7 +725,6 @@ class GetShouldRunCounterJob(Job):
                     expanded_node.unexpanded_id,
                     expanded_node.unique_id,
                     expanded_node.build_context,
-                    expanded_node.command,
                     expanded_node.cache_time,
                     expanded_node.config)
             counting_nodes.append(counting_node)
@@ -879,10 +878,10 @@ class GetStartingJobs01Tester(Job):
 class ShouldRunRecurseJobState(builder.jobs.JobState):
     """Used to count how many times the should run is returned"""
 
-    def __init__(self, unexpanded_id, unique_id, build_context, command,
-            cache_time, should_run_immediate, config=None):
+    def __init__(self, unexpanded_id, unique_id, build_context, cache_time,
+            should_run_immediate, config=None):
         super(ShouldRunRecurseJobState, self).__init__(
-                unexpanded_id, unique_id, build_context, command, cache_time,
+                unexpanded_id, unique_id, build_context, cache_time,
                 config=config)
         self.should_run_immediate = should_run_immediate
 
@@ -901,7 +900,6 @@ class ShouldRunRecurseJob(Job):
                     expanded_node.unexpanded_id,
                     expanded_node.unique_id,
                     expanded_node.build_context,
-                    expanded_node.command,
                     expanded_node.cache_time,
                     self.should_run_immediate,
                     expanded_node.config,)
@@ -1991,7 +1989,7 @@ class TimestampExpandedJobTester(TimestampExpandedJob):
     """
     unexpanded_id = "timestamp_expanded_job"
 
-    def get_command(self):
+    def get_command(self, unique_id, build_context, build_graph):
         command = "timestamp expanded job tester command %Y-%m-%d-%H-%M"
         return command
 
