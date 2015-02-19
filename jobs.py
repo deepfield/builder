@@ -12,7 +12,7 @@ class JobState(object):
     """A job state is basically a job in the build graph. It is used to keep
     state on the specific job
     """
-    def __init__(self, unexpanded_id, unique_id, build_context, command,
+    def __init__(self, unexpanded_id, unique_id, build_context,
             cache_time, config=None):
         if config is None:
             config = {}
@@ -20,7 +20,6 @@ class JobState(object):
         self.unexpanded_id = unexpanded_id
         self.unique_id = unique_id
         self.build_context = build_context
-        self.command = command
         self.cache_time = cache_time
         self.config = config
 
@@ -31,7 +30,7 @@ class JobState(object):
         self.expanded_directions = {"up": False, "down": False}
 
     def __repr__(self):
-        return "{}:{} {}".format(self.unexpanded_id, self.unique_id, self.command)
+        return "{}:{}".format(self.unexpanded_id, self.unique_id)
 
     def get_stale_alternates(self, build_graph):
         """Returns True if the job does not have an alternate or if any
@@ -335,7 +334,10 @@ class JobState(object):
 
     def get_command(self, build_graph):
         """Returns the job's expanded command"""
-        return self.command
+        unexpanded_job = (build_graph.rule_dep_graph
+                                     .node[self.unexpanded_id]["object"])
+        return unexpanded_job.get_command(self.unique_id, self.build_context,
+                                          build_graph)
 
 class MetaJobState(JobState):
     def get_should_run_immediate(self, build_graph, cache=True):
@@ -345,10 +347,10 @@ class MetaJobState(JobState):
         return False
 
 class TimestampExpandedJobState(JobState):
-    def __init__(self, unexpanded_id, unique_id, build_context, command,
+    def __init__(self, unexpanded_id, unique_id, build_context,
             cache_time, curfew, config=None):
         super(TimestampExpandedJobState, self).__init__(unexpanded_id,
-                unique_id, build_context, command, cache_time, config=config)
+                unique_id, build_context, cache_time, config=config)
         self.curfew = curfew
 
     def past_curfew(self):
@@ -389,8 +391,7 @@ class Job(object):
         state_type = self.get_job_state()
         return [
             state_type(self.unexpanded_id, self.get_expandable_id(),
-                     build_context, self.get_command(),
-                     self.cache_time)]
+                       build_context, self.cache_time)]
 
     def get_enable(self):
         """Used to determine if the node should end up in the build graph
@@ -399,7 +400,7 @@ class Job(object):
         """
         return True
 
-    def get_command(self):
+    def get_command(self, unique_id, build_context, build_graph):
         """Used to get the command related to the command"""
         return "base command for " + self.unexpanded_id
 
@@ -438,7 +439,7 @@ class MetaJob(Job):
     def expand(self, build_context):
         job_type = self.get_job_state()
         return [job_type(self.unexpanded_id, self.unexpanded_id,
-                build_context, self.get_command(), self.cache_time)]
+                build_context, self.cache_time)]
 
 
 class TimestampExpandedJob(Job):
@@ -464,8 +465,8 @@ class TimestampExpandedJob(Job):
 
         expanded_nodes = []
         for expanded_id, build_context in expanded_contexts.iteritems():
-            expanded_node = job_type(self.unexpanded_id,
-                expanded_id, build_context, self.get_command(),
+            expanded_node = job_type(
+                self.unexpanded_id, expanded_id, build_context,
                 self.cache_time, self.curfew, config=self.config)
             expanded_nodes.append(expanded_node)
 
