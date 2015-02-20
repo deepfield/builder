@@ -377,7 +377,7 @@ class MetaJobState(TimestampExpandedJobState):
                 unique_id, build_context, cache_time, curfew,
                 config=config)
 
-    def get_should_run_immediate(self, build_graph, cache=True):
+    def get_should_run_immediate(self, build_graph, cached=True):
         return False
 
     def get_should_run(self, build_graph, cached=True, cache_set=None):
@@ -409,7 +409,7 @@ class Job(object):
         """
         return self.unexpanded_id
 
-    def get_job_state(self):
+    def get_state_type(self):
         """Returns the type of state to use for expansions"""
         return JobState
 
@@ -421,7 +421,7 @@ class Job(object):
         context would use start time and end time and the node
         would expand from there
         """
-        state_type = self.get_job_state()
+        state_type = self.get_state_type()
         return [
             state_type(self.unexpanded_id, self.get_expandable_id(),
                        build_context, self.cache_time)]
