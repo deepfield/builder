@@ -716,6 +716,7 @@ class BuildGraph(networkx.DiGraph):
             self._self_expand(
                     next_node, direction, depth, current_depth, top_jobs,
                     cache_set)
+        return next_nodes
 
 
     def _self_expand(self, node, direction, depth, current_depth, top_jobs,
@@ -815,6 +816,8 @@ class BuildGraph(networkx.DiGraph):
         """
         if self.rule_dep_graph is None:
             self.construct_rule_dependency_graph()
+
+        self.rule_dep_graph.write_dot("graph.dot")
 
         current_depth = 0
         if build_context.get("exact", False):

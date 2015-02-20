@@ -339,13 +339,6 @@ class JobState(object):
         return unexpanded_job.get_command(self.unique_id, self.build_context,
                                           build_graph)
 
-class MetaJobState(JobState):
-    def get_should_run_immediate(self, build_graph, cache=True):
-        return False
-
-    def get_should_run(self, build_graph, cached=True, cache_set=None):
-        return False
-
 class TimestampExpandedJobState(JobState):
     def __init__(self, unexpanded_id, unique_id, build_context,
             cache_time, curfew, config=None):
@@ -358,6 +351,19 @@ class TimestampExpandedJobState(JobState):
         end_time = self.build_context["end_time"]
         curfew_time = end_time + time_delta
         return curfew_time < arrow.get()
+
+class MetaJobState(TimestampExpandedJobState):
+    def __init__(self, unexpanded_id, unique_id, build_context,
+            cache_time, curfew, config=None):
+        super(MetaJobState, self).__init__(unexpanded_id,
+                unique_id, build_context, cache_time, curfew,
+                config=config)
+
+    def get_should_run_immediate(self, build_graph, cache=True):
+        return False
+
+    def get_should_run(self, build_graph, cached=True, cache_set=None):
+        return False
 
 
 class Job(object):
@@ -431,17 +437,6 @@ class Job(object):
         return {}
 
 
-class MetaJob(Job):
-    """A job that should never run"""
-    def get_state_type(self):
-        return MetaJobState
-
-    def expand(self, build_context):
-        job_type = self.get_job_state()
-        return [job_type(self.unexpanded_id, self.unexpanded_id,
-                build_context, self.cache_time)]
-
-
 class TimestampExpandedJob(Job):
     """A job that combines the timestamp expadned node and the job node
     logic
@@ -472,3 +467,8 @@ class TimestampExpandedJob(Job):
 
         return expanded_nodes
 
+
+class MetaJob(TimestampExpandedJob):
+    """A job that should never run"""
+    def get_state_type(self):
+        return MetaJobState
