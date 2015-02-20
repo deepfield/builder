@@ -3,6 +3,7 @@ and the build graph
 """
 
 import arrow
+import copy
 import networkx
 
 import builder.dependencies
@@ -865,8 +866,10 @@ class BuildGraph(networkx.DiGraph):
         if isinstance(start_node, builder.jobs.MetaTarget):
             job_collection = start_node.get_job_collection()
             for job_id in job_collection:
-                build_context["start_job"] = job_id
-                self.construct_build_graph(build_context, cache_set=cache_set,
+                copy_build_context = copy.copy(build_context)
+                copy_build_context["start_job"] = job_id
+                self.construct_build_graph(copy_build_context,
+                                           cache_set=cache_set,
                                            top_jobs=top_jobs)
             return
 
