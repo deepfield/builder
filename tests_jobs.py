@@ -69,7 +69,9 @@ class JobTest(unittest.TestCase):
 
 class JobDependsPast(Job):
     """A job that depends on a file from the past"""
-    unexpanded_id = "job_depends_past"
+    def __init__(self, unexpanded_id="job_depends_past", cache_time=None,
+                 targets=None, dependencies=None, config=None):
+        super(JobDependsPast, self).__init__(unexpanded_id=unexpanded_id)
 
     def get_dependencies(self, build_context=None):
         depends_dict = {
@@ -91,7 +93,10 @@ class JobBackboneDependantTester(Job):
     """A job that has targets that depend on wether or not backbone is
     enabled
     """
-    unexpanded_id = "job_backbone_dependant"
+    def __init__(self, unexpanded_id="job_backbone_dependant", cache_time=None,
+                 targets=None, dependencies=None, config=None):
+        super(JobBackboneDependantTester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         targets = {
@@ -113,7 +118,9 @@ class JobBackboneDependantTester(Job):
 
 class JobAlternateTester(Job):
     """A job that has an alternate target"""
-    unexpanded_id = "job_alternate"
+    def __init__(self, unexpanded_id="job_alternate", cache_time=None,
+                 targets=None, dependencies=None, config=None):
+        super(JobAlternateTester, self).__init__(unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         if build_context is None:
@@ -135,7 +142,10 @@ class JobAlternateTester(Job):
 
 class UpdateTargetCacheBottom(Job):
     """The job at the bottom to easily build out the graph"""
-    unexpanded_id = "update_target_cache_bottom"
+    def __init__(self, unexpanded_id="update_target_cache_bottom",
+                cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateTargetCacheBottom, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -166,7 +176,10 @@ class UpdateTargetCacheMiddle03(Job):
     """The job in the middle that is buildable and not stale and will not
     be updated
     """
-    unexpanded_id = "update_target_cache_middle_03"
+    def __init__(self, unexpanded_id="update_target_cache_middle_03",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateTargetCacheMiddle03, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -191,7 +204,10 @@ class UpdateTargetCacheMiddle02(Job):
     """The job in the middle that is not stale not buildable will be
     updated
     """
-    unexpanded_id = "update_target_cache_middle_02"
+    def __init__(self, unexpanded_id="update_target_cache_middle_02",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateTargetCacheMiddle02, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -214,7 +230,10 @@ class UpdateTargetCacheMiddle02(Job):
 
 class UpdateTargetCacheMiddle01(Job):
     """The job in the middle that will never be buildable but has it's"""
-    unexpanded_id = "update_target_cache_middle_01"
+    def __init__(self, unexpanded_id="update_target_cache_middle_01",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateTargetCacheMiddle01, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -237,7 +256,9 @@ class UpdateTargetCacheMiddle01(Job):
 
 class UpdateTargetCacheTop(Job):
     """The job at the top whose mtimes will be updated"""
-    unexpanded_id = "update_target_cache_top"
+    def __init__(self, unexpanded_id="update_target_cache_top",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateTargetCacheTop, self).__init__(unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -266,8 +287,11 @@ class UpdateTargetCacheTop(Job):
 
 class ForceBuildBottom(TimestampExpandedJob):
     """The middle job to not force"""
-    unexpanded_id = "force_build_bottom"
-    file_step = "15min"
+    def __init__(self, unexpanded_id="force_build_bottom", cache_time=None,
+                 file_step="15min", targets=None, dependencies=None,
+                 config=None):
+        super(ForceBuildBottom, self).__init__(unexpanded_id=unexpanded_id,
+                                               file_step=file_step)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -296,8 +320,10 @@ class ForceBuildBottom(TimestampExpandedJob):
 
 class ForceBuildMiddle(TimestampExpandedJob):
     """The middle job to not force"""
-    unexpanded_id = "force_build_middle"
-    file_step = "5min"
+    def __init__(self, unexpanded_id="force_build_middle", file_step="5min",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(ForceBuildMiddle, self).__init__(unexpanded_id=unexpanded_id,
+                                               file_step=file_step)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -322,8 +348,10 @@ class ForceBuildMiddle(TimestampExpandedJob):
 
 class ForceBuildTop(TimestampExpandedJob):
     """The top job to be force"""
-    unexpanded_id = "force_build_top"
-    file_step = "1min"
+    def __init__(self, unexpanded_id="force_build_top", file_step="1min",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(ForceBuildTop, self).__init__(unexpanded_id=unexpanded_id,
+                                               file_step=file_step)
 
     def get_targets(self, build_context=None):
         return {
@@ -338,7 +366,9 @@ class ForceBuildTop(TimestampExpandedJob):
 
 class ExpandExactBottom(Job):
     """The bottom job"""
-    unexpanded_id = "test_expand_exact_bottom"
+    def __init__(self, unexpanded_id="test_expand_exact_bottom",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(ExpandExactBottom, self).__init__(unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -361,7 +391,9 @@ class ExpandExactBottom(Job):
 
 class ExpandExactMiddle(Job):
     """The middle job"""
-    unexpanded_id = "test_expand_exact_middle"
+    def __init__(self, unexpanded_id="test_expand_exact_middle",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(ExpandExactMiddle, self).__init__(unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -384,7 +416,9 @@ class ExpandExactMiddle(Job):
 
 class ExpandExactTop(Job):
     """The top job"""
-    unexpanded_id = "test_expand_exact_top"
+    def __init__(self, unexpanded_id="test_expand_exact_top",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(ExpandExactTop, self).__init__(unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -407,7 +441,10 @@ class ExpandExactTop(Job):
 
 class IsJobImmediatlyRunnable5min(Job):
     """The job is a 5min job"""
-    unexpanded_id = "is_job_immediatly_runnable"
+    def __init__(self, unexpanded_id="is_job_immediatly_runnable_5min",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(IsJobImmediatlyRunnable5min, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -437,7 +474,10 @@ class IsJobImmediatlyRunnable5min(Job):
 
 class UpdateJobCacheBottom(Job):
     """The job at the bottom to easily build out the graph"""
-    unexpanded_id = "update_job_cache_bottom"
+    def __init__(self, unexpanded_id="update_job_cache_bottom",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateJobCacheBottom, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -468,7 +508,10 @@ class UpdateJobCacheMiddle03(Job):
     """The job in the middle that is buildable and not stale and will not
     be updated
     """
-    unexpanded_id = "update_job_cache_middle_03"
+    def __init__(self, unexpanded_id="update_job_cache_middle_03",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateJobCacheMiddle03, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -493,7 +536,10 @@ class UpdateJobCacheMiddle02(Job):
     """The job in the middle that is not stale not buildable will be
     updated
     """
-    unexpanded_id = "update_job_cache_middle_02"
+    def __init__(self, unexpanded_id="update_job_cache_middle_02",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateJobCacheMiddle02, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -516,7 +562,10 @@ class UpdateJobCacheMiddle02(Job):
 
 class UpdateJobCacheMiddle01(Job):
     """The job in the middle that will never be buildable but has it's"""
-    unexpanded_id = "update_job_cache_middle_01"
+    def __init__(self, unexpanded_id="update_job_cache_middle_01",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateJobCacheMiddle01, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -539,7 +588,10 @@ class UpdateJobCacheMiddle01(Job):
 
 class UpdateJobCacheTop(Job):
     """The job at the top whose mtimes will be updated"""
-    unexpanded_id = "update_job_cache_top"
+    def __init__(self, unexpanded_id="update_job_cache_top",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateJobCacheTop, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -569,8 +621,9 @@ class UpdateJobCacheTop(Job):
 class GetNextJobsCounter(Job):
     """Used to count how many times the next job was looked for"""
 
-    def __init__(self, config=None):
-        super(GetNextJobsCounter, self).__init__(config=config)
+    def __init__(self, unexpanded_id="get_next_jobs_counter", config=None):
+        super(GetNextJobsCounter, self).__init__(unexpanded_id=unexpanded_id,
+                                                 config=config)
         self.count = 0
 
     def get_next_jobs_to_run(self, job_id, update_set=None):
@@ -582,7 +635,9 @@ class GetNextJobsCounter(Job):
 
 class GetNextJobsToRunLowest(GetNextJobsCounter):
     """A job at the bottom of the graph"""
-    unexpanded_id = "get_next_jobs_to_run_lowest"
+    def __init__(self, unexpanded_id="get_next_jobs_to_run_lowest"):
+        super(GetNextJobsToRunLowest, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -605,7 +660,9 @@ class GetNextJobsToRunLowest(GetNextJobsCounter):
 
 class GetNextJobsToRunBottom(GetNextJobsCounter):
     """A job at the bottom of the diamond"""
-    unexpanded_id = "get_next_jobs_to_run_bottom"
+    def __init__(self, unexpanded_id="get_next_jobs_to_run_bottom"):
+        super(GetNextJobsToRunBottom, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -631,7 +688,9 @@ class GetNextJobsToRunBottom(GetNextJobsCounter):
 
 class GetNextJobsToRunMiddle02(GetNextJobsCounter):
     """A job in the middle of the diamond"""
-    unexpanded_id = "get_next_jobs_to_run_middle_02"
+    def __init__(self, unexpanded_id="get_next_jobs_to_run_middle_02"):
+        super(GetNextJobsToRunMiddle02, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -654,7 +713,9 @@ class GetNextJobsToRunMiddle02(GetNextJobsCounter):
 
 class GetNextJobsToRunMiddle01(GetNextJobsCounter):
     """A job in the middle of the diamond"""
-    unexpanded_id = "get_next_jobs_to_run_middle_01"
+    def __init__(self, unexpanded_id="get_next_jobs_to_run_middle_01"):
+        super(GetNextJobsToRunMiddle01, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -677,7 +738,9 @@ class GetNextJobsToRunMiddle01(GetNextJobsCounter):
 
 class GetNextJobsToRunTop(GetNextJobsCounter):
     """Top job of the graph"""
-    unexpanded_id = "get_next_jobs_to_run_top"
+    def __init__(self, unexpanded_id="get_next_jobs_to_run_top"):
+        super(GetNextJobsToRunTop, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -733,8 +796,11 @@ class GetShouldRunCounterJob(Job):
 
 class UpdateLowerNodesShouldRunLowest(GetShouldRunCounterJob):
     """A job at the bottom of the graph"""
-    unexpanded_id = "update_lower_nodes_should_run_lowest"
-    cache_time = "10min"
+    def __init__(self, unexpanded_id="update_lower_nodes_should_run_lowest",
+                 cache_time="10min", targets=None, dependencies=None,
+                 config=None):
+        super(UpdateLowerNodesShouldRunLowest, self).__init__(
+                unexpanded_id=unexpanded_id, cache_time=cache_time)
 
     def get_targets(self, build_context=None):
         return {
@@ -757,7 +823,10 @@ class UpdateLowerNodesShouldRunLowest(GetShouldRunCounterJob):
 
 class UpdateLowerNodesShouldRunBottom(GetShouldRunCounterJob):
     """A job at the bottom of the diamond"""
-    unexpanded_id = "update_lower_nodes_should_run_bottom"
+    def __init__(self, unexpanded_id="update_lower_nodes_should_run_bottom",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateLowerNodesShouldRunBottom, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -785,7 +854,10 @@ class UpdateLowerNodesShouldRunBottom(GetShouldRunCounterJob):
 
 class UpdateLowerNodesShouldRunMiddle02(GetShouldRunCounterJob):
     """A job in the middle of the diamond"""
-    unexpanded_id = "update_lower_nodes_should_run_middle_02"
+    def __init__(self, unexpanded_id="update_lower_nodes_should_run_middle_02",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateLowerNodesShouldRunMiddle02, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -810,7 +882,10 @@ class UpdateLowerNodesShouldRunMiddle02(GetShouldRunCounterJob):
 
 class UpdateLowerNodesShouldRunMiddle01(GetShouldRunCounterJob):
     """A job in the middle of the diamond"""
-    unexpanded_id = "update_lower_nodes_should_run_middle_01"
+    def __init__(self, unexpanded_id="update_lower_nodes_should_run_middle_01",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateLowerNodesShouldRunMiddle01, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -834,7 +909,10 @@ class UpdateLowerNodesShouldRunMiddle01(GetShouldRunCounterJob):
 
 class UpdateLowerNodesShouldRunTop(GetShouldRunCounterJob):
     """Top most job"""
-    unexpanded_id = "update_lower_nodes_should_run_top"
+    def __init__(self, unexpanded_id="update_lower_nodes_should_run_top",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(UpdateLowerNodesShouldRunTop, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -857,22 +935,34 @@ class UpdateLowerNodesShouldRunTop(GetShouldRunCounterJob):
 
 class GetStartingJobs04Tester(Job):
     """A job that will have it's should run values overwritten"""
-    unexpanded_id = "get_starting_jobs_04"
+    def __init__(self, unexpanded_id="get_starting_jobs_04",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(GetStartingJobs04Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
 
 class GetStartingJobs03Tester(Job):
     """A job that will have it's should run values overwritten"""
-    unexpanded_id = "get_starting_jobs_03"
+    def __init__(self, unexpanded_id="get_starting_jobs_03",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(GetStartingJobs03Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
 
 class GetStartingJobs02Tester(Job):
     """A job that will have it's should run values overwritten"""
-    unexpanded_id = "get_starting_jobs_02"
+    def __init__(self, unexpanded_id="get_starting_jobs_02",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(GetStartingJobs02Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
 
 class GetStartingJobs01Tester(Job):
     """A job that will have it's should run values overwritten"""
-    unexpanded_id = "get_starting_jobs_01"
+    def __init__(self, unexpanded_id="get_starting_jobs_01",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(GetStartingJobs01Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
 
 class ShouldRunRecurseJobState(builder.jobs.JobState):
@@ -891,6 +981,7 @@ class ShouldRunRecurseJobState(builder.jobs.JobState):
 
 
 class ShouldRunRecurseJob(Job):
+    should_run_immediate = False
     def expand(self, build_context):
         counting_nodes = []
         expanded_nodes = super(ShouldRunRecurseJob, self).expand(
@@ -909,8 +1000,11 @@ class ShouldRunRecurseJob(Job):
 
 class ShouldRunRecurseJob10Tester(ShouldRunRecurseJob):
     """Second top most job should not run"""
-    unexpanded_id = "should_run_recurse_job_10"
     should_run_immediate = True
+    def __init__(self, unexpanded_id="should_run_recurse_job_10",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(ShouldRunRecurseJob10Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -935,8 +1029,11 @@ class ShouldRunRecurseJob10Tester(ShouldRunRecurseJob):
 
 class ShouldRunRecurseJob09Tester(ShouldRunRecurseJob):
     """Second top most job should not run"""
-    unexpanded_id = "should_run_recurse_job_09"
     should_run_immediate = False
+    def __init__(self, unexpanded_id="should_run_recurse_job_09",
+                 cache_time=None, targets=None, dependencies=None, config=None):
+        super(ShouldRunRecurseJob09Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -961,9 +1058,12 @@ class ShouldRunRecurseJob09Tester(ShouldRunRecurseJob):
 
 class ShouldRunRecurseJob08Tester(ShouldRunRecurseJob):
     """Second top most job should not run"""
-    unexpanded_id = "should_run_recurse_job_08"
-    cache_time = "10min"
     should_run_immediate = True
+    def __init__(self, unexpanded_id="should_run_recurse_job_08",
+                 cache_time="10min", targets=None, dependencies=None,
+                 config=None):
+        super(ShouldRunRecurseJob08Tester, self).__init__(
+                unexpanded_id=unexpanded_id, cache_time=cache_time)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -988,9 +1088,12 @@ class ShouldRunRecurseJob08Tester(ShouldRunRecurseJob):
 
 class ShouldRunRecurseJob07Tester(ShouldRunRecurseJob):
     """Second top most job should not run"""
-    unexpanded_id = "should_run_recurse_job_07"
-    cache_time = "10min"
     should_run_immediate = False
+    def __init__(self, unexpanded_id="should_run_recurse_job_07",
+                 cache_time="10min", targets=None, dependencies=None,
+                 config=None):
+        super(ShouldRunRecurseJob07Tester, self).__init__(
+                unexpanded_id=unexpanded_id, cache_time=cache_time)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1015,9 +1118,12 @@ class ShouldRunRecurseJob07Tester(ShouldRunRecurseJob):
 
 class ShouldRunRecurseJob06Tester(ShouldRunRecurseJob):
     """Second top most job should not run"""
-    unexpanded_id = "should_run_recurse_job_06"
-    cache_time = "10min"
     should_run_immediate = True
+    def __init__(self, unexpanded_id="should_run_recurse_job_06",
+                 cache_time="10min", targets=None, dependencies=None,
+                 config=None):
+        super(ShouldRunRecurseJob06Tester, self).__init__(
+                unexpanded_id=unexpanded_id, cache_time=cache_time)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1042,9 +1148,12 @@ class ShouldRunRecurseJob06Tester(ShouldRunRecurseJob):
 
 class ShouldRunRecurseJob05Tester(ShouldRunRecurseJob):
     """Second top most job should not run"""
-    unexpanded_id = "should_run_recurse_job_05"
-    cache_time = "10min"
     should_run_immediate = False
+    def __init__(self, unexpanded_id="should_run_recurse_job_05",
+                 cache_time="10min", targets=None, dependencies=None,
+                 config=None):
+        super(ShouldRunRecurseJob05Tester, self).__init__(
+                unexpanded_id=unexpanded_id, cache_time=cache_time)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1069,8 +1178,12 @@ class ShouldRunRecurseJob05Tester(ShouldRunRecurseJob):
 
 class ShouldRunRecurseJob04Tester(ShouldRunRecurseJob):
     """Second top most job should not run"""
-    unexpanded_id = "should_run_recurse_job_04"
     should_run_immediate = True
+    def __init__(self, unexpanded_id="should_run_recurse_job_04",
+                 cache_time=None, targets=None, dependencies=None,
+                 config=None):
+        super(ShouldRunRecurseJob04Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1095,8 +1208,12 @@ class ShouldRunRecurseJob04Tester(ShouldRunRecurseJob):
 
 class ShouldRunRecurseJob03Tester(ShouldRunRecurseJob):
     """Second top most job should not run"""
-    unexpanded_id = "should_run_recurse_job_03"
     should_run_immediate = False
+    def __init__(self, unexpanded_id="should_run_recurse_job_03",
+                 cache_time=None, targets=None, dependencies=None,
+                 config=None):
+        super(ShouldRunRecurseJob03Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1121,8 +1238,12 @@ class ShouldRunRecurseJob03Tester(ShouldRunRecurseJob):
 
 class ShouldRunRecurseJob02Tester(ShouldRunRecurseJob):
     """Second top most job should not run"""
-    unexpanded_id = "should_run_recurse_job_02"
     should_run_immediate = True
+    def __init__(self, unexpanded_id="should_run_recurse_job_02",
+                 cache_time=None, targets=None, dependencies=None,
+                 config=None):
+        super(ShouldRunRecurseJob02Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1147,8 +1268,12 @@ class ShouldRunRecurseJob02Tester(ShouldRunRecurseJob):
 
 class ShouldRunRecurseJob01Tester(ShouldRunRecurseJob):
     """Top most job should not run"""
-    unexpanded_id = "should_run_recurse_job_01"
     should_run_immediate = False
+    def __init__(self, unexpanded_id="should_run_recurse_job_01",
+                 cache_time=None, targets=None, dependencies=None,
+                 config=None):
+        super(ShouldRunRecurseJob01Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1173,29 +1298,40 @@ class ShouldRunRecurseJob01Tester(ShouldRunRecurseJob):
 
 class ShouldRunCacheLogicJobTester(Job):
     """Cached job"""
-    unexpanded_id = "should_run_cache_logic"
-    cache_time = "5min"
+    def __init__(self, unexpanded_id="should_run_cache_logic",
+                 cache_time="5min", targets=None, dependencies=None,
+                 config=None):
+        super(ShouldRunCacheLogicJobTester, self).__init__(
+                unexpanded_id=unexpanded_id, cache_time=cache_time)
 
 
 class ShouldRunLogicJobTester(Job):
     """Non cache Job"""
-    unexpanded_id = "should_run_logic"
+    def __init__(self, unexpanded_id="should_run_logic", config=None):
+        super(ShouldRunLogicJobTester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
 
 class PastCurfewTimestampJobTester(TimestampExpandedJob):
     """Timestamp job, returns True if curfew + endtime is past"""
-    unexpanded_id = "past_curfew_timestamp_job"
+    def __init__(self, unexpanded_id="past_curfew_timestamp_job", config=None):
+        super(PastCurfewTimestampJobTester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
 
 class PastCurfewJobTester(Job):
     """Standard job, returns True"""
-    unexpanded_id = "past_curfew_job"
+    def __init__(self, unexpanded_id="past_curfew_job", config=None):
+        super(PastCurfewJobTester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
 
 class AllDependenciesJobTester(TimestampExpandedJob):
     """Only job"""
-    file_step = "15min"
-    unexpanded_id = "all_dependencies_job"
+    def __init__(self, unexpanded_id="all_dependencies_job", file_step="15min",
+                 config=None):
+        super(AllDependenciesJobTester, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1219,9 +1355,11 @@ class AllDependenciesJobTester(TimestampExpandedJob):
 
 class PastCacheTimeJobTester(TimestampExpandedJob):
     """Job for testing cache time"""
-    file_step = "15min"
-    unexpanded_id = "past_cache_time_job"
-    cache_time = "5min"
+    def __init__(self, unexpanded_id="past_cache_time_job", file_step="15min",
+                 cache_time="5min", config=None):
+        super(PastCacheTimeJobTester, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step,
+                cache_time=cache_time)
 
     def get_dependencies(self, build_context=None):
         return {}
@@ -1239,8 +1377,10 @@ class PastCacheTimeJobTester(TimestampExpandedJob):
 
 class BuildableJobTester(TimestampExpandedJob):
     """Has multiple kinds of dependencies that will be tested"""
-    file_step = "15min"
-    unexpanded_id = "buildable_job"
+    def __init__(self, unexpanded_id="buildable_job", file_step="15min",
+                 config=None):
+        super(BuildableJobTester, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1272,8 +1412,10 @@ class BuildableJobTester(TimestampExpandedJob):
 
 class StaleAlternateUpdateBottomJobTester(TimestampExpandedJob):
     """Outputs a target and that target has an alternate_update"""
-    file_step = "15min"
-    unexpanded_id = "stale_alternate_update_bottom_job"
+    def __init__(self, unexpanded_id="stale_alternate_update_bottom_job",
+                 file_step="15min", config=None):
+        super(StaleAlternateUpdateBottomJobTester, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1303,8 +1445,10 @@ class StaleAlternateUpdateBottomJobTester(TimestampExpandedJob):
 
 class StaleAlternateUpdateTopJobTester(TimestampExpandedJob):
     """Outputs a target and that target has an alternate_update"""
-    file_step = "15min"
-    unexpanded_id = "stale_alternate_update_top_job"
+    def __init__(self, unexpanded_id="stale_alternate_update_top_job",
+                 file_step="15min", config=None):
+        super(StaleAlternateUpdateTopJobTester, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1338,6 +1482,10 @@ class StaleAlternateBottomJobTester(
     """Outputs a target and that target has an alternate"""
     file_step = "15min"
     unexpanded_id = "stale_alternate_bottom_job"
+    def __init__(self, unexpanded_id="stale_alternate_bottom_job",
+                 file_step="15min", config=None):
+        super(StaleAlternateBottomJobTester, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1366,8 +1514,10 @@ class StaleAlternateBottomJobTester(
 
 class StaleAlternateTopJobTester(TimestampExpandedJob):
     """Outputs a target and that target has an alternate"""
-    file_step = "15min"
-    unexpanded_id = "stale_alternate_top_job"
+    def __init__(self, unexpanded_id="stale_alternate_top_job",
+                 file_step="15min", config=None):
+        super(StaleAlternateTopJobTester, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1398,8 +1548,10 @@ class StaleAlternateTopJobTester(TimestampExpandedJob):
 
 class StaleIgnoreMtimeJobTester(TimestampExpandedJob):
     """Depends on a target that has an ignoredmtime"""
-    file_step = "15min"
-    unexpanded_id = "stale_ignore_mtime_job"
+    def __init__(self, unexpanded_id="stale_ignore_mtime_job",
+                 file_step="15min", config=None):
+        super(StaleIgnoreMtimeJobTester, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1429,9 +1581,11 @@ class StaleIgnoreMtimeJobTester(TimestampExpandedJob):
 
 class StaleStandardJobTester(TimestampExpandedJob):
     """A target with dependencies and targets"""
-    file_step = "15min"
-    unexpanded_id = "stale_standard_job"
-    cache_time = "5min"
+    def __init__(self, unexpanded_id="stale_standard_job",
+                 file_step="15min", cache_time="5min", config=None):
+        super(StaleStandardJobTester, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step,
+                cache_time=cache_time)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1456,8 +1610,11 @@ class StaleStandardJobTester(TimestampExpandedJob):
 
 class DiamondRedundancyHighestJobTester(TimestampExpandedJob):
     """Highest job"""
-    unexpanded_id = "diamond_redundant_highest_job"
     count = 0
+    def __init__(self, unexpanded_id="diamond_redundant_highest_job",
+                 config=None):
+        super(DiamondRedundancyHighestJobTester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -1489,8 +1646,11 @@ class DiamondRedundancyHighestJobTester(TimestampExpandedJob):
 
 class DiamondRedundancyTopJobTester(TimestampExpandedJob):
     """Top job"""
-    unexpanded_id = "diamond_redundant_top_job"
     count = 0
+    def __init__(self, unexpanded_id="diamond_redundant_top_job",
+                 config=None):
+        super(DiamondRedundancyTopJobTester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -1521,7 +1681,10 @@ class DiamondRedundancyTopJobTester(TimestampExpandedJob):
 
 class DiamondRedundancyMiddleJob02Tester(TimestampExpandedJob):
     """Middle job"""
-    unexpanded_id = "diamond_redundant_middle_job_02"
+    def __init__(self, unexpanded_id="diamond_redundant_middle_job_02",
+                 config=None):
+        super(DiamondRedundancyMiddleJob02Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -1547,7 +1710,10 @@ class DiamondRedundancyMiddleJob02Tester(TimestampExpandedJob):
 
 class DiamondRedundancyMiddleJob01Tester(TimestampExpandedJob):
     """Middle job"""
-    unexpanded_id = "diamond_redundant_middle_job_01"
+    def __init__(self, unexpanded_id="diamond_redundant_middle_job_01",
+                 config=None):
+        super(DiamondRedundancyMiddleJob01Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -1573,7 +1739,10 @@ class DiamondRedundancyMiddleJob01Tester(TimestampExpandedJob):
 
 class DiamondRedundancyBottomJobTester(Job):
     """Bottom job"""
-    unexpanded_id = "diamond_redundant_bottom_job"
+    def __init__(self, unexpanded_id="diamond_redundant_bottom_job",
+                 config=None):
+        super(DiamondRedundancyBottomJobTester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -1602,7 +1771,10 @@ class DiamondRedundancyBottomJobTester(Job):
 
 class BackboneDependantTopJob02Tester(Job):
     """Top job"""
-    unexpanded_id = "backbone_dependant_top_job_02"
+    def __init__(self, unexpanded_id="backbone_dependant_top_job_02",
+                 config=None):
+        super(BackboneDependantTopJob02Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -1627,7 +1799,10 @@ class BackboneDependantTopJob02Tester(Job):
 
 class BackboneDependantTopJob01Tester(Job):
     """Top job"""
-    unexpanded_id = "backbone_dependant_top_job_01"
+    def __init__(self, unexpanded_id="backbone_dependant_top_job_01",
+                 config=None):
+        super(BackboneDependantTopJob01Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -1652,7 +1827,10 @@ class BackboneDependantTopJob01Tester(Job):
 
 class BackboneDependantMiddleJob02Tester(Job):
     """Middle job"""
-    unexpanded_id = "backbone_dependant_middle_job_02"
+    def __init__(self, unexpanded_id="backbone_dependant_middle_job_02",
+                 config=None):
+        super(BackboneDependantMiddleJob02Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -1677,7 +1855,10 @@ class BackboneDependantMiddleJob02Tester(Job):
 
 class BackboneDependantMiddleJob01Tester(Job):
     """Middle job"""
-    unexpanded_id = "backbone_dependant_middle_job_01"
+    def __init__(self, unexpanded_id="backbone_dependant_middle_job_01",
+                 config=None):
+        super(BackboneDependantMiddleJob01Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -1702,7 +1883,10 @@ class BackboneDependantMiddleJob01Tester(Job):
 
 class BackboneDependantBottomJobTester(Job):
     """Bottom job"""
-    unexpanded_id = "backbone_dependant_bottom_job"
+    def __init__(self, unexpanded_id="backbone_dependant_bottom_job",
+                 config=None):
+        super(BackboneDependantBottomJobTester, self).__init__(
+                unexpanded_id=unexpanded_id, config=config)
 
     def get_targets(self, build_context=None):
         return {
@@ -1735,8 +1919,10 @@ class BackboneDependantBottomJobTester(Job):
 
 class BuildGraphConstructionJobBottom01Tester(TimestampExpandedJob):
     """bottom job"""
-    file_step = "1h"
-    unexpanded_id = "build_graph_construction_job_bottom_01"
+    def __init__(self, unexpanded_id="build_graph_construction_job_bottom_01",
+                 file_step="1h", config=None):
+        super(BuildGraphConstructionJobBottom01Tester, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step)
 
     def get_targets(self, build_context=None):
         return {
@@ -1773,8 +1959,10 @@ class BuildGraphConstructionJobBottom01Tester(TimestampExpandedJob):
 class BuildGraphConstructionJobTop02Tester(
     TimestampExpandedJob):
     """Top job"""
-    unexpanded_id = "build_graph_construction_job_top_02"
-    file_step = "5min"
+    def __init__(self, unexpanded_id="build_graph_construction_job_top_02",
+                 file_step="5min", config=None):
+        super(BuildGraphConstructionJobTop02Tester, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step)
 
     def get_targets(self, build_context=None):
         return {
@@ -1822,8 +2010,10 @@ class BuildGraphConstructionJobTop02Tester(
 
 class BuildGraphConstructionJobTop01Tester(TimestampExpandedJob):
     """Top job"""
-    unexpanded_id = "build_graph_construction_job_top_01"
-    file_step = "5min"
+    def __init__(self, unexpanded_id="build_graph_construction_job_top_01",
+                 file_step="5min", config=None):
+        super(BuildGraphConstructionJobTop01Tester, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step)
 
     def get_targets(self, build_context=None):
         return {
@@ -1849,7 +2039,10 @@ class BuildGraphConstructionJobTop01Tester(TimestampExpandedJob):
 
 class RuleDepConstructionJobBottom01Tester(Job):
     """bottom job"""
-    unexpanded_id = "rule_dep_construction_job_bottom_01"
+    def __init__(self, unexpanded_id="rule_dep_construction_job_bottom_01",
+                 config=None):
+        super(RuleDepConstructionJobBottom01Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -1885,7 +2078,10 @@ class RuleDepConstructionJobBottom01Tester(Job):
 
 class RuleDepConstructionJobTop02Tester(Job):
     """Top job"""
-    unexpanded_id = "rule_dep_construction_job_top_02"
+    def __init__(self, unexpanded_id="rule_dep_construction_job_top_02",
+                 config=None):
+        super(RuleDepConstructionJobTop02Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -1930,7 +2126,10 @@ class RuleDepConstructionJobTop02Tester(Job):
 
 class RuleDepConstructionJobTop01Tester(Job):
     """Top job"""
-    unexpanded_id = "rule_dep_construction_job_top_01"
+    def __init__(self, unexpanded_id="rule_dep_construction_job_top_01",
+                 config=None):
+        super(RuleDepConstructionJobTop01Tester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
         return {
@@ -1956,6 +2155,10 @@ class RuleDepConstructionJobTop01Tester(Job):
 class StandardDependsOneOrMoreTargetTester(Job):
     """Used to test a job in the depends section"""
     unexpanded_id = "standard_depends_target"
+    def __init__(self, unexpanded_id="standard_depends_target",
+                 config=None):
+        super(StandardDependsOneOrMoreTargetTester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1971,7 +2174,10 @@ class StandardDependsOneOrMoreTargetTester(Job):
 
 class StandardDependsTargetTester(Job):
     """Used to test a job in the depends section"""
-    unexpanded_id = "standard_depends_target"
+    def __init__(self, unexpanded_id="standard_depends_target",
+                 config=None):
+        super(StandardDependsTargetTester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_dependencies(self, build_context=None):
         return {
@@ -1987,7 +2193,10 @@ class TimestampExpandedJobTester(TimestampExpandedJob):
     """Used to test that jobs are expanded correctly and their commands
     are retrieved correctly
     """
-    unexpanded_id = "timestamp_expanded_job"
+    def __init__(self, unexpanded_id="timestamp_expanded_job",
+                 config=None):
+        super(TimestampExpandedJobTester, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_command(self, unique_id, build_context, build_graph):
         command = "timestamp expanded job tester command %Y-%m-%d-%H-%M"
@@ -1998,7 +2207,11 @@ class JobBackboneDependantDependsOneOrMore(Job):
     """A job that has a depends_one_or_more that is inserted if backbone
     is true
     """
-    unexpanded_id = "job_backbone_dependant_depends_one_or_more"
+    def __init__(self,
+                 unexpanded_id="job_backbone_dependant_depends_one_or_more",
+                 config=None):
+        super(JobBackboneDependantDependsOneOrMore, self).__init__(
+                unexpanded_id=unexpanded_id)
 
     def get_dependencies(self, build_context=None):
         depends_dict = {
@@ -2023,14 +2236,17 @@ class JobBackboneDependantDependsOneOrMore(Job):
 
 class RangeJob(TimestampExpandedJob):
     """Used to test that the range value is followed"""
-    unexpanded_id = "range_job"
-    file_step = "5min"
+    def __init__(self, unexpanded_id="range_job", file_step="5min",
+                 config=None):
+        super(RangeJob, self).__init__(
+                unexpanded_id=unexpanded_id, file_step=file_step)
 
 class IgnoreProduceJob(Job):
     """A job that has a produced target that should be completely ignored in
     stale checking
     """
-    unexpanded_id = "ignore_produce_job"
+    def __init__(self, unexpanded_id="ignore_produce_job", config=None):
+        super(IgnoreProduceJob, self).__init__(unexpanded_id=unexpanded_id)
 
     def get_dependencies(self, build_context=None):
         return {}

@@ -817,8 +817,6 @@ class BuildGraph(networkx.DiGraph):
         if self.rule_dep_graph is None:
             self.construct_rule_dependency_graph()
 
-        self.rule_dep_graph.write_dot("graph.dot")
-
         current_depth = 0
         if build_context.get("exact", False):
             depth = 1

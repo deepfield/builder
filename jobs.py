@@ -79,33 +79,49 @@ class JobState(object):
         self.stale = new_value
 
     def get_minimum_target_mtime(self, build_graph):
-        """Returns the minimum target mtime or returns True if one
-        is missing
+        """Returns the minimum target mtime or returns True if a stale condition
+        is met
 
-        A target is considered missing if there is a missing target and a
-        missing alternate. The alternate does not need to be corresponding
-        to the target
+        Stale conditions are the following:
+            - There are no targets for the job
+            - The job has no produces and an alternate is missing
+            - The job is missing a produces and is missing an alternates or
+                doesn't have an alternate
 
         Returns:
-            True: if a target is missing
-            Minimum mtime: the lowest mtime of the targets
+            True: if a stale condition is met
+            Minimum mtime: if no stale condition is met the lowest mtime of
+                the targets, returned
         """
+        # There are no targets so it is just a cron job with dependencies
+        out_edges = build_graph.out_edges(self.unique_id, data=True)
+        if not out_edges:
+            return True
+
+        # The target doesn't produce anything so it only depends on it's
+        # alternates
+        producing_edges = [x for x in out_edges if x[2]["label"] == "produces"]
+        if not producing_edges:
+            return self.get_stale_alternates(build_graph)
+
         alt_check = False
         target_mtimes = [float("inf")]
-        for target_edge in build_graph.out_edges(self.unique_id, data=True):
+        for produce_edge in producing_edges:
             # edge is form (src_node_id, dest_node_id, data_dict)
-            if target_edge[2]["label"] == "produces":
-                if target_edge[2].get("ignore_produce", False):
+            target = produce_edge[2]
+            if produce_edge[2].get("ignore_produce", False):
+                continue
+
+            target_id = produce_edge[1]
+            target = build_graph.node[target_id]["object"]
+            if not target.get_exists() and not alt_check:
+                if self.get_stale_alternates(build_graph):
+                    return True
+            else:
+                if produce_edge[2].get("ignore_mtime", False):
                     continue
-                target_id = target_edge[1]
-                target = build_graph.node[target_id]["object"]
-                if not target.get_exists() and not alt_check:
-                    if self.get_stale_alternates(build_graph):
-                        return True
-                else:
-                    if target_edge[2].get("ignore_mtime", False):
-                        continue
-                    target_mtimes.append(target.get_mtime())
+                target_mtimes.append(target.get_mtime())
+
         min_target_mtime = min(target_mtimes)
         return min_target_mtime
 
@@ -135,6 +151,8 @@ class JobState(object):
             A target doesn't exist and the job doesn't have an alternate
             A target doesn't exist and a single alternate doesn't exist
             A target's mtime is lower than a dependency's mtime
+            The job has no targets
+            The job has no produces and is missing an alternates
         """
         if cached and self.stale != None:
             return self.stale
@@ -343,7 +361,7 @@ class TimestampExpandedJobState(JobState):
     def __init__(self, unexpanded_id, unique_id, build_context,
             cache_time, curfew, config=None):
         super(TimestampExpandedJobState, self).__init__(unexpanded_id,
-                unique_id, build_context, cache_time, config=config)
+                unique_id, build_context, cache_time)
         self.curfew = curfew
 
     def past_curfew(self):
@@ -368,12 +386,21 @@ class MetaJobState(TimestampExpandedJobState):
 
 class Job(object):
     """A job"""
-    unexpanded_id = "job"
-    cache_time = None
+    def __init__(self, unexpanded_id="job", cache_time=None, targets=None,
+            dependencies=None, config=None):
+        if targets is None:
+            targets = {}
 
-    def __init__(self, config=None):
+        if dependencies is None:
+            dependencies = {}
+
         if config is None:
             config = {}
+
+        self.unexpanded_id = unexpanded_id
+        self.cache_time = cache_time
+        self.targets = targets
+        self.dependencies = dependencies
         self.config = config
 
     def get_expandable_id(self):
@@ -419,9 +446,7 @@ class Job(object):
             ],
         }
         """
-        if build_context is None:
-            build_context = {}
-        return {}
+        return self.dependencies
 
     def get_targets(self, build_context=None):
         """most jobs will output a target, specify them here
@@ -432,17 +457,24 @@ class Job(object):
                 ],
             }
         """
-        if build_context is None:
-            build_context = []
-        return {}
+        return self.targets
 
 
 class TimestampExpandedJob(Job):
     """A job that combines the timestamp expadned node and the job node
     logic
     """
-    curfew = "10min"
-    file_step = "5min"
+    def __init__(self, unexpanded_id="timestamp_expanded_job", cache_time=None,
+                 curfew="10min", file_step="5min", targets=None,
+                 dependencies=None, config=None):
+        super(TimestampExpandedJob, self).__init__(unexpanded_id=unexpanded_id,
+                                                   cache_time=cache_time,
+                                                   targets=targets,
+                                                   dependencies=dependencies,
+                                                   config=config)
+
+        self.curfew = curfew
+        self.file_step = file_step
 
     def get_expandable_id(self):
         return self.unexpanded_id + "_%Y-%m-%d-%H-%M"

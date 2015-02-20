@@ -14,6 +14,7 @@ import testing
 import builder.jobs
 import builder.build
 import builder.util
+import builder.targets
 
 
 class GraphTest(unittest.TestCase):
@@ -3713,6 +3714,65 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(actual_stale2, expected_stale2)
         self.assertEqual(actual_stale3, expected_stale3)
         self.assertEqual(actual_stale4, expected_stale4)
+
+    def test_stale_with_no_targets(self):
+        # Given
+        targets1 = {}
+
+        targets2 = {
+            "alternates": [
+                builder.expanders.Expander(
+                    builder.targets.Target,
+                    "target"
+                )
+            ]
+        }
+        targets3 = {
+            "alternates": [
+                builder.expanders.Expander(
+                    builder.targets.Target,
+                    "target"
+                )
+            ]
+        }
+
+        job1 = builder.jobs.Job(unexpanded_id="job_with_no_targets",
+                                targets=targets1)
+        job2 = builder.jobs.Job(unexpanded_id="job_with_no_targets",
+                                targets=targets2)
+        job3 = builder.jobs.Job(unexpanded_id="job_with_no_targets",
+                                targets=targets3)
+
+        build1 = builder.build.BuildGraph([job1])
+        build2 = builder.build.BuildGraph([job2])
+        build3 = builder.build.BuildGraph([job3])
+
+        build2.construct_rule_dependency_graph()
+        build2.rule_dep_graph.write_dot("graph.dot")
+
+        build1.construct_build_graph({"start_job": "job_with_no_targets"})
+        build2.construct_build_graph({"start_job": "job_with_no_targets"})
+        build3.construct_build_graph({"start_job": "job_with_no_targets"})
+
+        job_state1 = build1.node["job_with_no_targets"]["object"]
+        job_state2 = build2.node["job_with_no_targets"]["object"]
+        job_state3 = build3.node["job_with_no_targets"]["object"]
+
+        target2 = build2.node["target"]["object"]
+        target3 = build3.node["target"]["object"]
+
+        target2.exists = True
+        target3.exists = False
+
+        # When
+        stale1 = job_state1.get_stale(build1)
+        stale2 = job_state2.get_stale(build2)
+        stale3 = job_state3.get_stale(build3)
+
+        # Then
+        self.assertTrue(stale1)
+        self.assertFalse(stale2)
+        self.assertTrue(stale3)
 
 
 
