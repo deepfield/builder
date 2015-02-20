@@ -13,7 +13,7 @@ class JobState(object):
     state on the specific job
     """
     def __init__(self, unexpanded_id, unique_id, build_context,
-            cache_time, config=None):
+                 cache_time, config=None):
         if config is None:
             config = {}
 
@@ -290,18 +290,13 @@ class JobState(object):
             dependency = build_graph.node[dependency_id]["object"]
             has_cache_time = dependency.cache_time is not None
             if has_cache_time == cache_time:
-                if (not dependency.get_parents_should_not_run(
+                parents_should_not_run = dependency.get_parents_should_not_run(
                         build_graph, has_cache_time, cached=cached,
-                        cache_set=cache_set) or
-                        dependency.get_should_run_immediate(
-                        build_graph, cached=cached)):
+                        cache_set=cache_set)
+                should_run_immediate = dependency.get_should_run_immediate(
+                        build_graph, cached=cached)
+                if not parents_should_not_run or should_run_immediate:
                     self.parents_should_not_run = False
-                    cache_set.add(self.unique_id)
-                    return False
-
-                if not dependency.get_parents_should_not_run(
-                        build_graph, cache_time, cached=cached,
-                        cache_set=cache_set):
                     cache_set.add(self.unique_id)
                     return False
 
@@ -319,16 +314,15 @@ class JobState(object):
             return self.should_run
 
         has_cache_time = self.cache_time is not None
-        self.get_stale(build_graph)
-        self.get_buildable(build_graph)
-        if (not self.get_stale(build_graph) or
-                not self.get_buildable(build_graph)):
+        stale = self.get_stale(build_graph)
+        buildable = self.get_buildable(build_graph)
+        if not stale or not buildable:
             self.should_run = False
             return False
 
-        if (has_cache_time or
-                self.past_curfew() or
-                self.all_dependencies(build_graph)):
+        past_curfew = self.past_curfew()
+        all_dependencies = self.all_dependencies(build_graph)
+        if has_cache_time or past_curfew or all_dependencies:
             self.should_run = True
             return True
         self.should_run = False
@@ -340,8 +334,8 @@ class JobState(object):
         depends on it's current state and whether or not it's ancestors
         should run
         """
-        should_run_immediate = self.get_should_run_immediate(
-            build_graph, cached=cached)
+        should_run_immediate = self.get_should_run_immediate(build_graph,
+                                                             cached=cached)
 
         cache_time = self.cache_time is not None
 
@@ -359,7 +353,7 @@ class JobState(object):
 
 class TimestampExpandedJobState(JobState):
     def __init__(self, unexpanded_id, unique_id, build_context,
-            cache_time, curfew, config=None):
+                 cache_time, curfew, config=None):
         super(TimestampExpandedJobState, self).__init__(unexpanded_id,
                 unique_id, build_context, cache_time)
         self.curfew = curfew
@@ -372,10 +366,10 @@ class TimestampExpandedJobState(JobState):
 
 class MetaJobState(TimestampExpandedJobState):
     def __init__(self, unexpanded_id, unique_id, build_context,
-            cache_time, curfew, config=None):
-        super(MetaJobState, self).__init__(unexpanded_id,
-                unique_id, build_context, cache_time, curfew,
-                config=config)
+                 cache_time, curfew, config=None):
+        super(MetaJobState, self).__init__(unexpanded_id, unique_id,
+                                           build_context, cache_time, curfew,
+                                           config=config)
 
     def get_should_run_immediate(self, build_graph, cached=True):
         return False
@@ -387,7 +381,7 @@ class MetaJobState(TimestampExpandedJobState):
 class Job(object):
     """A job"""
     def __init__(self, unexpanded_id="job", cache_time=None, targets=None,
-            dependencies=None, config=None):
+                 dependencies=None, config=None):
         if targets is None:
             targets = {}
 
@@ -422,9 +416,8 @@ class Job(object):
         would expand from there
         """
         state_type = self.get_state_type()
-        return [
-            state_type(self.unexpanded_id, self.get_expandable_id(),
-                       build_context, self.cache_time)]
+        return [state_type(self.unexpanded_id, self.get_expandable_id(),
+                           build_context, self.cache_time)]
 
     def get_enable(self):
         """Used to determine if the node should end up in the build graph
@@ -487,20 +480,47 @@ class TimestampExpandedJob(Job):
         end times
         """
         job_type = self.get_state_type()
-        expanded_contexts = (builder.expanders.TimestampExpander.expand_build_context(
-            build_context, self.get_expandable_id(), self.file_step))
+        expanded_contexts = (builder.expanders
+                                    .TimestampExpander
+                                    .expand_build_context(
+                                            build_context,
+                                            self.get_expandable_id(),
+                                            self.file_step))
 
         expanded_nodes = []
         for expanded_id, build_context in expanded_contexts.iteritems():
-            expanded_node = job_type(
-                self.unexpanded_id, expanded_id, build_context,
-                self.cache_time, self.curfew, config=self.config)
+            expanded_node = job_type(self.unexpanded_id, expanded_id,
+                                     build_context, self.cache_time,
+                                     self.curfew, config=self.config)
             expanded_nodes.append(expanded_node)
 
         return expanded_nodes
 
 
-class MetaJob(TimestampExpandedJob):
-    """A job that should never run"""
-    def get_state_type(self):
-        return MetaJobState
+class MetaTarget(object):
+    """Meta targets point to jobs in the graph. Meta targets are only in rule
+    dependency graphs and should never be expanded in to the build graph. When
+    exapanding the graph the meta targets should simply forward the expansion to
+    the next jobs.
+    """
+    def __init__(self, unexpanded_id="meta_target", job_collection=None,
+                 config=None):
+        if job_collection is None:
+            job_collection = {}
+
+        if config is None:
+            config = {}
+
+        self.unexpanded_id = unexpanded_id
+        self.job_collection = job_collection
+        self.config = config
+
+    def get_job_collection(self):
+        """Returns the jobs that it should be pointing to."""
+        return self.job_collection
+
+    def get_enable(self):
+        """Returns whether or not the meta job should be inserted in the
+        graph
+        """
+        return True

@@ -3748,7 +3748,6 @@ class GraphTest(unittest.TestCase):
         build3 = builder.build.BuildGraph([job3])
 
         build2.construct_rule_dependency_graph()
-        build2.rule_dep_graph.write_dot("graph.dot")
 
         build1.construct_build_graph({"start_job": "job_with_no_targets"})
         build2.construct_build_graph({"start_job": "job_with_no_targets"})
@@ -3774,6 +3773,41 @@ class GraphTest(unittest.TestCase):
         self.assertFalse(stale2)
         self.assertTrue(stale3)
 
+    def test_meta_in_rule_dep_graph(self):
+        # Given
+        job1 = builder.jobs.Job(unexpanded_id="job1")
+        job2 = builder.jobs.Job(unexpanded_id="job2")
+        meta = builder.jobs.MetaTarget(unexpanded_id="meta",
+                                       job_collection=["job1", "job2"])
+
+        build = builder.build.BuildGraph([job1, job2], metas=[meta])
+
+        # When
+        build.construct_rule_dependency_graph()
+        rule_dep_graph = build.rule_dep_graph
+
+        # Then
+        build.rule_dep_graph.write_dot("graph.dot")
+        self.assertEqual(len(rule_dep_graph.edge["job1"]), 1)
+        self.assertEqual(len(rule_dep_graph.edge["job2"]), 1)
+        self.assertIn("meta", rule_dep_graph)
+
+    def test_expand_meta(self):
+        # Given
+        job1 = builder.jobs.Job(unexpanded_id="job1")
+        job2 = builder.jobs.Job(unexpanded_id="job2")
+        meta = builder.jobs.MetaTarget(unexpanded_id="meta",
+                                       job_collection=["job1", "job2"])
+
+        build = builder.build.BuildGraph([job1, job2], metas=[meta])
+
+        # When
+        build.construct_build_graph({"start_job": "meta"})
+
+        # Then
+        self.assertNotIn("meta", build)
+        self.assertIn("job1", build)
+        self.assertIn("job2", build)
 
 
 class UtilTest(unittest.TestCase):
