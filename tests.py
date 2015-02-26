@@ -3345,7 +3345,7 @@ class GraphTest(unittest.TestCase):
         expected_should_run_new2 = True
         expected_should_run_new3 = False
 
-        build.run = mock.Mock()
+        build.add_command_to_queue = mock.Mock()
 
         # When
         mtime_old1 = (build.node
@@ -3387,7 +3387,7 @@ class GraphTest(unittest.TestCase):
 
 
         with mock.patch("os.stat", mock_mtime):
-            build.finish("update_job_cache_top")
+            build.finish_job(build, "update_job_cache_top")
 
         mtime_new1 = (build.node
                 ["update_job_cache_top_01_target"]
@@ -3451,7 +3451,9 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(should_run_new1, expected_should_run_new1)
         self.assertEqual(should_run_new2, expected_should_run_new2)
         self.assertEqual(should_run_new3, expected_should_run_new3)
-        build.run.assert_has_calls([mock.call("update_job_cache_middle_02")])
+        build.add_command_to_queue.assert_has_calls(
+                [mock.call("update_job_cache_middle_02",
+                           "update_job_cache_middle_02")])
 
     @testing.unit
     def test_update(self):
@@ -3540,7 +3542,7 @@ class GraphTest(unittest.TestCase):
         expected_should_run_new2 = True
         expected_should_run_new3 = False
 
-        build.run = mock.Mock()
+        build.add_command_to_queue = mock.Mock()
 
         # When
         mtime_old1 = (build.node
@@ -3581,9 +3583,9 @@ class GraphTest(unittest.TestCase):
                 ["object"].get_should_run(build))
 
         with mock.patch("os.stat", mock_mtime):
-            build.update("update_target_cache_top_01_target")
-            build.update("update_target_cache_top_02_target")
-            build.update("update_target_cache_top_03_target")
+            build.finish_target(build, "update_target_cache_top_01_target")
+            build.finish_target(build, "update_target_cache_top_02_target")
+            build.finish_target(build, "update_target_cache_top_03_target")
 
         mtime_new1 = (build.node
                 ["update_target_cache_top_01_target"]
@@ -3647,7 +3649,9 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(should_run_new1, expected_should_run_new1)
         self.assertEqual(should_run_new2, expected_should_run_new2)
         self.assertEqual(should_run_new3, expected_should_run_new3)
-        build.run.assert_has_calls([mock.call("update_target_cache_middle_02")])
+        build.add_command_to_queue.assert_has_calls(
+                [mock.call("update_target_cache_middle_02",
+                           "update_target_cache_middle_02")])
 
     @testing.unit
     def test_ignore_produce(self):

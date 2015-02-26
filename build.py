@@ -15,9 +15,6 @@ import networkx
 import builder.dependencies
 
 
-class Server(object):
-
-
 class RuleDependencyGraph(networkx.DiGraph):
     """The rule dependency graph holds all the information on how jobs relate
     to jobs and their targets. It also holds information on what their aliases
@@ -336,7 +333,7 @@ class RuleDependencyGraph(networkx.DiGraph):
 class BuildGraph(networkx.DiGraph):
     """The build object will control the rule dependency graph and the
     build graph"""
-    def __init__(self, jobs, metas=None, number_of_consumers=None config=None):
+    def __init__(self, jobs, metas=None, number_of_consumers=None, config=None):
         super(BuildGraph, self).__init__()
         if metas is None:
             metas = {}
@@ -359,6 +356,7 @@ class BuildGraph(networkx.DiGraph):
         self.number_of_consumers = number_of_consumers
 
         self.queue = Queue.Queue()
+        self.lock = multiprocessing.Lock()
 
     def write_rule_dep_graph(self, file_name):
         """Ensures the rule dep graph exists and then writes it to file_name
@@ -1031,9 +1029,7 @@ class BuildGraph(networkx.DiGraph):
     def update_job_cache(self, job_id):
         """Updates the cache due to a job finishing"""
         target_ids = self.neighbors(job_id)
-        for target_id in target_ids:
-            target = self.node[target_id]["object"]
-            target.get_mtime(cached=False)
+        self.update_targets(target_ids)
 
         job = self.node[job_id]["object"]
         job.get_stale(self, cached=False)
@@ -1065,32 +1061,6 @@ class BuildGraph(networkx.DiGraph):
                 job.get_buildable(self, cached=False)
                 job.update_lower_nodes_should_run(self)
 
-    def finish(self, job_id):
-        """Checks what should happen now that the job is done"""
-        self.update_job_cache(job_id)
-        next_jobs = self.get_next_jobs_to_run(job_id)
-        for next_job in next_jobs:
-            self.run(next_job)
-
-    def update(self, target_id):
-        """Checks what should happen now that there is new information
-        on a target
-        """
-        self.update_target_cache(target_id)
-        producer_ids = self.predecessors(target_id)
-        producers_exist = False
-        for producer_id in producer_ids:
-            producers_exist = True
-            next_jobs = self.get_next_jobs_to_run(producer_id)
-            for next_job in next_jobs:
-                self.run(next_job)
-        if producers_exist == False:
-            for depends_id in self.neighbors(target_id):
-                for job_id in self.neighbors(depends_id):
-                    next_jobs = self.get_next_jobs_to_run(job_id)
-                    for next_job in next_jobs:
-                        self.run(next_job)
-
     def update_targets(self, target_ids):
         """Takes in a list of target ids and updates all of their needed
         values
@@ -1105,14 +1075,13 @@ class BuildGraph(networkx.DiGraph):
             exists_mtime_dict = update_function(target_ids)
             for target_id in target_ids:
                 target = self.get_target(target_id)
-                target.exists = exists_mtime_dict["exists"]
-                target.mtime = exists_mtime_dict["mtime"]
+                target.exists = exists_mtime_dict[target_id]["exists"]
+                target.mtime = exists_mtime_dict[target_id]["mtime"]
 
     def update_jobs(self, job_ids):
         """Takes in a list of job ids and updates all of their needed values"""
         job_ids = self.get_all_ancestors(job_ids)
         job_ids = self.filter_job_ids(job_ids)
-        self.update_jobs(job_ids)
 
         cache_set = set([])
         for job_id in job_ids:
@@ -1138,35 +1107,78 @@ class BuildGraph(networkx.DiGraph):
         """Takes off a job from the queue and runs it"""
         while True:
             func_dict = queue.get()
+            build_graph = func_dict["build_graph"]
+            unique_id = func_dict["unique_id"]
             func = func_dict["function"]
+            if func == "break":
+                return
             args = func_dict["args"]
             kwargs = func_dict["kwargs"]
-            func(args, kwargs)
+            func(build_graph, unique_id, *args, **kwargs)
 
     @staticmethod
-    def run_command(command):
+    def finish_job(build_graph, job_id):
+        """Takes in a unique_id and marks it as finished in the build graph and
+        does what ever needs to happen next
+        """
+        build_graph.lock.acquire()
+        build_graph.update_job_cache(job_id)
+        next_job_ids_to_run = build_graph.get_next_jobs_to_run(job_id)
+        for next_job_id_to_run in next_job_ids_to_run:
+            next_job_to_run = build_graph.get_job(next_job_id_to_run)
+            command = next_job_to_run.get_command(build_graph)
+            build_graph.add_command_to_queue(next_job_to_run.unique_id,
+                                             command)
+
+        build_graph.lock.release()
+
+    @staticmethod
+    def finish_target(build_graph, target_id):
+        """Takes in a target id and marks updates the values associated with it
+        and then does what ever needs to happen next
+        """
+        build_graph.lock.acquire()
+        build_graph.update_target_cache(target_id)
+        update_job_ids = build_graph.get_creators(target_id)
+        if not update_job_ids:
+            update_job_ids = build_graph.get_dependants(target_id)
+        for update_job_id in update_job_ids:
+            next_job_ids_to_run = build_graph.get_next_jobs_to_run(
+                    update_job_id)
+            for next_job_id_to_run in next_job_ids_to_run:
+                next_job_to_run = build_graph.get_job(next_job_id_to_run)
+                command = next_job_to_run.get_command(build_graph)
+                build_graph.add_command_to_queue(next_job_to_run.unique_id,
+                                                 command)
+
+        build_graph.lock.release()
+
+    @staticmethod
+    def run_command(build_graph, unique_id, command):
         """Takes in a command string to run as a subprocess"""
         args = shlex.split(command)
         p = subprocess.Popen(args)
         p.communicate()
+        build_graph.add_command_to_queue(unique_id, BuildGraph.finish_job)
 
-    def add_command_to_queue(self, command):
+    def add_command_to_queue(self, unique_id, command):
         """Takes in a command string to run and adds it to the queue"""
         function = BuildGraph.run_command
-        self.add_job(function, command)
+        self.add_job_to_queue(unique_id, function, command)
 
-    def add_job_to_queue(self, function, unique_id, *args, **kwargs):
+    def add_job_to_queue(self, unique_id, function, *args, **kwargs):
         """Adds the function to the queue so that it can be run by a consumer"""
         func_dict = {
-                "function": function,
-                "unique_id": unique_id,
-                "args": args,
-                "kwargs": kwargs,
+            "build_graph": self,
+            "unique_id": unique_id,
+            "function": function,
+            "args": args,
+            "kwargs": kwargs,
         }
         self.queue.put(func_dict)
 
     def consume(self):
         """Starts up the consumers and starts the running"""
         p = multiprocessing.Pool(self.number_of_consumers)
-        p.map(Server.consumer,
+        p.map(BuildGraph.consumer,
               [self.queue for _ in xrange(self.number_of_consumers)])
