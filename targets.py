@@ -80,14 +80,6 @@ class Target(object):
             }
         """
 
-    def get_bulk_exists_function(self):
-        """returns the function that will get exists values in bulk"""
-        return self.get_bulk_exists_mtime
-
-    def get_bulk_mtime_function(self):
-        """returns the function that will get mtime values in bulk"""
-        return self.get_bulk_exists_mtime
-
 
 class LocalFileSystemTarget(Target):
     """A local file system target is one that lives on the local

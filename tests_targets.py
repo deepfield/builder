@@ -133,23 +133,14 @@ class LocalFileSystemTargetTest(unittest.TestCase):
         file1 = builder.targets.LocalFileSystemTarget(
                 path1, path1, build_context)
 
-        mtime_fetcher = file1.get_bulk_mtime_function()
-        exists_fetcher = file1.get_bulk_exists_function()
+        mtime_fetcher = file1.get_bulk_exists_mtime
 
         with mock.patch("os.stat", mock_mtime):
-            if mtime_fetcher == exists_fetcher:
-                mtimes_exists = mtime_fetcher([path1, path2])
-                file1_exists = mtimes_exists[path1]["exists"]
-                file2_exists = mtimes_exists[path2]["exists"]
-                file1_mtime = mtimes_exists[path1]["mtime"]
-                file2_mtime = mtimes_exists[path2]["mtime"]
-            else:
-                mtimes = mtime_fetcher([path1, path2])
-                exists = exists_fetcher([path1, path2])
-                file1_exists = exists[path1]["exists"]
-                file2_exists = exists[path2]["exists"]
-                file1_mtime = mtimes[path1]["mtime"]
-                file2_mtime = mtimes[path2]["mtime"]
+            mtimes_exists = mtime_fetcher([path1, path2])
+            file1_exists = mtimes_exists[path1]["exists"]
+            file2_exists = mtimes_exists[path2]["exists"]
+            file1_mtime = mtimes_exists[path1]["mtime"]
+            file2_mtime = mtimes_exists[path2]["mtime"]
 
         self.assertTrue(file1_exists)
         self.assertFalse(file2_exists)
@@ -326,32 +317,19 @@ class S3BackedLocalFileSystemTargetTest(unittest.TestCase):
         file1 = builder.targets.S3BackedLocalFileSystemTarget(
                 path1, path1, build_context)
 
-        mtime_fetcher = file1.get_bulk_mtime_function()
-        exists_fetcher = file1.get_bulk_exists_function()
+        mtime_fetcher = file1.get_bulk_exists_mtime
 
         with mock.patch("os.stat", mock_local_mtime), \
                 mock.patch("deepy.store.list_files_remote", mock_remote_mtime):
-            if mtime_fetcher == exists_fetcher:
-                mtimes_exists = mtime_fetcher([path1, path2, path3, path4])
-                file1_exists = mtimes_exists[path1]["exists"]
-                file2_exists = mtimes_exists[path2]["exists"]
-                file3_exists = mtimes_exists[path3]["exists"]
-                file4_exists = mtimes_exists[path4]["exists"]
-                file1_mtime = mtimes_exists[path1]["mtime"]
-                file2_mtime = mtimes_exists[path2]["mtime"]
-                file3_mtime = mtimes_exists[path3]["mtime"]
-                file4_mtime = mtimes_exists[path4]["mtime"]
-            else:
-                mtimes = mtime_fetcher([path1, path2, path3, path4])
-                exists = exists_fetcher([path1, path2, path3, path4])
-                file1_exists = exists[path1]["exists"]
-                file2_exists = exists[path2]["exists"]
-                file3_exists = exists[path3]["exists"]
-                file4_exists = exists[path4]["exists"]
-                file1_mtime = mtimes[path1]["mtime"]
-                file2_mtime = mtimes[path2]["mtime"]
-                file3_mtime = mtimes[path3]["mtime"]
-                file4_mtime = mtimes[path4]["mtime"]
+            mtimes_exists = mtime_fetcher([path1, path2, path3, path4])
+            file1_exists = mtimes_exists[path1]["exists"]
+            file2_exists = mtimes_exists[path2]["exists"]
+            file3_exists = mtimes_exists[path3]["exists"]
+            file4_exists = mtimes_exists[path4]["exists"]
+            file1_mtime = mtimes_exists[path1]["mtime"]
+            file2_mtime = mtimes_exists[path2]["mtime"]
+            file3_mtime = mtimes_exists[path3]["mtime"]
+            file4_mtime = mtimes_exists[path4]["mtime"]
 
         self.assertTrue(file1_exists)
         self.assertTrue(file2_exists)
@@ -481,24 +459,15 @@ class GlobLocalFileSystemTargetTest(unittest.TestCase):
         glob_target1 = builder.targets.GlobLocalFileSystemTarget(
                 glob1, glob1, build_context)
 
-        exists_fetcher = glob_target1.get_bulk_exists_function()
-        mtime_fetcher = glob_target1.get_bulk_mtime_function()
+        mtime_fetcher = glob_target1.get_bulk_exists_mtime
 
         with mock.patch("os.stat", mock_mtime), \
                 mock.patch("glob.glob", mock_glob):
-            if mtime_fetcher == exists_fetcher:
                 mtimes_exists = mtime_fetcher([glob1, glob2])
                 file1_exists = mtimes_exists[glob1]["exists"]
                 file2_exists = mtimes_exists[glob2]["exists"]
                 file1_mtime = mtimes_exists[glob1]["mtime"]
                 file2_mtime = mtimes_exists[glob2]["mtime"]
-            else:
-                mtimes = mtime_fetcher([glob1, glob2])
-                exists = exists_fetcher([glob1, glob2])
-                file1_exists = exists[glob1]["exists"]
-                file2_exists = exists[glob1]["exists"]
-                file1_mtime = mtimes[glob2]["mtime"]
-                file2_mtime = mtimes[glob2]["mtime"]
 
         self.assertTrue(file1_exists)
         self.assertFalse(file2_exists)
@@ -733,14 +702,12 @@ class S3BackedGlobLocalFileSystemTargetTest(unittest.TestCase):
                 .S3BackedGlobLocalFileSystemTarget(
                         glob1, glob1, build_context))
 
-        exists_fetcher = glob_target1.get_bulk_exists_function()
-        mtime_fetcher = glob_target1.get_bulk_mtime_function()
+        mtime_fetcher = glob_target1.get_bulk_exists_mtime
 
         with mock.patch("os.stat", mock_mtime), \
                 mock.patch("deepy.store.list_files_remote",
                         mock_remote_mtime), \
                 mock.patch("glob.glob", mock_glob):
-            if mtime_fetcher == exists_fetcher:
                 mtimes_exists = mtime_fetcher([glob1, glob2, glob3,
                         glob4, glob5])
                 glob1_exists = mtimes_exists[glob1]["exists"]
@@ -753,21 +720,6 @@ class S3BackedGlobLocalFileSystemTargetTest(unittest.TestCase):
                 glob3_mtime = mtimes_exists[glob3]["mtime"]
                 glob4_mtime = mtimes_exists[glob4]["mtime"]
                 glob5_mtime = mtimes_exists[glob5]["mtime"]
-            else:
-                mtimes = mtime_fetcher([glob1, glob2, glob3,
-                        glob4, glob5])
-                exists = exists_fetcher([glob1, glob2, glob3,
-                        glob4, glob5])
-                glob1_exists = exists[glob1]["exists"]
-                glob2_exists = exists[glob2]["exists"]
-                glob3_exists = exists[glob3]["exists"]
-                glob4_exists = exists[glob4]["exists"]
-                glob5_exists = exists[glob5]["exists"]
-                glob1_mtime = mtimes[glob1]["mtime"]
-                glob2_mtime = mtimes[glob2]["mtime"]
-                glob3_mtime = mtimes[glob3]["mtime"]
-                glob4_mtime = mtimes[glob4]["mtime"]
-                glob5_mtime = mtimes[glob5]["mtime"]
 
         self.assertTrue(glob1_exists)
         self.assertFalse(glob2_exists)
