@@ -13,15 +13,18 @@ class JobState(object):
     state on the specific job
     """
     def __init__(self, unexpanded_id, unique_id, build_context,
-                 cache_time, config=None):
+            cache_time, config=None, meta=None):
         if config is None:
             config = {}
+        if meta is None:
+            meta = {}
 
         self.unexpanded_id = unexpanded_id
         self.unique_id = unique_id
         self.build_context = build_context
         self.cache_time = cache_time
         self.config = config
+        self.meta = meta
 
         self.stale = None
         self.buildable = None
