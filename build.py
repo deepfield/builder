@@ -854,8 +854,9 @@ class BuildGraph(networkx.DiGraph):
 
         unexpanded_id = build_context["start_job"]
         del build_context["start_job"]
-        start_node = (self.rule_dep_graph
-                          .node[unexpanded_id]["object"])
+        if not 'object' in self.rule_dep_graph.node[unexpanded_id]:
+            raise ValueError("Starting job with id {} not found in graph".format(unexpanded_id))
+        start_node = self.rule_dep_graph.node[unexpanded_id]["object"]
 
         if cache_set is None:
             cache_set = set([])
