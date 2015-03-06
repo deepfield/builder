@@ -12,19 +12,20 @@ class JobState(object):
     """A job state is basically a job in the build graph. It is used to keep
     state on the specific job
     """
-    def __init__(self, unexpanded_id, unique_id, build_context,
+    def __init__(self, job, unique_id, build_context,
             cache_time, config=None, meta=None):
         if config is None:
             config = {}
         if meta is None:
             meta = {}
 
-        self.unexpanded_id = unexpanded_id
+        self.unexpanded_id = job.unexpanded_id
         self.unique_id = unique_id
         self.build_context = build_context
         self.cache_time = cache_time
         self.config = config
         self.meta = meta
+        self.job = job
 
         self.stale = None
         self.buildable = None
@@ -355,9 +356,9 @@ class JobState(object):
                                           build_graph)
 
 class TimestampExpandedJobState(JobState):
-    def __init__(self, unexpanded_id, unique_id, build_context,
+    def __init__(self, job, unique_id, build_context,
                  cache_time, curfew, config=None):
-        super(TimestampExpandedJobState, self).__init__(unexpanded_id,
+        super(TimestampExpandedJobState, self).__init__(job,
                 unique_id, build_context, cache_time)
         self.curfew = curfew
 
@@ -368,9 +369,9 @@ class TimestampExpandedJobState(JobState):
         return curfew_time < arrow.get()
 
 class MetaJobState(TimestampExpandedJobState):
-    def __init__(self, unexpanded_id, unique_id, build_context,
+    def __init__(self, job, unique_id, build_context,
                  cache_time, curfew, config=None):
-        super(MetaJobState, self).__init__(unexpanded_id, unique_id,
+        super(MetaJobState, self).__init__(job, unique_id,
                                            build_context, cache_time, curfew,
                                            config=config)
 
@@ -419,7 +420,7 @@ class Job(object):
         would expand from there
         """
         state_type = self.get_state_type()
-        return [state_type(self.unexpanded_id, self.get_expandable_id(),
+        return [state_type(self, self.get_expandable_id(),
                            build_context, self.cache_time)]
 
     def get_enable(self):
@@ -492,7 +493,7 @@ class TimestampExpandedJob(Job):
 
         expanded_nodes = []
         for expanded_id, build_context in expanded_contexts.iteritems():
-            expanded_node = job_type(self.unexpanded_id, expanded_id,
+            expanded_node = job_type(self, expanded_id,
                                      build_context, self.cache_time,
                                      self.curfew, config=self.config)
             expanded_nodes.append(expanded_node)
