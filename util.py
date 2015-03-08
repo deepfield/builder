@@ -28,7 +28,9 @@ def convert_to_timedelta(time_val):
         time_val = int(time_val)
     except ValueError:
         pass
-    if time_val == 300:
+    if time_val == 10:
+        time_val = '10sec'
+    elif time_val == 300:
         time_val = '5min'
     elif time_val == 3600:
         time_val = '1h'
