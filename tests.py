@@ -3810,6 +3810,54 @@ class GraphTest(unittest.TestCase):
         self.assertIn("job2", build)
 
 
+class RuleDependencyGraphTest(unittest.TestCase):
+
+    def _get_rdg(self):
+        jobs = [
+            RuleDepConstructionJobTop01Tester(),
+            RuleDepConstructionJobTop02Tester(),
+        ]
+
+        graph = builder.build.BuildGraph(jobs)
+
+        return graph.rule_dep_graph
+
+    @testing.unit
+    def test_get_job(self):
+        # Given
+        graph = self._get_rdg()
+
+        # When
+        job = graph.get_job('rule_dep_construction_job_top_01')
+
+        # Then
+        self.assertIsNotNone(job)
+
+
+    @testing.unit
+    def test_get_all_jobs(self):
+        # Given
+        graph = self._get_rdg()
+
+        # When
+        jobs = graph.get_all_jobs()
+
+        # Then
+        self.assertEquals(2, len(jobs))
+
+    @testing.unit
+    def test_get_all_target_expanders(self):
+        # Given
+        graph = self._get_rdg()
+
+        # When
+        targets = graph.get_all_target_expanders()
+
+        # Then
+        self.assertEquals(8, len(targets))
+        for target in targets:
+            self.assertIsInstance(target, builder.expanders.Expander)
+
 class UtilTest(unittest.TestCase):
     def test_convert_to_timedelta(self):
         truths = [
