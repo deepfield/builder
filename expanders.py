@@ -67,6 +67,11 @@ class Expander(object):
         self.config = config
         self.meta = meta
 
+    def __hash__(self):
+        """Use the unexpanded_id as the expander's identity.
+        """
+        return self.unexpanded_id.__hash__()
+
     def expand(self, build_context):
         """Returns a list of a single instance that is instantiated with the
         unexpanded id and the same build context
