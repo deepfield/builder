@@ -401,6 +401,12 @@ class Job(object):
         self.dependencies = dependencies
         self.config = config
 
+    def get_id(self):
+        """
+        Returns a unique name for the job
+        """
+        return self.unexpanded_id
+
     def get_expandable_id(self):
         """Returns the unexpanded_id with any expansion neccessary information
         appended
@@ -432,7 +438,7 @@ class Job(object):
 
     def get_command(self, unique_id, build_context, build_graph):
         """Used to get the command related to the command"""
-        return "base command for " + self.unexpanded_id
+        raise NotImplementedError()
 
     def get_dependencies(self, build_context=None):
         """most jobs will depend on the existance of a file, this is what is
@@ -458,7 +464,7 @@ class Job(object):
 
 
 class TimestampExpandedJob(Job):
-    """A job that combines the timestamp expadned node and the job node
+    """A job that combines the timestamp expanded node and the job node
     logic
     """
     def __init__(self, unexpanded_id="timestamp_expanded_job", cache_time=None,
