@@ -38,10 +38,12 @@ class JobState(object):
 
     def get_stale_alternates(self, build_graph):
         """Returns True if the job does not have an alternate or if any
-        of it's alternates don't exist
+        of it's alternates don't exist otherwise returns the mtimes of
+        the alternates
         """
         alt = False
         alternate_edges = build_graph.out_edges(self.unique_id, data=True)
+        alternate_mtimes = []
         for alt_edge in alternate_edges:
             if alt_edge[2]["label"] == "alternates":
                 alt = True
@@ -49,7 +51,10 @@ class JobState(object):
                 alternate = (build_graph.node[alternate_id]["object"])
                 if not alternate.get_exists():
                     return True
-        return not alt
+                alternate_mtimes.append(alternate.get_mtime())
+        if alt == False:
+            return True
+        return alternate_mtimes
 
     def update_stale(self, new_value, build_graph):
         """Updates the stale value of the node and then updates all the above
@@ -104,8 +109,10 @@ class JobState(object):
                 target_id = target_edge[1]
                 target = build_graph.node[target_id]["object"]
                 if not target.get_exists() and not alt_check:
-                    if self.get_stale_alternates(build_graph):
+                    stale_alternates = self.get_stale_alternates(build_graph)
+                    if stale_alternates == True:
                         return True
+                    target_mtimes = target_mtimes + stale_alternates
                 else:
                     if target_edge[2].get("ignore_mtime", False):
                         continue

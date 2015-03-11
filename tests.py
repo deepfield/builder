@@ -839,7 +839,7 @@ class GraphTest(unittest.TestCase):
 
         # All alternates exist and are stale but the targets are not
         # and a single target does not exist
-        expected_stale2 = False
+        expected_stale2 = True
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].exists) = True
@@ -1189,7 +1189,7 @@ class GraphTest(unittest.TestCase):
 
         # All alternate_updates exist and are stale but the targets are not
         # and a single target does not exist
-        expected_original_stale2 = False
+        expected_original_stale2 = True
         expected_stale2 = True
         (build2.node
                 ["stale_alternate_update_highest_target-2014-12-05-10-45"]
