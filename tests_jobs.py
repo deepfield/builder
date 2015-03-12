@@ -2042,10 +2042,11 @@ class IgnoreProduceJob(Job):
             "produces": [
                 builder.expanders.Expander(
                         builder.targets.Target,
-                        "ignore_produce_ignore_target",
-                        ignore_produce=True),
+                        "ignore_produce_marker_target"),
+            ],
+            "untracked": [
                 builder.expanders.Expander(
                         builder.targets.Target,
-                        "ignore_produce_marker_target"),
+                        "ignore_produce_ignore_target"),
             ]
         }
