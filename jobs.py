@@ -385,7 +385,12 @@ class MetaJobState(TimestampExpandedJobState):
         return False
 
     def get_should_run(self, build_graph, cached=True, cache_set=None):
-        return False
+        start_time = self.build_context["start_time"]
+        if arrow.get() < start_time:
+            return False
+        else:
+            return super(TimestampExpandedJobState, self).get_should_run(
+                            build_graph, cached=cached, cache_set=cache_set)
 
 
 class Job(object):
