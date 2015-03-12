@@ -3809,6 +3809,57 @@ class GraphTest(unittest.TestCase):
         self.assertIn("job1", build)
         self.assertIn("job2", build)
 
+    @testing.unit
+    def test_should_run_future(self):
+        # Given
+        job1 = builder.tests_jobs.ShouldRunFuture()
+
+        build_context1 = {
+            "start_time": arrow.get("300"),
+            "end_time": arrow.get("300"),
+            "start_job": "should_run_future",
+        }
+
+        build_context2 = {
+            "start_time": arrow.get("99"),
+            "end_time": arrow.get("99"),
+            "start_job": "should_run_future",
+        }
+
+        build1 = builder.build.BuildGraph([job1])
+        build2 = builder.build.BuildGraph([job1])
+
+        expected_should_run1 = False
+        expected_should_run2 = True
+
+        build1 = build1.construct_build_graph(build_context1)
+        build2 = build1.construct_build_graph(build_context2)
+
+
+        node1 = build1.node["should_run_future_1970-01-01-00-05"]["object"]
+        node2 = build2.node["should_run_future_1970-01-01-00-00"]["object"]
+
+        node1.should_run = True
+        node1.buildable = True
+
+        node2.should_run = True
+        node2.buildable = True
+
+        old_arrow_get = copy.deepcopy(arrow.get)
+        def mock_get(*args, **kwargs):
+            if len(args) == 0:
+                return old_arrow_get("100")
+            return old_arrow_get(*args, **kwargs)
+
+        # When
+        with mock.patch("arrow.get", mock_get):
+
+            should_run1 = node1.get_should_run(build1)
+            should_run2 = node2.get_should_run(build2)
+
+        self.assertEqual(should_run1, expected_should_run1)
+        self.assertEqual(should_run2, expected_should_run2)
+
 
 class UtilTest(unittest.TestCase):
     def test_convert_to_timedelta(self):
