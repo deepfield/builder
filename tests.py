@@ -3759,8 +3759,8 @@ class GraphTest(unittest.TestCase):
         # When
         with mock.patch("arrow.get", mock_get):
 
-            should_run1 = build1.node["should_run_future_1970-01-01-00-05"]["object"].get_should_run(build1)
-            should_run2 = build2.node["should_run_future_1970-01-01-00-00"]["object"].get_should_run(build2)
+            should_run1 = node1.get_should_run(build1)
+            should_run2 = node2.get_should_run(build2)
 
         self.assertEqual(should_run1, expected_should_run1)
         self.assertEqual(should_run2, expected_should_run2)
