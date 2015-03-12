@@ -2049,3 +2049,6 @@ class IgnoreProduceJob(Job):
                         "ignore_produce_marker_target"),
             ]
         }
+
+class ShouldRunFuture(TimestampExpandedJob):
+    unexpanded_id = "should_run_future"
