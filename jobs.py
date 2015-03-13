@@ -374,6 +374,14 @@ class TimestampExpandedJobState(JobState):
         curfew_time = end_time + time_delta
         return curfew_time < arrow.get()
 
+
+    def get_should_run(self, build_graph, cached=True, cache_set=None):
+        start_time = self.build_context["start_time"]
+        if arrow.get() < start_time:
+            return False
+        else:
+            return super(TimestampExpandedJobState, self).get_should_run(
+                            build_graph, cached=cached, cache_set=cache_set)
 class MetaJobState(TimestampExpandedJobState):
     def __init__(self, job, unique_id, build_context,
                  cache_time, curfew, config=None):
@@ -384,18 +392,10 @@ class MetaJobState(TimestampExpandedJobState):
     def get_should_run_immediate(self, build_graph, cached=True):
         return False
 
-    def get_should_run(self, build_graph, cached=True, cache_set=None):
-        start_time = self.build_context["start_time"]
-        if arrow.get() < start_time:
-            return False
-        else:
-            return super(TimestampExpandedJobState, self).get_should_run(
-                            build_graph, cached=cached, cache_set=cache_set)
-
 
 class Job(object):
     """A job"""
-    def __init__(self, unexpanded_id="job", cache_time=None, targets=None,
+    def __init__(self, unexpanded_id=None, cache_time=None, targets=None,
                  dependencies=None, config=None):
         if targets is None:
             targets = {}
@@ -406,7 +406,9 @@ class Job(object):
         if config is None:
             config = {}
 
-        self.unexpanded_id = unexpanded_id
+        # Support setting unexpanded_id as class attribute
+        if not (hasattr(self, 'unexpanded_id') and unexpanded_id is None):
+            self.unexpanded_id = unexpanded_id
         self.cache_time = cache_time
         self.targets = targets
         self.dependencies = dependencies
@@ -478,7 +480,7 @@ class TimestampExpandedJob(Job):
     """A job that combines the timestamp expanded node and the job node
     logic
     """
-    def __init__(self, unexpanded_id="timestamp_expanded_job", cache_time=None,
+    def __init__(self, unexpanded_id=None, cache_time=None,
                  curfew="10min", file_step="5min", targets=None,
                  dependencies=None, config=None):
         super(TimestampExpandedJob, self).__init__(unexpanded_id=unexpanded_id,
