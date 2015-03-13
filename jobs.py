@@ -367,6 +367,14 @@ class TimestampExpandedJobState(JobState):
         curfew_time = end_time + time_delta
         return curfew_time < arrow.get()
 
+    def get_should_run(self, build_graph, cached=True, cache_set=None):
+        start_time = self.build_context["start_time"]
+        if arrow.get() < start_time:
+            return False
+        else:
+            return super(TimestampExpandedJobState, self).get_should_run(
+                            build_graph, cached=cached, cache_set=cache_set)
+
 
 class Job(object):
     """A job"""
