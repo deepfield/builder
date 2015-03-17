@@ -30,7 +30,7 @@ class Target(object):
             used to expand it
         config: A dictionary of properties that the target may use as a config
     """
-    def __init__(self, unexpanded_id, unique_id, build_context, config=None, **kwargs):
+    def __init__(self, unexpanded_id, unique_id, build_context, config=None):
         self.unexpanded_id = unexpanded_id
         self.unique_id = unique_id
         self.build_context = build_context

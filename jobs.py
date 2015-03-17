@@ -12,16 +12,20 @@ class JobState(object):
     """A job state is basically a job in the build graph. It is used to keep
     state on the specific job
     """
-    def __init__(self, unexpanded_id, unique_id, build_context,
-                 cache_time, config=None):
+    def __init__(self, job, unique_id, build_context,
+            cache_time, config=None, meta=None):
         if config is None:
             config = {}
+        if meta is None:
+            meta = {}
 
-        self.unexpanded_id = unexpanded_id
+        self.unexpanded_id = job.unexpanded_id
         self.unique_id = unique_id
         self.build_context = build_context
         self.cache_time = cache_time
         self.config = config
+        self.meta = meta
+        self.job = job
 
         self.stale = None
         self.buildable = None
@@ -34,10 +38,12 @@ class JobState(object):
 
     def get_stale_alternates(self, build_graph):
         """Returns True if the job does not have an alternate or if any
-        of it's alternates don't exist
+        of it's alternates don't exist otherwise returns the mtimes of
+        the alternates
         """
         alt = False
         alternate_edges = build_graph.out_edges(self.unique_id, data=True)
+        alternate_mtimes = []
         for alt_edge in alternate_edges:
             if alt_edge[2]["label"] == "alternates":
                 alt = True
@@ -45,7 +51,10 @@ class JobState(object):
                 alternate = (build_graph.node[alternate_id]["object"])
                 if not alternate.get_exists():
                     return True
-        return not alt
+                alternate_mtimes.append(alternate.get_mtime())
+        if alt == False:
+            return True
+        return alternate_mtimes
 
     def update_stale(self, new_value, build_graph):
         """Updates the stale value of the node and then updates all the above
@@ -115,13 +124,14 @@ class JobState(object):
             target_id = produce_edge[1]
             target = build_graph.node[target_id]["object"]
             if not target.get_exists() and not alt_check:
-                if self.get_stale_alternates(build_graph):
+                stale_alternates = self.get_stale_alternates(build_graph)
+                if stale_alternates == True:
                     return True
+                target_mtimes = target_mtimes + stale_alternates
             else:
                 if produce_edge[2].get("ignore_mtime", False):
                     continue
                 target_mtimes.append(target.get_mtime())
-
         min_target_mtime = min(target_mtimes)
         return min_target_mtime
 
@@ -352,9 +362,9 @@ class JobState(object):
                                           build_graph)
 
 class TimestampExpandedJobState(JobState):
-    def __init__(self, unexpanded_id, unique_id, build_context,
+    def __init__(self, job, unique_id, build_context,
                  cache_time, curfew, config=None):
-        super(TimestampExpandedJobState, self).__init__(unexpanded_id,
+        super(TimestampExpandedJobState, self).__init__(job,
                 unique_id, build_context, cache_time)
         self.curfew = curfew
 
@@ -364,23 +374,28 @@ class TimestampExpandedJobState(JobState):
         curfew_time = end_time + time_delta
         return curfew_time < arrow.get()
 
+
+    def get_should_run(self, build_graph, cached=True, cache_set=None):
+        start_time = self.build_context["start_time"]
+        if arrow.get() < start_time:
+            return False
+        else:
+            return super(TimestampExpandedJobState, self).get_should_run(
+                            build_graph, cached=cached, cache_set=cache_set)
 class MetaJobState(TimestampExpandedJobState):
-    def __init__(self, unexpanded_id, unique_id, build_context,
+    def __init__(self, job, unique_id, build_context,
                  cache_time, curfew, config=None):
-        super(MetaJobState, self).__init__(unexpanded_id, unique_id,
+        super(MetaJobState, self).__init__(job, unique_id,
                                            build_context, cache_time, curfew,
                                            config=config)
 
     def get_should_run_immediate(self, build_graph, cached=True):
         return False
 
-    def get_should_run(self, build_graph, cached=True, cache_set=None):
-        return False
-
 
 class Job(object):
     """A job"""
-    def __init__(self, unexpanded_id="job", cache_time=None, targets=None,
+    def __init__(self, unexpanded_id=None, cache_time=None, targets=None,
                  dependencies=None, config=None):
         if targets is None:
             targets = {}
@@ -391,11 +406,19 @@ class Job(object):
         if config is None:
             config = {}
 
-        self.unexpanded_id = unexpanded_id
+        # Support setting unexpanded_id as class attribute
+        if not (hasattr(self, 'unexpanded_id') and unexpanded_id is None):
+            self.unexpanded_id = unexpanded_id
         self.cache_time = cache_time
         self.targets = targets
         self.dependencies = dependencies
         self.config = config
+
+    def get_id(self):
+        """
+        Returns a unique name for the job
+        """
+        return self.unexpanded_id
 
     def get_expandable_id(self):
         """Returns the unexpanded_id with any expansion neccessary information
@@ -416,7 +439,7 @@ class Job(object):
         would expand from there
         """
         state_type = self.get_state_type()
-        return [state_type(self.unexpanded_id, self.get_expandable_id(),
+        return [state_type(self, self.get_expandable_id(),
                            build_context, self.cache_time)]
 
     def get_enable(self):
@@ -428,7 +451,7 @@ class Job(object):
 
     def get_command(self, unique_id, build_context, build_graph):
         """Used to get the command related to the command"""
-        return "base command for " + self.unexpanded_id
+        raise NotImplementedError()
 
     def get_dependencies(self, build_context=None):
         """most jobs will depend on the existance of a file, this is what is
@@ -454,10 +477,10 @@ class Job(object):
 
 
 class TimestampExpandedJob(Job):
-    """A job that combines the timestamp expadned node and the job node
+    """A job that combines the timestamp expanded node and the job node
     logic
     """
-    def __init__(self, unexpanded_id="timestamp_expanded_job", cache_time=None,
+    def __init__(self, unexpanded_id=None, cache_time=None,
                  curfew="10min", file_step="5min", targets=None,
                  dependencies=None, config=None):
         super(TimestampExpandedJob, self).__init__(unexpanded_id=unexpanded_id,
@@ -489,7 +512,7 @@ class TimestampExpandedJob(Job):
 
         expanded_nodes = []
         for expanded_id, build_context in expanded_contexts.iteritems():
-            expanded_node = job_type(self.unexpanded_id, expanded_id,
+            expanded_node = job_type(self, expanded_id,
                                      build_context, self.cache_time,
                                      self.curfew, config=self.config)
             expanded_nodes.append(expanded_node)

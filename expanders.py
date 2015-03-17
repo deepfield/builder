@@ -40,7 +40,7 @@ class Expander(object):
     """
     def __init__(self, base_class, unexpanded_id, edge_data=None,
             node_data=None, config=None, ignore_mtime=False,
-            ignore_produce=False):
+            ignore_produce=False, meta=None):
         """An unexpanded id is one that can be turned into a unique id
         provided that the correct build context is passed
 
@@ -54,6 +54,9 @@ class Expander(object):
             node_data = {}
         if config is None:
             config = {}
+        if meta is None:
+            meta = {}
+
         edge_data["ignore_mtime"] = ignore_mtime
         edge_data["ignore_produce"] = ignore_produce
 
@@ -62,6 +65,7 @@ class Expander(object):
         self.edge_data = edge_data
         self.node_data = node_data
         self.config = config
+        self.meta = meta
 
     def expand(self, build_context):
         """Returns a list of a single instance that is instantiated with the
@@ -99,12 +103,12 @@ class TimestampExpander(Expander):
     """
     def __init__(self, base_class, unexpanded_id, file_step, past=0,
             edge_data=None, node_data=None, ignore_mtime=False,
-            ignore_produce=False, config=None):
+            ignore_produce=False, config=None, meta=None):
         super(TimestampExpander, self).__init__(
                 base_class, unexpanded_id, edge_data=edge_data,
                 node_data=node_data, ignore_mtime=ignore_mtime,
                 ignore_produce=ignore_produce,
-                config=config)
+                config=config, meta=meta)
         self.file_step = file_step
         self.past = past
 

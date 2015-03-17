@@ -770,10 +770,10 @@ class GetNextJobsToRunTop(GetNextJobsCounter):
 class GetShouldRunCounterState(builder.jobs.JobState):
     """Used to count how many times the should run is returned"""
 
-    def __init__(self, unexpanded_id, unique_id, build_context,
+    def __init__(self, job, unique_id, build_context,
             cache_time, config=None):
-        super(GetShouldRunCounterState, self).__init__(
-                unexpanded_id, unique_id, build_context, cache_time,
+        super(GetShouldRunCounterState, self).__init__(job,
+                unique_id, build_context, cache_time,
                 config=config)
         self.count = 0
 
@@ -791,7 +791,7 @@ class GetShouldRunCounterJob(Job):
                 build_context)
         for expanded_node in expanded_nodes:
             counting_node = GetShouldRunCounterState(
-                    expanded_node.unexpanded_id,
+                    expanded_node,
                     expanded_node.unique_id,
                     expanded_node.build_context,
                     expanded_node.cache_time,
@@ -974,10 +974,10 @@ class GetStartingJobs01Tester(Job):
 class ShouldRunRecurseJobState(builder.jobs.JobState):
     """Used to count how many times the should run is returned"""
 
-    def __init__(self, unexpanded_id, unique_id, build_context, cache_time,
+    def __init__(self, job, unique_id, build_context, cache_time,
             should_run_immediate, config=None):
-        super(ShouldRunRecurseJobState, self).__init__(
-                unexpanded_id, unique_id, build_context, cache_time,
+        super(ShouldRunRecurseJobState, self).__init__(job,
+                unique_id, build_context, cache_time,
                 config=config)
         self.should_run_immediate = should_run_immediate
 
@@ -994,7 +994,7 @@ class ShouldRunRecurseJob(Job):
                 build_context)
         for expanded_node in expanded_nodes:
             counting_node = ShouldRunRecurseJobState(
-                    expanded_node.unexpanded_id,
+                    expanded_node,
                     expanded_node.unique_id,
                     expanded_node.build_context,
                     expanded_node.cache_time,
@@ -2262,10 +2262,14 @@ class IgnoreProduceJob(Job):
             "produces": [
                 builder.expanders.Expander(
                         builder.targets.Target,
-                        "ignore_produce_ignore_target",
-                        ignore_produce=True),
+                        "ignore_produce_marker_target"),
+            ],
+            "untracked": [
                 builder.expanders.Expander(
                         builder.targets.Target,
-                        "ignore_produce_marker_target"),
+                        "ignore_produce_ignore_target"),
             ]
         }
+
+class ShouldRunFuture(TimestampExpandedJob):
+    unexpanded_id = "should_run_future"

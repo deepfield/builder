@@ -13,6 +13,8 @@ import arrow
 import networkx
 
 import builder.dependencies
+import builder.jobs
+import builder.targets
 
 
 class RuleDependencyGraph(networkx.DiGraph):
@@ -327,9 +329,36 @@ class RuleDependencyGraph(networkx.DiGraph):
             the object in the object keyword for the node corresponding to
             job_id
         """
-        return self.node[job_id]['object']
+        potential_job = self.node.get(job_id, {}).get('object')
+        if not isinstance(potential_job, builder.jobs.Job):
+            raise LookupError("Job {} not found".format(job_id))
+        return potential_job
 
+    def get_all_jobs(self):
+        """Return a list of all jobs in the rule dependency graph
+        """
+        jobs = []
+        for job_node in filter(lambda x: isinstance(x.get('object'), builder.jobs.Job), self.node.itervalues()):
+            jobs.append(job_node['object'])
 
+        return jobs
+
+    def get_all_target_expanders(self):
+        """Return a list of all jobs in the rule dependency graph
+        """
+        targets = []
+
+        def select_nodes(node):
+            data = node.get('object')
+            if isinstance(data, builder.expanders.Expander) and issubclass(data.base_class, builder.targets.Target):
+                return True
+
+            return False
+
+        for target_node in filter(select_nodes, self.node.itervalues()):
+            targets.append(target_node['object'])
+
+        return targets
 class BuildGraph(networkx.DiGraph):
     """The build object will control the rule dependency graph and the
     build graph"""
@@ -912,9 +941,9 @@ class BuildGraph(networkx.DiGraph):
             build_context["force"] = False
 
         unexpanded_id = build_context["start_job"]
-        del build_context["start_job"]
-        start_node = (self.rule_dep_graph
-                          .node[unexpanded_id]["object"])
+        if not 'object' in self.rule_dep_graph.node[unexpanded_id]:
+            raise ValueError("Starting job with id {} not found in graph".format(unexpanded_id))
+        start_node = self.rule_dep_graph.node[unexpanded_id]["object"]
 
         if cache_set is None:
             cache_set = set([])
