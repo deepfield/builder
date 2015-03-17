@@ -9,7 +9,7 @@ import arrow
 import mock
 import networkx
 
-from builder.tests_jobs import UpdateTargetCacheBottom, UpdateTargetCacheMiddle03, UpdateTargetCacheMiddle02, UpdateTargetCacheMiddle01, ForceBuildBottom, ForceBuildMiddle, ForceBuildTop, ExpandExactBottom, ExpandExactMiddle, ExpandExactTop, UpdateJobCacheBottom, UpdateJobCacheMiddle03, UpdateJobCacheMiddle02, UpdateJobCacheMiddle01, UpdateJobCacheTop, GetNextJobsToRunLowest, GetNextJobsToRunBottom, GetNextJobsToRunMiddle02, GetNextJobsToRunMiddle01, GetNextJobsToRunTop, UpdateLowerNodesShouldRunLowest, UpdateLowerNodesShouldRunBottom, UpdateLowerNodesShouldRunMiddle02, UpdateLowerNodesShouldRunMiddle01, UpdateLowerNodesShouldRunTop, GetStartingJobs04Tester, GetStartingJobs03Tester, GetStartingJobs02Tester, GetStartingJobs01Tester, ShouldRunRecurseJob10Tester, ShouldRunRecurseJob09Tester, ShouldRunRecurseJob08Tester, ShouldRunRecurseJob07Tester, ShouldRunRecurseJob06Tester, ShouldRunRecurseJob05Tester, ShouldRunRecurseJob04Tester, ShouldRunRecurseJob03Tester, ShouldRunRecurseJob02Tester, ShouldRunRecurseJob01Tester, ShouldRunCacheLogicJobTester, ShouldRunLogicJobTester, PastCurfewJobTester, AllDependenciesJobTester, PastCacheTimeJobTester, BuildableJobTester, StaleAlternateUpdateBottomJobTester, StaleAlternateUpdateTopJobTester, StaleAlternateBottomJobTester, StaleAlternateTopJobTester, StaleIgnoreMtimeJobTester, StaleStandardJobTester, DiamondRedundancyHighestJobTester, DiamondRedundancyTopJobTester, DiamondRedundancyMiddleJob02Tester, DiamondRedundancyMiddleJob01Tester, DiamondRedundancyBottomJobTester, BackboneDependantTopJob02Tester, BackboneDependantTopJob01Tester, BackboneDependantMiddleJob02Tester, BackboneDependantMiddleJob01Tester, BackboneDependantBottomJobTester, BuildGraphConstructionJobBottom01Tester, BuildGraphConstructionJobTop02Tester, BuildGraphConstructionJobTop01Tester, RuleDepConstructionJobBottom01Tester, RuleDepConstructionJobTop02Tester, RuleDepConstructionJobTop01Tester, UpdateTargetCacheTop, PastCurfewTimestampJobTester, IgnoreProduceJob
+from builder.tests_jobs import TenSecondJob, UpdateTargetCacheBottom, UpdateTargetCacheMiddle03, UpdateTargetCacheMiddle02, UpdateTargetCacheMiddle01, ForceBuildBottom, ForceBuildMiddle, ForceBuildTop, ExpandExactBottom, ExpandExactMiddle, ExpandExactTop, UpdateJobCacheBottom, UpdateJobCacheMiddle03, UpdateJobCacheMiddle02, UpdateJobCacheMiddle01, UpdateJobCacheTop, GetNextJobsToRunLowest, GetNextJobsToRunBottom, GetNextJobsToRunMiddle02, GetNextJobsToRunMiddle01, GetNextJobsToRunTop, UpdateLowerNodesShouldRunLowest, UpdateLowerNodesShouldRunBottom, UpdateLowerNodesShouldRunMiddle02, UpdateLowerNodesShouldRunMiddle01, UpdateLowerNodesShouldRunTop, GetStartingJobs04Tester, GetStartingJobs03Tester, GetStartingJobs02Tester, GetStartingJobs01Tester, ShouldRunRecurseJob10Tester, ShouldRunRecurseJob09Tester, ShouldRunRecurseJob08Tester, ShouldRunRecurseJob07Tester, ShouldRunRecurseJob06Tester, ShouldRunRecurseJob05Tester, ShouldRunRecurseJob04Tester, ShouldRunRecurseJob03Tester, ShouldRunRecurseJob02Tester, ShouldRunRecurseJob01Tester, ShouldRunCacheLogicJobTester, ShouldRunLogicJobTester, PastCurfewJobTester, AllDependenciesJobTester, PastCacheTimeJobTester, BuildableJobTester, StaleAlternateUpdateBottomJobTester, StaleAlternateUpdateTopJobTester, StaleAlternateBottomJobTester, StaleAlternateTopJobTester, StaleIgnoreMtimeJobTester, StaleStandardJobTester, DiamondRedundancyHighestJobTester, DiamondRedundancyTopJobTester, DiamondRedundancyMiddleJob02Tester, DiamondRedundancyMiddleJob01Tester, DiamondRedundancyBottomJobTester, BackboneDependantTopJob02Tester, BackboneDependantTopJob01Tester, BackboneDependantMiddleJob02Tester, BackboneDependantMiddleJob01Tester, BackboneDependantBottomJobTester, BuildGraphConstructionJobBottom01Tester, BuildGraphConstructionJobTop02Tester, BuildGraphConstructionJobTop01Tester, RuleDepConstructionJobBottom01Tester, RuleDepConstructionJobTop02Tester, RuleDepConstructionJobTop01Tester, UpdateTargetCacheTop, PastCurfewTimestampJobTester, IgnoreProduceJob
 import testing
 import builder.jobs
 import builder.build
@@ -38,6 +38,19 @@ class GraphTest(unittest.TestCase):
             mock_stat.st_mtime = file_dict[path]
             return mock_stat
         return mock_mtime
+
+    @testing.unit
+    def test_expand_10s(self):
+        # Given
+        build = builder.build.BuildGraph([TenSecondJob()])
+
+        # When
+        build.construct_build_graph({'start_time': arrow.get("2015-01-01T00:00:00+00:00"),
+                                     'end_time': arrow.get("2015-01-01T00:01:00+00:00"),
+                                     'start_job': 'test_second_job'})
+
+        # Then
+        self.assertEquals(len(build.node), 6)
 
     @testing.unit
     def test_rule_dep_construction(self):
@@ -128,11 +141,11 @@ class GraphTest(unittest.TestCase):
                 "start_job": start_job2
         }
 
-        node1_id = "build_graph_construction_job_top_01_2014-12-05-10-30"
-        node2_id = "build_graph_construction_job_top_01_2014-12-05-11-25"
-        node3_id = "build_graph_construction_job_top_02_2014-12-05-10-00"
-        node4_id = "build_graph_construction_job_top_02_2014-12-05-10-55"
-        node5_id = "build_graph_construction_job_bottom_01_2014-12-05-10-00"
+        node1_id = "build_graph_construction_job_top_01_2014-12-05-10-30-00"
+        node2_id = "build_graph_construction_job_top_01_2014-12-05-11-25-00"
+        node3_id = "build_graph_construction_job_top_02_2014-12-05-10-00-00"
+        node4_id = "build_graph_construction_job_top_02_2014-12-05-10-55-00"
+        node5_id = "build_graph_construction_job_bottom_01_2014-12-05-10-00-00"
 
         expected_number_of_parents1 = 1
         expected_number_of_parents2 = 1
@@ -709,25 +722,25 @@ class GraphTest(unittest.TestCase):
         # When
         with mock.patch("arrow.get", new_arrow_get):
             stale1 = (build1.node
-                    ["stale_standard_job_2014-12-05-10-45"]
+                    ["stale_standard_job_2014-12-05-10-45-00"]
                     ["object"].get_stale(build1))
             stale2 = (build2.node
-                    ["stale_standard_job_2014-12-05-10-45"]
+                    ["stale_standard_job_2014-12-05-10-45-00"]
                     ["object"].get_stale(build2))
             stale3 = (build3.node
-                    ["stale_standard_job_2014-12-05-10-45"]
+                    ["stale_standard_job_2014-12-05-10-45-00"]
                     ["object"].get_stale(build3))
             stale4 = (build4.node
-                    ["stale_standard_job_2014-12-05-10-45"]
+                    ["stale_standard_job_2014-12-05-10-45-00"]
                     ["object"].get_stale(build4))
             stale5 = (build5.node
-                    ["stale_standard_job_2014-12-05-10-45"]
+                    ["stale_standard_job_2014-12-05-10-45-00"]
                     ["object"].get_stale(build5))
             stale6 = (build6.node
-                    ["stale_ignore_mtime_job_2014-12-05-10-45"]
+                    ["stale_ignore_mtime_job_2014-12-05-10-45-00"]
                     ["object"].get_stale(build6))
             stale7 = (build7.node
-                    ["stale_ignore_mtime_job_2014-12-05-10-45"]
+                    ["stale_ignore_mtime_job_2014-12-05-10-45-00"]
                     ["object"].get_stale(build7))
 
         # Then
@@ -1069,16 +1082,16 @@ class GraphTest(unittest.TestCase):
 
         # When
         stale1 = (build1.node
-                ["stale_alternate_top_job_2014-12-05-10-45"]
+                ["stale_alternate_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build1))
         stale2 = (build2.node
-                ["stale_alternate_top_job_2014-12-05-10-45"]
+                ["stale_alternate_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build2))
         stale3 = (build3.node
-                ["stale_alternate_top_job_2014-12-05-10-45"]
+                ["stale_alternate_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build3))
         stale4 = (build4.node
-                ["stale_alternate_top_job_2014-12-05-10-45"]
+                ["stale_alternate_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build4))
 
         # Then
@@ -1421,40 +1434,40 @@ class GraphTest(unittest.TestCase):
 
         # When
         original_stale1 = (build1.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45"]
+                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build1))
         (build1.node
-                ["stale_alternate_update_bottom_job_2014-12-05-10-45"]
+                ["stale_alternate_update_bottom_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build1))
         stale1 = (build1.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45"]
+                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build1))
         original_stale2 = (build2.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45"]
+                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build2))
         (build2.node
-                ["stale_alternate_update_bottom_job_2014-12-05-10-45"]
+                ["stale_alternate_update_bottom_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build2))
         stale2 = (build2.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45"]
+                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build2))
         original_stale3 = (build3.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45"]
+                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build3))
         (build3.node
-                ["stale_alternate_update_bottom_job_2014-12-05-10-45"]
+                ["stale_alternate_update_bottom_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build3))
         stale3 = (build3.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45"]
+                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build3))
         original_stale4 = (build4.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45"]
+                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build4))
         (build4.node
-                ["stale_alternate_update_bottom_job_2014-12-05-10-45"]
+                ["stale_alternate_update_bottom_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build4))
         stale4 = (build4.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45"]
+                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build4))
 
         # Then
@@ -1802,22 +1815,22 @@ class GraphTest(unittest.TestCase):
 
         # When
         buildable1 = (build1.node
-                ["buildable_job_2014-12-05-10-45"]
+                ["buildable_job_2014-12-05-10-45-00"]
                 ["object"].get_buildable(build1))
         buildable2 = (build2.node
-                ["buildable_job_2014-12-05-10-45"]
+                ["buildable_job_2014-12-05-10-45-00"]
                 ["object"].get_buildable(build2))
         buildable3 = (build3.node
-                ["buildable_job_2014-12-05-10-45"]
+                ["buildable_job_2014-12-05-10-45-00"]
                 ["object"].get_buildable(build3))
         buildable4 = (build4.node
-                ["buildable_job_2014-12-05-10-45"]
+                ["buildable_job_2014-12-05-10-45-00"]
                 ["object"].get_buildable(build4))
         buildable5 = (build5.node
-                ["buildable_job_2014-12-05-10-45"]
+                ["buildable_job_2014-12-05-10-45-00"]
                 ["object"].get_buildable(build5))
         buildable6 = (build6.node
-                ["buildable_job_2014-12-05-10-45"]
+                ["buildable_job_2014-12-05-10-45-00"]
                 ["object"].get_buildable(build6))
 
         # Then
@@ -1929,13 +1942,13 @@ class GraphTest(unittest.TestCase):
         # When
         with mock.patch("arrow.get", mock_arrow_get):
             past_cache_time1 = (build1.node
-                    ["past_cache_time_job_2014-12-05-10-45"]
+                    ["past_cache_time_job_2014-12-05-10-45-00"]
                     ["object"].past_cache_time(build1))
             past_cache_time2 = (build2.node
-                    ["past_cache_time_job_2014-12-05-10-45"]
+                    ["past_cache_time_job_2014-12-05-10-45-00"]
                     ["object"].past_cache_time(build2))
             past_cache_time3 = (build3.node
-                    ["past_cache_time_job_2014-12-05-10-45"]
+                    ["past_cache_time_job_2014-12-05-10-45-00"]
                     ["object"].past_cache_time(build3))
 
         # Then
@@ -2121,16 +2134,16 @@ class GraphTest(unittest.TestCase):
 
         # When
         all_dependencies1 = (build1.node
-                ["all_dependencies_job_2014-12-05-10-45"]
+                ["all_dependencies_job_2014-12-05-10-45-00"]
                 ["object"].all_dependencies(build1))
         all_dependencies2 = (build1.node
-                ["all_dependencies_job_2014-12-05-10-45"]
+                ["all_dependencies_job_2014-12-05-10-45-00"]
                 ["object"].all_dependencies(build2))
         all_dependencies3 = (build1.node
-                ["all_dependencies_job_2014-12-05-10-45"]
+                ["all_dependencies_job_2014-12-05-10-45-00"]
                 ["object"].all_dependencies(build3))
         all_dependencies4 = (build1.node
-                ["all_dependencies_job_2014-12-05-10-45"]
+                ["all_dependencies_job_2014-12-05-10-45-00"]
                 ["object"].all_dependencies(build4))
 
         # Then
@@ -3836,8 +3849,8 @@ class GraphTest(unittest.TestCase):
         build2 = build1.construct_build_graph(build_context2)
 
 
-        node1 = build1.node["should_run_future_1970-01-01-00-05"]["object"]
-        node2 = build2.node["should_run_future_1970-01-01-00-00"]["object"]
+        node1 = build1.node["should_run_future_1970-01-01-00-05-00"]["object"]
+        node2 = build2.node["should_run_future_1970-01-01-00-00-00"]["object"]
 
         node1.should_run = True
         node1.buildable = True

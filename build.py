@@ -902,6 +902,7 @@ class BuildGraph(networkx.DiGraph):
                                            top_jobs=top_jobs)
             return
 
+
         expanded_nodes = start_node.expand(build_context)
         for expanded_node in expanded_nodes:
             self._self_expand(expanded_node, "up", depth, current_depth,

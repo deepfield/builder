@@ -67,6 +67,7 @@ class JobTest(unittest.TestCase):
         self.assertEqual(command1, expected_command1)
 
 
+
 class JobDependsPast(Job):
     """A job that depends on a file from the past"""
     def __init__(self, unexpanded_id="job_depends_past", cache_time=None,
@@ -2267,3 +2268,7 @@ class IgnoreProduceJob(Job):
 
 class ShouldRunFuture(TimestampExpandedJob):
     unexpanded_id = "should_run_future"
+
+class TenSecondJob(TimestampExpandedJob):
+    def __init__(self):
+        super(TenSecondJob, self).__init__(unexpanded_id="test_second_job", file_step="10s")
