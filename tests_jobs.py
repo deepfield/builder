@@ -227,6 +227,9 @@ class UpdateTargetCacheMiddle02(Job):
             ]
         }
 
+    def get_command(self, unique_id, build_context, build_graph):
+        return unique_id
+
 
 class UpdateTargetCacheMiddle01(Job):
     """The job in the middle that will never be buildable but has it's"""
@@ -558,6 +561,9 @@ class UpdateJobCacheMiddle02(Job):
                     "update_job_cache_top_02_target")
             ]
         }
+
+    def get_command(self, unique_id, build_context, build_graph):
+        return "{}".format(unique_id)
 
 
 class UpdateJobCacheMiddle01(Job):

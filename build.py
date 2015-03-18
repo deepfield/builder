@@ -130,6 +130,15 @@ class RuleDependencyGraph(networkx.DiGraph):
         """
         networkx.write_dot(self, file_name)
 
+    def is_job(self, job_id):
+        """Returns if the id passed in relates to a job node"""
+        job = self.node[job_id]
+        if "object" not in job:
+            return False
+        if not isinstance(job["object"], builder.jobs.Job):
+            return False
+        return True
+
     def assert_job(self, job_id):
         """Raises a runtime error if the job_id doesn't correspond to a job.
 
@@ -145,11 +154,17 @@ class RuleDependencyGraph(networkx.DiGraph):
         Raises:
             RuntimeError: raised if the node specified is not a job node
         """
-        job = self.node[job_id]
-        if "object" not in job:
+        if not self.is_job(job_id):
             raise RuntimeError("{} is not a job node".format(job_id))
-        if not isinstance(job["object"], builder.jobs.Job):
-            raise RuntimeError("{} is not a job node".format(job_id))
+
+    def is_target(self, target_id):
+        """Returns if the id passed in relates to a target node or not"""
+        target = self.node[target_id]
+        if "object" not in target:
+            return False
+        if not isinstance(target["object"], builder.expanders.Expander):
+            return False
+        return True
 
     def assert_target(self, target_id):
         """Raises a runtime error if the target_id doesn't correspond to a
@@ -167,10 +182,7 @@ class RuleDependencyGraph(networkx.DiGraph):
         Raises:
             RuntimeError: raised if the node specified is not a target node
         """
-        target = self.node[target_id]
-        if "object" not in target:
-            raise RuntimeError("{} is not a target node".format(target_id))
-        if not isinstance(target["object"], builder.expanders.Expander):
+        if not self.is_target(target_id):
             raise RuntimeError("{} is not a target node".format(target_id))
 
     def filter_target_ids(self, target_ids):
@@ -189,11 +201,8 @@ class RuleDependencyGraph(networkx.DiGraph):
         """
         output_target_ids = []
         for target_id in target_ids:
-            target = self.node[target_id]
-            if "object" in target:
-                the_object = target["object"]
-                if isinstance(the_object, builder.expanders.Expander):
-                    output_target_ids.append(target_id)
+            if self.is_target(target_id):
+                output_target_ids.append(target_id)
         return output_target_ids
 
     def filter_job_ids(self, job_ids):
@@ -212,11 +221,8 @@ class RuleDependencyGraph(networkx.DiGraph):
         """
         output_job_ids = []
         for job_id in job_ids:
-            job = self.node[job_id]
-            if "object" in job:
-                the_object = job["object"]
-                if isinstance(the_object, builder.jobs.Job):
-                    output_job_ids.append(job_id)
+            if self.is_job(job_id):
+                output_job_ids.append(job_id)
         return output_job_ids
 
     def get_targets(self, job_id):
@@ -299,6 +305,10 @@ class RuleDependencyGraph(networkx.DiGraph):
             return self.get_creators(target_id)
         else:
             return self.get_dependants(target_id)
+
+    def get_target(self, target_id):
+        """Returns the object corresponding to the target_id"""
+        return self.node[target_id]["object"]
 
     def get_job(self, job_id):
         """Returns the object corresponding to the job_id
@@ -394,7 +404,7 @@ class BuildGraph(networkx.DiGraph):
         self.rule_dep_graph.construct()
         return self.rule_dep_graph
 
-    def add_node(self, node, attr_dict=None, **kwargs):
+    def add_node(self, node, new_nodes=None, attr_dict=None, **kwargs):
         """Adds a jobstate, target, dependency node to the graph
 
         A node is added to the graph where the object keyword of the node will
@@ -420,6 +430,9 @@ class BuildGraph(networkx.DiGraph):
         if node.unique_id in self:
             node_data = self.node[node.unique_id]
             node = self.node[node.unique_id]["object"]
+        else:
+            if new_nodes is not None:
+                new_nodes.add(node.unique_id)
 
         if isinstance(node, builder.targets.Target):
             node_data["style"] = "filled"
@@ -431,6 +444,15 @@ class BuildGraph(networkx.DiGraph):
 
         super(BuildGraph, self).add_node(node.unique_id, attr_dict=node_data)
         return node
+
+    def is_job(self, job_id):
+        """Returns if the node relating to job id is a job node"""
+        job = self.node[job_id]
+        if "object" not in job:
+            return False
+        if not isinstance(job["object"], builder.jobs.JobState):
+            return False
+        return True
 
     def assert_job(self, job_id):
         """Raises a runtime error if the job_id doesn't correspond to a job.
@@ -447,11 +469,17 @@ class BuildGraph(networkx.DiGraph):
         Raises:
             RuntimeError: raised if the node specified is not a JobState node
         """
-        job = self.node[job_id]
-        if "object" not in job:
+        if not self.is_job(job_id):
             raise RuntimeError("{} is not a job node".format(job_id))
-        if not isinstance(job["object"], builder.jobs.JobState):
-            raise RuntimeError("{} is not a job node".format(job_id))
+
+    def is_target(self, target_id):
+        """Returns if the node related to target_id is a target node"""
+        target = self.node[target_id]
+        if "object" not in target:
+            return False
+        if not isinstance(target["object"], builder.targets.Target):
+            return False
+        return True
 
     def assert_target(self, target_id):
         """Raises a runtime error if the target_id doesn't correspond to a
@@ -469,10 +497,7 @@ class BuildGraph(networkx.DiGraph):
         Raises:
             RuntimeError: raised if the node specified is not a Target node
         """
-        target = self.node[target_id]
-        if "object" not in target:
-            raise RuntimeError("{} is not a target node".format(target_id))
-        if not isinstance(target["object"], builder.targets.Target):
+        if not self.is_target(target_id):
             raise RuntimeError("{} is not a target node".format(target_id))
 
     def filter_target_ids(self, target_ids):
@@ -491,11 +516,8 @@ class BuildGraph(networkx.DiGraph):
         """
         output_target_ids = []
         for target_id in target_ids:
-            target = self.node[target_id]
-            if "object" in target:
-                the_object = target["object"]
-                if isinstance(the_object, builder.targets.Target):
-                    output_target_ids.append(target_id)
+            if self.is_target(target_id):
+                output_target_ids.append(target_id)
         return output_target_ids
 
     def filter_job_ids(self, job_ids):
@@ -514,11 +536,8 @@ class BuildGraph(networkx.DiGraph):
         """
         output_job_ids = []
         for job_id in job_ids:
-            job = self.node[job_id]
-            if "object" in job:
-                the_object = job["object"]
-                if isinstance(the_object, builder.jobs.JobState):
-                    output_job_ids.append(job_id)
+            if self.is_job(job_id):
+                output_job_ids.append(job_id)
         return output_job_ids
 
     def get_targets(self, job_id):
@@ -626,7 +645,8 @@ class BuildGraph(networkx.DiGraph):
         else:
             return self.get_dependants(target_id)
 
-    def _connect_targets(self, node, target_type, targets, edge_data):
+    def _connect_targets(self, node, target_type, targets, edge_data,
+                         new_nodes):
         """Connets the node to it's targets
 
         All the targets are connected to the node. The corresponding edge data
@@ -640,11 +660,12 @@ class BuildGraph(networkx.DiGraph):
             edge_data: any extra data to be added to the edge dict
         """
         for target in targets:
-            target = self.add_node(target)
+            target = self.add_node(target, new_nodes=new_nodes)
             self.add_edge(node.unique_id, target.unique_id, edge_data,
                           label=target_type)
 
-    def _connect_dependencies(self, node, dependency_type, dependencies, data):
+    def _connect_dependencies(self, node, dependency_type, dependencies, data,
+                              new_nodes):
         """Connets the node to it's dependnecies
 
         All the depenencies are connected to the node. The corresponding edge
@@ -667,17 +688,18 @@ class BuildGraph(networkx.DiGraph):
         dependency = builder.dependencies.Dependency(dependency_type,
                                                      dependency_node_id)
 
-        self.add_node(dependency, label=dependency_type.func_name)
+        self.add_node(dependency, new_nodes=new_nodes,
+                      label=dependency_type.func_name)
 
         self.add_edge(dependency_node_id, node.unique_id, data,
                       label=dependency_type.func_name)
 
         for dependency in dependencies:
-            dependency = self.add_node(dependency)
+            dependency = self.add_node(dependency, new_nodes=new_nodes)
             self.add_edge(dependency.unique_id, dependency_node_id, data,
                           label=dependency_type.func_name)
 
-    def _expand_direction(self, node, direction):
+    def _expand_direction(self, job, direction, new_nodes):
         """Takes in a node and expands it's targets or dependencies and adds
         them to the graph
 
@@ -690,40 +712,42 @@ class BuildGraph(networkx.DiGraph):
                 the node
         """
         # The node has already been expanded in that direction
-        if node.expanded_directions[direction]:
-            return self.get_targets_or_dependencies(node.unique_id, direction)
+        if job.expanded_directions[direction]:
+            return self.get_targets_or_dependencies(job.unique_id, direction)
 
         # get the list of targets or dependencies to expand
         target_depends = {}
-        unexpanded_node = self.rule_dep_graph.node[node.unexpanded_id]["object"]
+        unexpanded_job = self.rule_dep_graph.get_job(job.unexpanded_id)
         if direction == "up":
-            target_depends = unexpanded_node.get_dependencies(
-                    build_context=node.build_context)
+            target_depends = unexpanded_job.get_dependencies(
+                    build_context=job.build_context)
         else:
-            target_depends = unexpanded_node.get_targets(
-                    build_context=node.build_context)
+            target_depends = unexpanded_job.get_targets(
+                    build_context=job.build_context)
 
         expanded_targets_list = []
         # expanded for each type of target or dependency
         for target_type, target_group in target_depends.iteritems():
             for target in target_group:
-                build_context = node.build_context
+                build_context = job.build_context
                 edge_data = target.edge_data
                 expanded_targets = target.expand(build_context)
                 if direction == "up":
                     dependency_type = (builder.dependencies
                                               .get_dependencies(target_type))
-                    self._connect_dependencies(node, dependency_type,
-                                               expanded_targets, edge_data)
+                    self._connect_dependencies(job, dependency_type,
+                                               expanded_targets, edge_data,
+                                               new_nodes)
 
                 if direction == "down":
-                    self._connect_targets(node, target_type, expanded_targets,
-                                          edge_data)
+                    self._connect_targets(job, target_type, expanded_targets,
+                                          edge_data, new_nodes)
                 expanded_targets_list = expanded_targets_list + expanded_targets
         return expanded_targets_list
 
     def _self_expand_next_direction(self, expanded_directions, depth,
-            current_depth, top_jobs, cache_set, direction):
+                                    current_depth, top_jobs, new_nodes,
+                                    cache_set, direction):
         """Expands out the next job nodes
 
         Args:
@@ -747,7 +771,7 @@ class BuildGraph(networkx.DiGraph):
                 next_node_ids = self.get_dependants_or_creators(
                         expanded_direction.unique_id, direction)
                 for next_node_id in next_node_ids:
-                    next_nodes.append(self.node[next_node_id]["object"])
+                    next_nodes.append(self.get_job(next_node_id))
                 continue
 
             # we have to use the unexpanded node to look in the rule dependnecy
@@ -760,9 +784,8 @@ class BuildGraph(networkx.DiGraph):
             # expand out the job and then add it to a list so that they can
             # continue the expansion later
             for unexpanded_next_node_id in unexpanded_next_node_ids:
-                unexpanded_next_node = (self.rule_dep_graph
-                                            .node[unexpanded_next_node_id]
-                                                 ["object"])
+                unexpanded_next_node = self.rule_dep_graph.get_job(
+                        unexpanded_next_node_id)
                 next_nodes = next_nodes + unexpanded_next_node.expand(
                         expanded_direction.build_context)
             cache_set.add(expanded_direction.unique_id)
@@ -771,12 +794,12 @@ class BuildGraph(networkx.DiGraph):
         # continue expanding in the direction given
         for next_node in next_nodes:
             self._self_expand(next_node, direction, depth, current_depth,
-                              top_jobs, cache_set)
+                              top_jobs, new_nodes, cache_set)
         return next_nodes
 
 
     def _self_expand(self, node, direction, depth, current_depth, top_jobs,
-                     cache_set=None):
+                     new_nodes, cache_set=None):
         """Input a node to expand and a build_context, magic ensues
 
         The node should already be an expanded node. It then expands out the
@@ -797,10 +820,10 @@ class BuildGraph(networkx.DiGraph):
         if node.unique_id in cache_set:
             return
 
-        self.add_node(node)
+        self.add_node(node, new_nodes=new_nodes)
 
-        expanded_targets = self._expand_direction(node, "down")
-        expanded_dependencies = self._expand_direction(node, "up")
+        expanded_targets = self._expand_direction(node, "down", new_nodes)
+        expanded_dependencies = self._expand_direction(node, "up", new_nodes)
         cache_set.add(node.unique_id)
 
         next_nodes = []
@@ -814,18 +837,17 @@ class BuildGraph(networkx.DiGraph):
         if direction == "up":
             next_nodes = self._self_expand_next_direction(
                     expanded_dependencies, depth, current_depth,
-                    top_jobs, cache_set, direction)
+                    top_jobs, new_nodes, cache_set, direction)
             if not next_nodes:
                 top_jobs.add(node.unique_id)
         if direction == "down":
             next_nodes = self._self_expand_next_direction(expanded_targets,
                                                           depth, current_depth,
-                                                          top_jobs, cache_set,
-                                                          direction)
-
+                                                          top_jobs, new_nodes,
+                                                          cache_set, direction)
 
     def construct_build_graph(self, build_context, cache_set=None,
-                              top_jobs=None):
+                              top_jobs=None, new_nodes=None):
         """Used to construct up a build graph using a build_context
 
         takes in a start job from the build_context and follows a path in the
@@ -892,6 +914,9 @@ class BuildGraph(networkx.DiGraph):
         if top_jobs is None:
             top_jobs = set([])
 
+        if new_nodes is None:
+            new_nodes = set([])
+
         if isinstance(start_node, builder.jobs.MetaTarget):
             job_collection = start_node.get_job_collection()
             for job_id in job_collection:
@@ -899,13 +924,14 @@ class BuildGraph(networkx.DiGraph):
                 copy_build_context["start_job"] = job_id
                 self.construct_build_graph(copy_build_context,
                                            cache_set=cache_set,
-                                           top_jobs=top_jobs)
+                                           top_jobs=top_jobs,
+                                           new_nodes=new_nodes)
             return
 
         expanded_nodes = start_node.expand(build_context)
         for expanded_node in expanded_nodes:
             self._self_expand(expanded_node, "up", depth, current_depth,
-                              top_jobs, cache_set=cache_set)
+                              top_jobs, new_nodes, cache_set=cache_set)
 
         # the top_jobs returned by _self_expand is a unintelligent top_job
         # some top_jobs may be sibilings of other top_jobs. This will remove
@@ -919,6 +945,7 @@ class BuildGraph(networkx.DiGraph):
         return self
 
     def _remove_sibilings_recurse(self, job_id, top_jobs, cache_set):
+        """Removes all jobs from top_jobs that is below job_id"""
         if job_id in cache_set:
             return
         top_jobs.discard(job_id)
@@ -930,13 +957,14 @@ class BuildGraph(networkx.DiGraph):
                         next_job_id, top_jobs, cache_set)
 
     def remove_sibilings(self, top_jobs):
+        """Removes all jobs in top_jobs that is below another job in top_jobs"""
         cache_set = set([])
         for top_job in top_jobs.copy():
             for target_id in self.neighbors(top_job):
                 for depends_id in self.neighbors(target_id):
                     for job_id in self.neighbors(depends_id):
-                        self._remove_sibilings_recurse(
-                            job_id, top_jobs, cache_set)
+                        self._remove_sibilings_recurse(job_id, top_jobs,
+                                                       cache_set)
 
     def get_starting_jobs(self):
         """Used to return a list of jobs to run"""
@@ -993,9 +1021,7 @@ class BuildGraph(networkx.DiGraph):
     def update_job_cache(self, job_id):
         """Updates the cache due to a job finishing"""
         target_ids = self.neighbors(job_id)
-        for target_id in target_ids:
-            target = self.node[target_id]["object"]
-            target.get_mtime(cached=False)
+        self.update_targets(target_ids)
 
         job = self.node[job_id]["object"]
         job.get_stale(self, cached=False)
@@ -1026,6 +1052,23 @@ class BuildGraph(networkx.DiGraph):
                 job.get_stale(self, cached=False)
                 job.get_buildable(self, cached=False)
                 job.update_lower_nodes_should_run(self)
+
+    def update_targets(self, target_ids):
+        """Takes in a list of target ids and updates all of their needed
+        values
+        """
+        update_function_list = collections.defaultdict(list)
+        for target_id in target_ids:
+            target = self.get_target(target_id)
+            func = target.get_bulk_exists_mtime
+            update_function_list[func].append(target_id)
+
+        for update_function, target_ids in update_function_list.iteritems():
+            exists_mtime_dict = update_function(target_ids)
+            for target_id in target_ids:
+                target = self.get_target(target_id)
+                target.exists = exists_mtime_dict[target_id]["exists"]
+                target.mtime = exists_mtime_dict[target_id]["mtime"]
 
     def finish(self, job_id):
         """Checks what should happen now that the job is done"""

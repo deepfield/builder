@@ -3715,6 +3715,7 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(actual_stale3, expected_stale3)
         self.assertEqual(actual_stale4, expected_stale4)
 
+    @testing.unit
     def test_stale_with_no_targets(self):
         # Given
         targets1 = {}
@@ -3773,6 +3774,7 @@ class GraphTest(unittest.TestCase):
         self.assertFalse(stale2)
         self.assertTrue(stale3)
 
+    @testing.unit
     def test_meta_in_rule_dep_graph(self):
         # Given
         job1 = builder.jobs.Job(unexpanded_id="job1")
@@ -3792,6 +3794,7 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(len(rule_dep_graph.edge["job2"]), 1)
         self.assertIn("meta", rule_dep_graph)
 
+    @testing.unit
     def test_expand_meta(self):
         # Given
         job1 = builder.jobs.Job(unexpanded_id="job1")
@@ -3808,6 +3811,80 @@ class GraphTest(unittest.TestCase):
         self.assertNotIn("meta", build)
         self.assertIn("job1", build)
         self.assertIn("job2", build)
+
+    @testing.unit
+    def test_new_nodes(self):
+        # Given
+        jobs = [
+            builder.jobs.Job(
+                "top_job",
+                targets={
+                    "produces": [
+                        builder.expanders.Expander(
+                            builder.targets.Target,
+                            "top_job_target"),
+                    ],
+                },
+                dependencies={
+                    "depends": [
+                        builder.expanders.Expander(
+                            builder.targets.Target,
+                            "top_job_depends_01"),
+                        builder.expanders.Expander(
+                            builder.targets.Target,
+                            "top_job_depends_02"),
+                    ],
+                }
+            ),
+            builder.jobs.Job(
+                "bottom_job",
+                targets={
+                    "produces": [
+                        builder.expanders.Expander(
+                            builder.targets.Target,
+                            "bottom_job_target"),
+                    ],
+                },
+                dependencies={
+                    "depends": [
+                        builder.expanders.Expander(
+                            builder.targets.Target,
+                            "top_job_target"),
+                    ],
+                }
+            ),
+        ]
+
+        start_time = "2014-12-05T10:30"
+        start_time = arrow.get(start_time)
+        end_time = "2014-12-05T11:30"
+        end_time = arrow.get(end_time)
+
+        start_job1 = "top_job"
+        start_job2 = "bottom_job"
+
+        build_context1 = {
+                "start_time": start_time,
+                "end_time": end_time,
+                "start_job": start_job1
+        }
+        build_context2 = {
+                "start_time": start_time,
+                "end_time": end_time,
+                "start_job": start_job2
+        }
+
+        # When
+        build = builder.build.BuildGraph(jobs)
+
+        new_nodes1 = set([])
+        new_nodes2 = set([])
+        build.construct_build_graph(build_context1, new_nodes=new_nodes1)
+        build.construct_build_graph(build_context2, new_nodes=new_nodes2)
+
+        # Then
+        self.assertEqual(len(new_nodes1), 6)
+        self.assertEqual(len(new_nodes2), 3)
 
     @testing.unit
     def test_should_run_future(self):
@@ -3859,6 +3936,67 @@ class GraphTest(unittest.TestCase):
 
         self.assertEqual(should_run1, expected_should_run1)
         self.assertEqual(should_run2, expected_should_run2)
+
+    @testing.unit
+    def test_filter_target_ids(self):
+        build = builder.build.BuildGraph(jobs=[])
+
+        build.add_node(builder.targets.Target("", "target1", {}))
+        build.add_node(builder.targets.Target("", "target2", {}))
+        build.add_node(builder.jobs.JobState(builder.jobs.Job(), "target3", {}, None))
+
+        id_list = ["target1", "target2", "target3"]
+
+        id_list = build.filter_target_ids(id_list)
+
+        self.assertNotIn("target3", id_list)
+        self.assertIn("target1", id_list)
+        self.assertIn("target2", id_list)
+
+    @testing.unit
+    def test_update_targets(self):
+        build = builder.build.BuildGraph(jobs=[])
+
+        target1 = builder.targets.LocalFileSystemTarget("", "target1", {})
+        target2 = builder.targets.LocalFileSystemTarget("", "target2", {})
+        target3 = builder.targets.S3BackedLocalFileSystemTarget("", "target3", {})
+        target4 = builder.targets.S3BackedLocalFileSystemTarget("", "target4", {})
+        target5 = builder.targets.S3BackedLocalFileSystemTarget("", "target5", {})
+        build.add_node(target1)
+        build.add_node(target2)
+        build.add_node(target3)
+        build.add_node(target4)
+        build.add_node(target5)
+
+        id_list = ["target1", "target2", "target3", "target4", "target5"]
+
+        mock_mtime = self.mock_mtime_generator({
+            "target1": 100,
+            "target3": 500,
+        })
+
+        s3_mtimes = {
+            "target4": 600,
+        }
+
+        def mock_s3_list(targets):
+            return s3_mtimes
+
+        with mock.patch("deepy.store.list_files_remote", mock_s3_list), \
+             mock.patch("os.stat", mock_mtime):
+            build.update_targets(id_list)
+
+        self.assertTrue(build.node["target1"]["object"].exists)
+        self.assertFalse(build.node["target2"]["object"].exists)
+        self.assertTrue(build.node["target3"]["object"].exists)
+        self.assertTrue(build.node["target4"]["object"].exists)
+        self.assertFalse(build.node["target5"]["object"].exists)
+
+        self.assertEqual(build.node["target1"]["object"].mtime, 100)
+        self.assertEqual(build.node["target2"]["object"].mtime, None)
+        self.assertEqual(build.node["target3"]["object"].mtime, 500)
+        self.assertEqual(build.node["target4"]["object"].mtime, 600)
+        self.assertEqual(build.node["target5"]["object"].mtime, None)
 
 
 class RuleDependencyGraphTest(unittest.TestCase):
