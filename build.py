@@ -1068,14 +1068,13 @@ class BuildGraph(networkx.DiGraph):
         for target_id in target_ids:
             target = self.get_target(target_id)
             func = target.get_bulk_exists_mtime
-            update_function_list[func].append(target_id)
+            update_function_list[func].append(target)
 
-        for update_function, target_ids in update_function_list.iteritems():
-            exists_mtime_dict = update_function(target_ids)
-            for target_id in target_ids:
-                target = self.get_target(target_id)
-                target.exists = exists_mtime_dict[target_id]["exists"]
-                target.mtime = exists_mtime_dict[target_id]["mtime"]
+        for update_function, targets in update_function_list.iteritems():
+            exists_mtime_dict = update_function(targets)
+            for target in targets:
+                target.exists = exists_mtime_dict[target.unique_id]["exists"]
+                target.mtime = exists_mtime_dict[target.unique_id]["mtime"]
 
     def finish(self, job_id):
         """Checks what should happen now that the job is done"""

@@ -64,7 +64,7 @@ class Target(object):
     @staticmethod
     @abc.abstractmethod
     def get_bulk_exists_mtime(targets):
-        """Gets the existance and mtime values for the unique ids in bulk
+        """Gets the existance and mtime values for the targets in bulk
 
         Returns:
             A dictionary with the form
@@ -107,10 +107,11 @@ class LocalFileSystemTarget(Target):
         return mtime
 
     @staticmethod
-    def get_bulk_exists_mtime(local_paths):
+    def get_bulk_exists_mtime(targets):
         """Gets all the exists and mtimes for the local paths and returns them
         in a dict. Just as efficient as normal mtime and exists
         """
+        local_paths = [x.unique_id for x in targets]
         exists_mtime_dict = {}
         for local_path in local_paths:
             mtime = LocalFileSystemTarget.non_cached_mtime(local_path)
@@ -175,7 +176,7 @@ class S3BackedLocalFileSystemTarget(LocalFileSystemTarget):
             return ls_files[local_path]
 
     @staticmethod
-    def get_bulk_exists_mtime(local_paths):
+    def get_bulk_exists_mtime(targets):
         """Gets all the exists and mtimes for the local paths and returns them
         in a dict. Just as efficient as normal mtime and exists
 
@@ -187,6 +188,7 @@ class S3BackedLocalFileSystemTarget(LocalFileSystemTarget):
                 },
             }
         """
+        local_paths = [x.unique_id for x in targets]
         exists_mtime_dict = {}
         mtime_dict = deepy.store.list_files_remote(local_paths)
         for local_path in local_paths:
@@ -273,10 +275,11 @@ class GlobLocalFileSystemTarget(Target):
         return self.mtime
 
     @staticmethod
-    def get_bulk_exists_mtime(patterns):
+    def get_bulk_exists_mtime(targets):
         """Uses the non chached mtime to retrieve mtimes in bulk.
         Just as efficient as getting the values individually
         """
+        patterns = [x.unique_id for x in targets]
         exists_mtime_dict = {}
         for pattern in patterns:
             mtime = GlobLocalFileSystemTarget.non_cached_mtime(pattern)
@@ -357,10 +360,11 @@ class S3BackedGlobLocalFileSystemTarget(GlobLocalFileSystemTarget):
         return self.mtime
 
     @staticmethod
-    def get_bulk_exists_mtime(patterns):
+    def get_bulk_exists_mtime(targets):
         """Uses the non chached mtime to retrieve mtimes in bulk.
         Just as efficient as getting the values individually
         """
+        patterns = [x.unique_id for x in targets]
         exists_mtime_dict = {}
         for pattern in patterns:
             mtime = S3BackedGlobLocalFileSystemTarget.non_cached_mtime(pattern)
