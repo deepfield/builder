@@ -51,7 +51,7 @@ class JobTest(unittest.TestCase):
             "end_time": arrow.get("2014-12-05T20:40"),
         }
 
-        expected_unique_id1 = "timestamp_expanded_job_2014-12-05-20-35"
+        expected_unique_id1 = "timestamp_expanded_job_2014-12-05-20-35-00"
 
         expected_command1 = ("timestamp expanded job tester command "
                              "%Y-%m-%d-%H-%M")
