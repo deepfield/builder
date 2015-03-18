@@ -3,6 +3,7 @@ and the build graph
 """
 
 import arrow
+import collections
 import copy
 import networkx
 
@@ -975,6 +976,12 @@ class BuildGraph(networkx.DiGraph):
                 if job.get_should_run(self):
                     should_run_list.append(job)
         return should_run_list
+
+    def get_target(self, target_id):
+        """
+        Fetch target with the given ID
+        """
+        return self.node[target_id]["object"]
 
     def get_job(self, job_id):
         """
