@@ -12,8 +12,8 @@ class JobState(object):
     """A job state is basically a job in the build graph. It is used to keep
     state on the specific job
     """
-    def __init__(self, job, unique_id, build_context,
-            cache_time, config=None, meta=None):
+    def __init__(self, job, unique_id, build_context, cache_time, config=None,
+                 meta=None, force=False):
         if config is None:
             config = {}
         if meta is None:
@@ -32,6 +32,7 @@ class JobState(object):
         self.should_run = None
         self.parents_should_not_run = None
         self.expanded_directions = {"up": False, "down": False}
+        self.force = force
 
     def __repr__(self):
         return "{}:{}".format(self.unexpanded_id, self.unique_id)
@@ -344,6 +345,9 @@ class JobState(object):
         depends on it's current state and whether or not it's ancestors
         should run
         """
+        if self.force:
+            return True
+
         should_run_immediate = self.get_should_run_immediate(build_graph,
                                                              cached=cached)
 
