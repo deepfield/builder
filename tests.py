@@ -88,11 +88,11 @@ class GraphTest(unittest.TestCase):
         graph = build_manager.make_build()
 
         # When
-        rule_dep_graph = graph.rule_dependency_graph
+        rule_dependency_graph = graph.rule_dependency_graph
 
         # Then
         for expected_edge in expected_edges:
-            for actual_edge in rule_dep_graph.edges_iter(data=True):
+            for actual_edge in rule_dependency_graph.edges_iter(data=True):
                 if expected_edge == actual_edge:
                     break
             else:
@@ -3768,7 +3768,7 @@ class GraphTest(unittest.TestCase):
         self.assertTrue(stale3)
 
     @testing.unit
-    def test_meta_in_rule_dep_graph(self):
+    def test_meta_in_rule_dependency_graph(self):
         # Given
         job1 = builder.jobs.Job(unexpanded_id="job1")
         job2 = builder.jobs.Job(unexpanded_id="job2")
@@ -3779,12 +3779,12 @@ class GraphTest(unittest.TestCase):
         build = build_manager.make_build()
 
         # When
-        rule_dep_graph = build.rule_dependency_graph
+        rule_dependency_graph = build.rule_dependency_graph
 
         # Then
-        self.assertEqual(len(rule_dep_graph.edge["job1"]), 1)
-        self.assertEqual(len(rule_dep_graph.edge["job2"]), 1)
-        self.assertIn("meta", rule_dep_graph)
+        self.assertEqual(len(rule_dependency_graph.edge["job1"]), 1)
+        self.assertEqual(len(rule_dependency_graph.edge["job2"]), 1)
+        self.assertIn("meta", rule_dependency_graph)
 
     @testing.unit
     def test_expand_meta(self):

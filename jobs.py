@@ -360,7 +360,7 @@ class JobState(object):
 
     def get_command(self, build_graph):
         """Returns the job's expanded command"""
-        unexpanded_job = (build_graph.rule_dep_graph
+        unexpanded_job = (build_graph.rule_dependency_graph
                                      .node[self.unexpanded_id]["object"])
         return unexpanded_job.get_command(self.unique_id, self.build_context,
                                           build_graph)

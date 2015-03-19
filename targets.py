@@ -24,7 +24,7 @@ class Target(object):
     to get them in bulk
 
     args:
-        unexpanded_id: The id that the file takes in the rule_dep_graph
+        unexpanded_id: The id that the file takes in the rule_dependency_graph
         unique_id: The id that this file will take in the build_graph
         build_context: The context that the node currently has, not what was
             used to expand it

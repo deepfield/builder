@@ -879,9 +879,9 @@ class BuildGraph(networkx.DiGraph):
             direction = set(["up"])
 
         # take care of meta targets
+        new_nodes = []
         if self.rule_dependency_graph.is_meta(new_job):
             meta = self.rule_dependency_graph.get_meta(new_job)
-            new_nodes = []
             job_collection = meta.get_job_collection()
             for job_id in job_collection:
                 new_nodes = new_nodes + self.add_job(job_id, build_context,
@@ -892,7 +892,6 @@ class BuildGraph(networkx.DiGraph):
         start_job = self.rule_dependency_graph.get_job(new_job)
         expanded_jobs = start_job.expand(build_context)
 
-        new_nodes = []
         current_depth = 0
         cache_set = set()
 
