@@ -874,9 +874,21 @@ class BuildGraph(networkx.DiGraph):
 
     def add_job(self, new_job, build_context, direction=None, depth=None,
                 force=False):
-        """Adds in a specific job"""
+        """Adds in a specific job and expands it using the expansion strategy
+
+        Args:
+            new_job: the job to add to the graph
+            build_context: the context to expand this job out for
+            direction: the direction to expand the graph
+            depth: the number of job nodes deep to expand
+            force: whether or not to force the new job
+
+        Returns:
+            A list of ids of nodes that are new to the graph during the adding
+            of this new job
+        """
         if direction is None:
-            direction = set(["up"])
+            direction = "up"
 
         # take care of meta targets
         new_nodes = []
