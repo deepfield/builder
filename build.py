@@ -781,7 +781,7 @@ class BuildGraph(networkx.DiGraph):
 
     def _self_expand_next_direction(self, expanded_directions, depth,
                                     current_depth, new_nodes,
-                                    cache_set, direction):
+                                    cache_set, direction, directions_to_recurse):
         """Expands out the next job nodes
 
         Args:
@@ -826,7 +826,7 @@ class BuildGraph(networkx.DiGraph):
 
         # continue expanding in the direction given
         for next_node in next_nodes:
-            self._self_expand(next_node, direction, depth, current_depth,
+            self._self_expand(next_node, directions_to_recurse, depth, current_depth,
                               new_nodes, cache_set)
         return next_nodes
 
@@ -863,14 +863,15 @@ class BuildGraph(networkx.DiGraph):
             if current_depth >= depth:
                 return
 
-        if direction == "up":
+        if "up" in direction:
+            new_direction = set(["up"])
             self._self_expand_next_direction(expanded_dependencies, depth,
                                              current_depth, new_nodes,
-                                             cache_set, direction)
-        if direction == "down":
+                                             cache_set, "up", new_direction)
+        if "down" in direction:
             self._self_expand_next_direction(expanded_targets, depth,
                                              current_depth, new_nodes,
-                                             cache_set, direction)
+                                             cache_set, "down", direction)
 
     def add_job(self, new_job, build_context, direction=None, depth=None,
                 force=False):
@@ -888,7 +889,7 @@ class BuildGraph(networkx.DiGraph):
             of this new job
         """
         if direction is None:
-            direction = "up"
+            direction = set(["up"])
 
         # take care of meta targets
         new_nodes = []
@@ -910,7 +911,7 @@ class BuildGraph(networkx.DiGraph):
         for expanded_job in expanded_jobs:
             if force:
                 expanded_job.force = True
-            self._self_expand(expanded_job, "up", depth, current_depth,
+            self._self_expand(expanded_job, direction, depth, current_depth,
                               new_nodes, cache_set)
         return new_nodes
 

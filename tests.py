@@ -3989,6 +3989,130 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(build.node["target4"]["object"].mtime, 600)
         self.assertEqual(build.node["target5"]["object"].mtime, None)
 
+    def test_expand(self):
+        # Given
+        target1 = builder.expanders.Expander(builder.targets.Target, "target1")
+        target2 = builder.expanders.Expander(builder.targets.Target, "target2")
+        target3 = builder.expanders.Expander(builder.targets.Target, "target3")
+        target4 = builder.expanders.Expander(builder.targets.Target, "target4")
+        target5 = builder.expanders.Expander(builder.targets.Target, "target5")
+        target6 = builder.expanders.Expander(builder.targets.Target, "target6")
+        target7 = builder.expanders.Expander(builder.targets.Target, "target7")
+        target8 = builder.expanders.Expander(builder.targets.Target, "target8")
+        target9 = builder.expanders.Expander(builder.targets.Target, "target9")
+        target10 = builder.expanders.Expander(builder.targets.Target,
+                                              "target10")
+        target11 = builder.expanders.Expander(builder.targets.Target,
+                                              "target11")
+        target12 = builder.expanders.Expander(builder.targets.Target,
+                                              "target12")
+        target13 = builder.expanders.Expander(builder.targets.Target,
+                                              "target13")
+        target14 = builder.expanders.Expander(builder.targets.Target,
+                                              "target14")
+
+        job1 = builder.tests_jobs.ExpandCounter(
+            "job1",
+            targets={
+                "produces": [target2]
+            }, dependencies={
+                "depends": [target1]
+            }
+        )
+        job2 = builder.tests_jobs.ExpandCounter(
+            "job2",
+            targets={
+                "produces": [target3, target4]
+            }, dependencies={
+                "depends": [target2]
+            }
+        )
+        job3 = builder.tests_jobs.ExpandCounter(
+            "job3",
+            targets={
+                "produces": [target5]
+            }, dependencies={
+                "depends": [target3, target11]
+            }
+        )
+        job4 = builder.tests_jobs.ExpandCounter(
+            "job4",
+            targets={
+                "produces": [target6]
+            }, dependencies={
+                "depends": [target4, target9]
+            }
+        )
+        job5 = builder.tests_jobs.ExpandCounter(
+            "job5",
+            targets={
+                "produces": [target7]
+            }, dependencies={
+                "depends": [target5]
+            }
+        )
+        job6 = builder.tests_jobs.ExpandCounter(
+            "job6",
+            targets={
+                "produces": [target8]
+            }, dependencies={
+                "depends": [target6]
+            }
+        )
+        job7 = builder.tests_jobs.ExpandCounter(
+            "job7",
+            targets={
+                "produces": [target9]
+            }, dependencies={
+                "depends": [target10]
+            }
+        )
+        job8 = builder.tests_jobs.ExpandCounter(
+            "job8",
+            targets={
+                "produces": [target11]
+            }, dependencies={
+                "depends": [target12]
+            }
+        )
+        job9 = builder.tests_jobs.ExpandCounter(
+            "job9",
+            targets={
+                "produces": [target13]
+            }, dependencies={
+                "depends": [target12]
+            }
+        )
+        job10 = builder.tests_jobs.ExpandCounter(
+            "job10",
+            targets={
+                "produces": [target14]
+            }, dependencies={
+                "depends": [target10]
+            }
+        )
+
+        jobs_list = [job1, job2, job3, job4, job5, job6, job7, job8, job9,
+                     job10]
+
+        build_manager = builder.build.BuildManager(jobs_list, [])
+        build = build_manager.make_build()
+
+        # When
+        build.add_job("job2", {}, direction=set(["up", "down"]))
+
+        # Then
+        self.assertEqual(job1.count, 1)
+        self.assertEqual(job2.count, 1)
+        self.assertEqual(job3.count, 1)
+        self.assertEqual(job4.count, 1)
+        self.assertEqual(job5.count, 1)
+        self.assertEqual(job6.count, 1)
+        self.assertEqual(job7.count, 1)
+        self.assertEqual(job8.count, 1)
+        self.assertEqual(job10.count, 0)
+        self.assertEqual(job10.count, 0)
+
 
 class RuleDependencyGraphTest(unittest.TestCase):
 

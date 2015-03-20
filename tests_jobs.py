@@ -2273,3 +2273,17 @@ class IgnoreProduceJob(Job):
 
 class ShouldRunFuture(TimestampExpandedJob):
     unexpanded_id = "should_run_future"
+
+class ExpandCounter(Job):
+    def __init__(self, unexpanded_id=None, cache_time=None, targets=None,
+                 dependencies=None, config=None):
+        self.count = 0
+        super(ExpandCounter, self).__init__(unexpanded_id=unexpanded_id,
+                                            cache_time=cache_time,
+                                            targets=targets,
+                                            dependencies=dependencies,
+                                            config=config)
+
+    def expand(self, build_context):
+        self.count = self.count + 1
+        return super(ExpandCounter, self).expand(build_context)
