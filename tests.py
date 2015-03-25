@@ -3811,7 +3811,7 @@ class GraphTest(unittest.TestCase):
         build = build_manager.make_build()
 
         # When
-        build.add_job("meta", {})
+        build.add_meta("meta", {})
 
         # Then
         self.assertNotIn("meta", build)
@@ -4175,6 +4175,58 @@ class RuleDependencyGraphTest(unittest.TestCase):
         self.assertEquals(8, len(targets))
         for target in targets:
             self.assertIsInstance(target, builder.expanders.Expander)
+
+    @testing.unit
+    def test_get_job_from_meta(self):
+        # Given
+        meta1 = builder.jobs.MetaTarget(
+                unexpanded_id="meta1",
+                job_collection=["meta2", "job1"])
+        meta2 = builder.jobs.MetaTarget(
+                unexpanded_id="meta2",
+                job_collection=["job2", "job3"])
+        job1 = builder.jobs.Job(
+                unexpanded_id="job1",
+                targets={
+                    "produces": [
+                        builder.expanders.Expander(
+                            builder.targets.Target,
+                            unexpanded_id="target1",
+                        )
+                    ]
+                })
+        job2 = builder.jobs.Job(
+                unexpanded_id="job2",
+                targets={
+                    "produces": [
+                        builder.expanders.Expander(
+                            builder.targets.Target,
+                            unexpanded_id="target2",
+                        )
+                    ]
+                })
+        job3 = builder.jobs.Job(
+                unexpanded_id="job3",
+                targets={
+                    "produces": [
+                        builder.expanders.Expander(
+                            builder.targets.Target,
+                            unexpanded_id="target3",
+                        )
+                    ]
+                })
+
+        rule_dependency_graph = builder.build.RuleDependencyGraph(
+                [job1, job2, job3], [meta1, meta2])
+
+        # when
+        jobs = rule_dependency_graph.get_jobs_from_meta("meta1")
+
+        # Then
+        self.assertEqual(len(jobs), 3)
+        self.assertIn("job1", jobs)
+        self.assertIn("job2", jobs)
+        self.assertIn("job3", jobs)
 
 class UtilTest(unittest.TestCase):
     def test_convert_to_timedelta(self):
