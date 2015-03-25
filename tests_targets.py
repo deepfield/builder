@@ -119,8 +119,12 @@ class LocalFileSystemTargetTest(unittest.TestCase):
     @testing.unit
     def test_get_bulk_exists_mtime(self):
         # given
-        path1 = "local_path/1"
-        path2 = "local_path/2"
+        path1_file = "local_path/1"
+        path1 = builder.targets.LocalFileSystemTarget(path1_file, path1_file,
+                                                      {})
+        path2_file = "local_path/2"
+        path2 = builder.targets.LocalFileSystemTarget(path2_file, path2_file,
+                                                      {})
 
         mtimes = {
             "local_path/1": 1
@@ -131,16 +135,16 @@ class LocalFileSystemTargetTest(unittest.TestCase):
         # when
         build_context = {}
         file1 = builder.targets.LocalFileSystemTarget(
-                path1, path1, build_context)
+                path1_file, path1_file, build_context)
 
         mtime_fetcher = file1.get_bulk_exists_mtime
 
         with mock.patch("os.stat", mock_mtime):
             mtimes_exists = mtime_fetcher([path1, path2])
-            file1_exists = mtimes_exists[path1]["exists"]
-            file2_exists = mtimes_exists[path2]["exists"]
-            file1_mtime = mtimes_exists[path1]["mtime"]
-            file2_mtime = mtimes_exists[path2]["mtime"]
+            file1_exists = mtimes_exists[path1_file]["exists"]
+            file2_exists = mtimes_exists[path2_file]["exists"]
+            file1_mtime = mtimes_exists[path1_file]["mtime"]
+            file2_mtime = mtimes_exists[path2_file]["mtime"]
 
         self.assertTrue(file1_exists)
         self.assertFalse(file2_exists)
@@ -291,19 +295,27 @@ class S3BackedLocalFileSystemTargetTest(unittest.TestCase):
     @testing.unit
     def test_get_bulk_exists_mtime(self):
         # given
-        path1 = "local_path/1"
-        path2 = "local_path/2"
-        path3 = "local_path/3"
-        path4 = "local_path/4"
+        path1_file = "local_path/1"
+        path1 = builder.targets.LocalFileSystemTarget(path1_file, path1_file,
+                                                      {})
+        path2_file = "local_path/2"
+        path2 = builder.targets.LocalFileSystemTarget(path2_file, path2_file,
+                                                      {})
+        path3_file = "local_path/3"
+        path3 = builder.targets.LocalFileSystemTarget(path3_file, path3_file,
+                                                      {})
+        path4_file = "local_path/4"
+        path4 = builder.targets.LocalFileSystemTarget(path4_file, path4_file,
+                                                      {})
 
         local_mtimes = {
-            path1: 1,
-            path2: 2,
+            path1_file: 1,
+            path2_file: 2,
         }
 
         remote_mtimes = {
-            path1: 3,
-            path4: 4,
+            path1_file: 3,
+            path4_file: 4,
         }
 
         mock_local_mtime = (LocalFileSystemTargetTest
@@ -315,21 +327,21 @@ class S3BackedLocalFileSystemTargetTest(unittest.TestCase):
         # when
         build_context = {}
         file1 = builder.targets.S3BackedLocalFileSystemTarget(
-                path1, path1, build_context)
+                path1_file, path1_file, build_context)
 
         mtime_fetcher = file1.get_bulk_exists_mtime
 
         with mock.patch("os.stat", mock_local_mtime), \
                 mock.patch("deepy.store.list_files_remote", mock_remote_mtime):
             mtimes_exists = mtime_fetcher([path1, path2, path3, path4])
-            file1_exists = mtimes_exists[path1]["exists"]
-            file2_exists = mtimes_exists[path2]["exists"]
-            file3_exists = mtimes_exists[path3]["exists"]
-            file4_exists = mtimes_exists[path4]["exists"]
-            file1_mtime = mtimes_exists[path1]["mtime"]
-            file2_mtime = mtimes_exists[path2]["mtime"]
-            file3_mtime = mtimes_exists[path3]["mtime"]
-            file4_mtime = mtimes_exists[path4]["mtime"]
+            file1_exists = mtimes_exists[path1_file]["exists"]
+            file2_exists = mtimes_exists[path2_file]["exists"]
+            file3_exists = mtimes_exists[path3_file]["exists"]
+            file4_exists = mtimes_exists[path4_file]["exists"]
+            file1_mtime = mtimes_exists[path1_file]["mtime"]
+            file2_mtime = mtimes_exists[path2_file]["mtime"]
+            file3_mtime = mtimes_exists[path3_file]["mtime"]
+            file4_mtime = mtimes_exists[path4_file]["mtime"]
 
         self.assertTrue(file1_exists)
         self.assertTrue(file2_exists)
@@ -438,11 +450,15 @@ class GlobLocalFileSystemTargetTest(unittest.TestCase):
     @testing.unit
     def test_get_bulk_exists_mtime(self):
         # given
-        glob1 = "local_path/1/*.gz"
+        glob1_pattern = "local_path/1/*.gz"
+        glob1 = builder.targets.GlobLocalFileSystemTarget(glob1_pattern,
+                                                          glob1_pattern, {})
         glob1_path1 = "local_path/1/1.gz"
         glob1_path2 = "local_path/1/2.gz"
 
-        glob2 = "local_path/2/*.gz"
+        glob2_pattern = "local_path/2/*.gz"
+        glob2 = builder.targets.GlobLocalFileSystemTarget(glob2_pattern,
+                                                          glob2_pattern, {})
 
         mtimes = {
             glob1_path1: 1,
@@ -457,17 +473,17 @@ class GlobLocalFileSystemTargetTest(unittest.TestCase):
         build_context = {}
 
         glob_target1 = builder.targets.GlobLocalFileSystemTarget(
-                glob1, glob1, build_context)
+                glob1_pattern, glob1_pattern, build_context)
 
         mtime_fetcher = glob_target1.get_bulk_exists_mtime
 
         with mock.patch("os.stat", mock_mtime), \
                 mock.patch("glob.glob", mock_glob):
                 mtimes_exists = mtime_fetcher([glob1, glob2])
-                file1_exists = mtimes_exists[glob1]["exists"]
-                file2_exists = mtimes_exists[glob2]["exists"]
-                file1_mtime = mtimes_exists[glob1]["mtime"]
-                file2_mtime = mtimes_exists[glob2]["mtime"]
+                file1_exists = mtimes_exists[glob1_pattern]["exists"]
+                file2_exists = mtimes_exists[glob2_pattern]["exists"]
+                file1_mtime = mtimes_exists[glob1_pattern]["mtime"]
+                file2_mtime = mtimes_exists[glob2_pattern]["mtime"]
 
         self.assertTrue(file1_exists)
         self.assertFalse(file2_exists)
@@ -647,28 +663,38 @@ class S3BackedGlobLocalFileSystemTargetTest(unittest.TestCase):
     def test_get_bulk_exists_mtime(self):
         # given
         # exists on both remote and local
-        glob1 = "local_path/1/*.gz"
+        glob1_pattern = "local_path/1/*.gz"
+        glob1 = builder.targets.GlobLocalFileSystemTarget(glob1_pattern,
+                                                          glob1_pattern, {})
         glob1_path1 = "local_path/1/1.gz"
         glob1_path2 = "local_path/1/2.gz"
 
         # exists on neither
-        glob2 = "local_path/2/*.gz"
+        glob2_pattern = "local_path/2/*.gz"
+        glob2 = builder.targets.GlobLocalFileSystemTarget(glob2_pattern,
+                                                          glob2_pattern, {})
 
         # exists on remote only
-        glob3 = "local_path/3/*.gz"
+        glob3_pattern = "local_path/3/*.gz"
         glob3_path1 = "local_path/3/1.gz"
         glob3_path2 = "local_path/3/2.gz"
+        glob3 = builder.targets.GlobLocalFileSystemTarget(glob3_pattern,
+                                                          glob3_pattern, {})
 
         # exists on local only
-        glob4 = "local_path/4/*.gz"
+        glob4_pattern = "local_path/4/*.gz"
         glob4_path1 = "local_path/4/1.gz"
         glob4_path2 = "local_path/4/2.gz"
+        glob4 = builder.targets.GlobLocalFileSystemTarget(glob4_pattern,
+                                                          glob4_pattern, {})
 
         # tests pattern matching correctness
-        glob5 = "local_path/*1/5*.gz"
+        glob5_pattern = "local_path/*1/5*.gz"
         glob5_path1 = "local_path/151/515.gz"
         glob5_path2 = "local_path/251/525.gz"
         close_glob5_path1 = "local_path/15/25.gz"
+        glob5 = builder.targets.GlobLocalFileSystemTarget(glob5_pattern,
+                                                          glob5_pattern, {})
 
         local_mtimes = {
             glob1_path1: 1,
@@ -700,7 +726,7 @@ class S3BackedGlobLocalFileSystemTargetTest(unittest.TestCase):
 
         glob_target1 = (builder.targets
                 .S3BackedGlobLocalFileSystemTarget(
-                        glob1, glob1, build_context))
+                        glob1_pattern, glob1_pattern, build_context))
 
         mtime_fetcher = glob_target1.get_bulk_exists_mtime
 
@@ -710,16 +736,16 @@ class S3BackedGlobLocalFileSystemTargetTest(unittest.TestCase):
                 mock.patch("glob.glob", mock_glob):
                 mtimes_exists = mtime_fetcher([glob1, glob2, glob3,
                         glob4, glob5])
-                glob1_exists = mtimes_exists[glob1]["exists"]
-                glob2_exists = mtimes_exists[glob2]["exists"]
-                glob3_exists = mtimes_exists[glob3]["exists"]
-                glob4_exists = mtimes_exists[glob4]["exists"]
-                glob5_exists = mtimes_exists[glob5]["exists"]
-                glob1_mtime = mtimes_exists[glob1]["mtime"]
-                glob2_mtime = mtimes_exists[glob2]["mtime"]
-                glob3_mtime = mtimes_exists[glob3]["mtime"]
-                glob4_mtime = mtimes_exists[glob4]["mtime"]
-                glob5_mtime = mtimes_exists[glob5]["mtime"]
+                glob1_exists = mtimes_exists[glob1_pattern]["exists"]
+                glob2_exists = mtimes_exists[glob2_pattern]["exists"]
+                glob3_exists = mtimes_exists[glob3_pattern]["exists"]
+                glob4_exists = mtimes_exists[glob4_pattern]["exists"]
+                glob5_exists = mtimes_exists[glob5_pattern]["exists"]
+                glob1_mtime = mtimes_exists[glob1_pattern]["mtime"]
+                glob2_mtime = mtimes_exists[glob2_pattern]["mtime"]
+                glob3_mtime = mtimes_exists[glob3_pattern]["mtime"]
+                glob4_mtime = mtimes_exists[glob4_pattern]["mtime"]
+                glob5_mtime = mtimes_exists[glob5_pattern]["mtime"]
 
         self.assertTrue(glob1_exists)
         self.assertFalse(glob2_exists)

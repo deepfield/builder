@@ -42,12 +42,12 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_expand_10s(self):
         # Given
-        build = builder.build.BuildGraph([TenSecondJob()])
+        build_manager = builder.build.BuildManager([TenSecondJob()], [])
+        build = build_manager.make_build()
 
         # When
-        build.construct_build_graph({'start_time': arrow.get("2015-01-01T00:00:00+00:00"),
-                                     'end_time': arrow.get("2015-01-01T00:01:00+00:00"),
-                                     'start_job': 'test_second_job'})
+        build.add_job("test_second_job", {'start_time': arrow.get("2015-01-01T00:00:00+00:00"),
+                                     'end_time': arrow.get("2015-01-01T00:01:00+00:00")})
 
         # Then
         self.assertEquals(len(build.node), 6)
@@ -97,15 +97,15 @@ class GraphTest(unittest.TestCase):
              {"label": "produces"}),
         )
 
-        graph = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        graph = build_manager.make_build()
 
         # When
-        graph.construct_rule_dependency_graph()
-        rule_dep_graph = graph.rule_dep_graph
+        rule_dependency_graph = graph.rule_dependency_graph
 
         # Then
         for expected_edge in expected_edges:
-            for actual_edge in rule_dep_graph.edges_iter(data=True):
+            for actual_edge in rule_dependency_graph.edges_iter(data=True):
                 if expected_edge == actual_edge:
                     break
             else:
@@ -133,12 +133,10 @@ class GraphTest(unittest.TestCase):
         build_context1 = {
                 "start_time": start_time,
                 "end_time": end_time,
-                "start_job": start_job1
         }
         build_context2 = {
                 "start_time": start_time,
                 "end_time": end_time,
-                "start_job": start_job2
         }
 
         node1_id = "build_graph_construction_job_top_01_2014-12-05-10-30-00"
@@ -166,10 +164,11 @@ class GraphTest(unittest.TestCase):
         expected_number_of_targets5 = 12
 
         # When
-        build = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
 
-        build.construct_build_graph(build_context1)
-        build.construct_build_graph(build_context2)
+        build.add_job(start_job1, build_context1)
+        build.add_job(start_job2, build_context2)
 
         build_graph = build
 
@@ -277,16 +276,17 @@ class GraphTest(unittest.TestCase):
         build_context1 = {
                 "start_time": arrow.get("2014-12-05T10:50"),
                 "end_time": arrow.get("2014-12-05T10:55"),
-                "start_job": "backbone_dependant_bottom_job",
         }
         build_context2 = {
                 "start_time": arrow.get("2014-12-05T10:50"),
                 "end_time": arrow.get("2014-12-05T10:55"),
-                "start_job": "backbone_dependant_bottom_job",
         }
 
-        build1 = builder.build.BuildGraph(jobs1, config=config1)
-        build2 = builder.build.BuildGraph(jobs2, config=config2)
+        build_manager1 = builder.build.BuildManager(jobs1, [], config=config1)
+        build_manager2 = builder.build.BuildManager(jobs2, [], config=config2)
+
+        build1 = build_manager1.make_build()
+        build2 = build_manager2.make_build()
 
         expected_build_count1 = 18
         expected_build_count2 = 10
@@ -297,8 +297,8 @@ class GraphTest(unittest.TestCase):
         top_node_02 = "backbone_dependant_top_job_02"
 
         # When
-        build1.construct_build_graph(build_context1)
-        build2.construct_build_graph(build_context2)
+        build1.add_job("backbone_dependant_bottom_job", build_context1)
+        build2.add_job("backbone_dependant_bottom_job", build_context2)
 
         build_count1 = len(build1.nodes())
         build_count2 = len(build2.nodes())
@@ -329,10 +329,10 @@ class GraphTest(unittest.TestCase):
         build_context = {
            "start_time": arrow.get("2014-12-05T10:50"),
            "end_time": arrow.get("2014-12-05T10:55"),
-           "start_job": "diamond_redundant_bottom_job",
         }
 
-        build = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
 
         expected_call_count1 = 1
         expected_call_count2 = 1
@@ -341,18 +341,18 @@ class GraphTest(unittest.TestCase):
         expected_call_count5 = 1
 
         # When
-        build.construct_build_graph(build_context)
+        build.add_job("diamond_redundant_bottom_job", build_context)
         call_count1 = (DiamondRedundancyTopJobTester.count)
         call_count2 = (DiamondRedundancyHighestJobTester.count)
-        call_count3 = (build.rule_dep_graph.node
+        call_count3 = (build.rule_dependency_graph.node
                 ["diamond_redundancy_top_target"]
                 ["object"]
                 .count)
-        call_count4 = (build.rule_dep_graph.node
+        call_count4 = (build.rule_dependency_graph.node
                 ["diamond_redundancy_highest_target"]
                 ["object"]
                 .count)
-        call_count5 = (build.rule_dep_graph.node
+        call_count5 = (build.rule_dependency_graph.node
                 ["diamond_redundancy_super_target"]
                 ["object"]
                 .count)
@@ -379,30 +379,30 @@ class GraphTest(unittest.TestCase):
         build_context1 = {
             "start_time": arrow.get("2014-12-05T10:50"),
             "end_time": arrow.get("2014-12-05T10:50"),
-            "start_job": "stale_standard_job", # StaleStandardJobTester,
         }
 
         build_context2 = {
             "start_time": arrow.get("2014-12-05T10:50"),
             "end_time": arrow.get("2014-12-05T10:50"),
-            "start_job": "stale_ignore_mtime_job", # StaleIgnoreMtimeJobTester,
         }
 
-        build1 = builder.build.BuildGraph(jobs1)
-        build2 = builder.build.BuildGraph(jobs1)
-        build3 = builder.build.BuildGraph(jobs1)
-        build4 = builder.build.BuildGraph(jobs1)
-        build5 = builder.build.BuildGraph(jobs1)
-        build6 = builder.build.BuildGraph(jobs2)
-        build7 = builder.build.BuildGraph(jobs2)
+        build_manager1 = builder.build.BuildManager(jobs1, [])
+        build_manager2 = builder.build.BuildManager(jobs2, [])
+        build1 = build_manager1.make_build()
+        build2 = build_manager1.make_build()
+        build3 = build_manager1.make_build()
+        build4 = build_manager1.make_build()
+        build5 = build_manager1.make_build()
+        build6 = build_manager2.make_build()
+        build7 = build_manager2.make_build()
 
-        build1.construct_build_graph(copy.deepcopy(build_context1))
-        build2.construct_build_graph(copy.deepcopy(build_context1))
-        build3.construct_build_graph(copy.deepcopy(build_context1))
-        build4.construct_build_graph(copy.deepcopy(build_context1))
-        build5.construct_build_graph(copy.deepcopy(build_context1))
-        build6.construct_build_graph(copy.deepcopy(build_context2))
-        build7.construct_build_graph(copy.deepcopy(build_context2))
+        build1.add_job("stale_standard_job", build_context1)
+        build2.add_job("stale_standard_job", build_context1)
+        build3.add_job("stale_standard_job", build_context1)
+        build4.add_job("stale_standard_job", build_context1)
+        build5.add_job("stale_standard_job", build_context1)
+        build6.add_job("stale_ignore_mtime_job", build_context2)
+        build7.add_job("stale_ignore_mtime_job", build_context2)
 
         # all deps, all targets, all deps are older than targets
         expected_stale1 = False
@@ -766,15 +766,16 @@ class GraphTest(unittest.TestCase):
             "start_job": "stale_alternate_bottom_job", # StaleAlternateBottomJobTester,
         }
 
-        build1 = builder.build.BuildGraph(jobs1)
-        build2 = builder.build.BuildGraph(jobs1)
-        build3 = builder.build.BuildGraph(jobs1)
-        build4 = builder.build.BuildGraph(jobs1)
+        build_manager = builder.build.BuildManager(jobs1, [])
+        build1 = build_manager.make_build()
+        build2 = build_manager.make_build()
+        build3 = build_manager.make_build()
+        build4 = build_manager.make_build()
 
-        build1.construct_build_graph(copy.deepcopy(build_context1))
-        build2.construct_build_graph(copy.deepcopy(build_context1))
-        build3.construct_build_graph(copy.deepcopy(build_context1))
-        build4.construct_build_graph(copy.deepcopy(build_context1))
+        build1.add_job("stale_alternate_bottom_job", build_context1)
+        build2.add_job("stale_alternate_bottom_job", build_context1)
+        build3.add_job("stale_alternate_bottom_job", build_context1)
+        build4.add_job("stale_alternate_bottom_job", build_context1)
 
         # All alternates exist and are stale but the targets are not
         expected_stale1 = False
@@ -1111,18 +1112,18 @@ class GraphTest(unittest.TestCase):
         build_context1 = {
             "start_time": arrow.get("2014-12-05T10:50"),
             "end_time": arrow.get("2014-12-05T10:50"),
-            "start_job": "stale_alternate_update_bottom_job", # StaleAlternateUpdateBottomJobTester,
         }
 
-        build1 = builder.build.BuildGraph(jobs1)
-        build2 = builder.build.BuildGraph(jobs1)
-        build3 = builder.build.BuildGraph(jobs1)
-        build4 = builder.build.BuildGraph(jobs1)
+        build_manager = builder.build.BuildManager(jobs1, [])
+        build1 = build_manager.make_build()
+        build2 = build_manager.make_build()
+        build3 = build_manager.make_build()
+        build4 = build_manager.make_build()
 
-        build1.construct_build_graph(copy.deepcopy(build_context1))
-        build2.construct_build_graph(copy.deepcopy(build_context1))
-        build3.construct_build_graph(copy.deepcopy(build_context1))
-        build4.construct_build_graph(copy.deepcopy(build_context1))
+        build1.add_job("stale_alternate_update_bottom_job", build_context1)
+        build2.add_job("stale_alternate_update_bottom_job", build_context1)
+        build3.add_job("stale_alternate_update_bottom_job", build_context1)
+        build4.add_job("stale_alternate_update_bottom_job", build_context1)
 
         # All alternate_updates exist and are stale but the targets are not
         # All targets exist
@@ -1493,19 +1494,21 @@ class GraphTest(unittest.TestCase):
             "start_job": "buildable_job", # BuildableJobTester,
         }
 
-        build1 = builder.build.BuildGraph(jobs1)
-        build2 = builder.build.BuildGraph(jobs1)
-        build3 = builder.build.BuildGraph(jobs1)
-        build4 = builder.build.BuildGraph(jobs1)
-        build5 = builder.build.BuildGraph(jobs1)
-        build6 = builder.build.BuildGraph(jobs1)
+        build_manager = builder.build.BuildManager(jobs1, [])
 
-        build1.construct_build_graph(copy.deepcopy(build_context1))
-        build2.construct_build_graph(copy.deepcopy(build_context1))
-        build3.construct_build_graph(copy.deepcopy(build_context1))
-        build4.construct_build_graph(copy.deepcopy(build_context1))
-        build5.construct_build_graph(copy.deepcopy(build_context1))
-        build6.construct_build_graph(copy.deepcopy(build_context1))
+        build1 = build_manager.make_build()
+        build2 = build_manager.make_build()
+        build3 = build_manager.make_build()
+        build4 = build_manager.make_build()
+        build5 = build_manager.make_build()
+        build6 = build_manager.make_build()
+
+        build1.add_job("buildable_job", build_context1)
+        build2.add_job("buildable_job", build_context1)
+        build3.add_job("buildable_job", build_context1)
+        build4.add_job("buildable_job", build_context1)
+        build5.add_job("buildable_job", build_context1)
+        build6.add_job("buildable_job", build_context1)
 
         # depends 15 minute not met
         expected_buildable1 = False
@@ -1849,20 +1852,20 @@ class GraphTest(unittest.TestCase):
         build_context1 = {
             "start_time": arrow.get("2014-12-05T10:55"),
             "end_time": arrow.get("2014-12-05T10:55"),
-            "start_job": "past_cache_time_job", # PastCacheTimeJobTester,
         }
 
         jobs1 = [
             PastCacheTimeJobTester(),
         ]
 
-        build1 = builder.build.BuildGraph(jobs1)
-        build2 = builder.build.BuildGraph(jobs1)
-        build3 = builder.build.BuildGraph(jobs1)
+        build_manager = builder.build.BuildManager(jobs1, [])
+        build1 = build_manager.make_build()
+        build2 = build_manager.make_build()
+        build3 = build_manager.make_build()
 
-        build1.construct_build_graph(copy.deepcopy(build_context1))
-        build2.construct_build_graph(copy.deepcopy(build_context1))
-        build3.construct_build_graph(copy.deepcopy(build_context1))
+        build1.add_job("past_cache_time_job", build_context1)
+        build2.add_job("past_cache_time_job", build_context1)
+        build3.add_job("past_cache_time_job", build_context1)
 
         # a target doesn't exist
         expected_past_cache_time1 = True
@@ -1966,18 +1969,19 @@ class GraphTest(unittest.TestCase):
         build_context1 = {
             "start_time": "2014-12-05T10:55",
             "end_time": "2014-12-05T10:55",
-            "start_job": "all_dependencies_job", # AllDependenciesJobTester,
         }
 
-        build1 = builder.build.BuildGraph(jobs1)
-        build2 = builder.build.BuildGraph(jobs1)
-        build3 = builder.build.BuildGraph(jobs1)
-        build4 = builder.build.BuildGraph(jobs1)
+        build_manager = builder.build.BuildManager(jobs1, [])
 
-        build1.construct_build_graph(copy.deepcopy(build_context1))
-        build2.construct_build_graph(copy.deepcopy(build_context1))
-        build3.construct_build_graph(copy.deepcopy(build_context1))
-        build4.construct_build_graph(copy.deepcopy(build_context1))
+        build1 = build_manager.make_build()
+        build2 = build_manager.make_build()
+        build3 = build_manager.make_build()
+        build4 = build_manager.make_build()
+
+        build1.add_job("all_dependencies_job", build_context1)
+        build2.add_job("all_dependencies_job", build_context1)
+        build3.add_job("all_dependencies_job", build_context1)
+        build4.add_job("all_dependencies_job", build_context1)
 
         # all dependencies
         expected_all_dependencies1 = True
@@ -2462,27 +2466,28 @@ class GraphTest(unittest.TestCase):
             "start_job": "should_run_recurse_job_10", # ShouldRunRecurseJob10Tester,
         }
 
-        build1 = builder.build.BuildGraph(jobs1)
-        build2 = builder.build.BuildGraph(jobs1)
-        build3 = builder.build.BuildGraph(jobs1)
-        build4 = builder.build.BuildGraph(jobs1)
-        build5 = builder.build.BuildGraph(jobs1)
-        build6 = builder.build.BuildGraph(jobs1)
-        build7 = builder.build.BuildGraph(jobs1)
-        build8 = builder.build.BuildGraph(jobs1)
-        build9 = builder.build.BuildGraph(jobs1)
-        build10 = builder.build.BuildGraph(jobs1)
+        build_manager = builder.build.BuildManager(jobs1, [])
+        build1 = build_manager.make_build()
+        build2 = build_manager.make_build()
+        build3 = build_manager.make_build()
+        build4 = build_manager.make_build()
+        build5 = build_manager.make_build()
+        build6 = build_manager.make_build()
+        build7 = build_manager.make_build()
+        build8 = build_manager.make_build()
+        build9 = build_manager.make_build()
+        build10 = build_manager.make_build()
 
-        build1.construct_build_graph(copy.deepcopy(build_context1))
-        build2.construct_build_graph(copy.deepcopy(build_context1))
-        build3.construct_build_graph(copy.deepcopy(build_context1))
-        build4.construct_build_graph(copy.deepcopy(build_context1))
-        build5.construct_build_graph(copy.deepcopy(build_context1))
-        build6.construct_build_graph(copy.deepcopy(build_context1))
-        build7.construct_build_graph(copy.deepcopy(build_context1))
-        build8.construct_build_graph(copy.deepcopy(build_context1))
-        build9.construct_build_graph(copy.deepcopy(build_context1))
-        build10.construct_build_graph(copy.deepcopy(build_context1))
+        build1.add_job("should_run_recurse_job_10", build_context1)
+        build2.add_job("should_run_recurse_job_10", build_context1)
+        build3.add_job("should_run_recurse_job_10", build_context1)
+        build4.add_job("should_run_recurse_job_10", build_context1)
+        build5.add_job("should_run_recurse_job_10", build_context1)
+        build6.add_job("should_run_recurse_job_10", build_context1)
+        build7.add_job("should_run_recurse_job_10", build_context1)
+        build8.add_job("should_run_recurse_job_10", build_context1)
+        build9.add_job("should_run_recurse_job_10", build_context1)
+        build10.add_job("should_run_recurse_job_10", build_context1)
 
         expected_parents_should_not_run1 = True
         expected_parents_should_not_run2 = True
@@ -2567,12 +2572,12 @@ class GraphTest(unittest.TestCase):
                 GetStartingJobs03Tester(),
                 GetStartingJobs04Tester()]
 
-        build1 = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        build1 = build_manager.make_build()
 
         build_context = {}
         for job in jobs:
-            build_context["start_job"] = job.unexpanded_id
-            build1.construct_build_graph(copy.deepcopy(build_context))
+            build1.add_job(job.unexpanded_id, copy.deepcopy(build_context))
 
         expected_starting_jobs = [
                 (build1.node
@@ -2624,13 +2629,13 @@ class GraphTest(unittest.TestCase):
             UpdateLowerNodesShouldRunMiddle02(),
         ]
 
-        build = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
 
         build_context = {
-                "start_job": "update_lower_nodes_should_run_lowest", # UpdateLowerNodesShouldRunLowest,
         }
 
-        build.construct_build_graph(build_context)
+        build.add_job("update_lower_nodes_should_run_lowest", build_context)
 
         top_job = (build.node
             ["update_lower_nodes_should_run_top"]
@@ -2731,13 +2736,10 @@ class GraphTest(unittest.TestCase):
             GetNextJobsToRunMiddle02(),
         ]
 
-        build = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
 
-        build_context = {
-                "start_job": "get_next_jobs_to_run_lowest", # GetNextJobsToRunLowest,
-        }
-
-        build.construct_build_graph(build_context)
+        build.add_job("get_next_jobs_to_run_lowest", {})
 
         top_job = (build.node
                 ["get_next_jobs_to_run_top"]
@@ -2830,13 +2832,13 @@ class GraphTest(unittest.TestCase):
             UpdateJobCacheBottom(),
         ]
 
-        build = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
 
         build_context = {
-                "start_job": "update_job_cache_bottom", # UpdateJobCacheBottom,
         }
 
-        build.construct_build_graph(build_context)
+        build.add_job("update_job_cache_bottom", build_context)
 
         mtime_dict = {
                 "update_job_cache_top_01_target": None,
@@ -3025,14 +3027,14 @@ class GraphTest(unittest.TestCase):
         ]
 
         build_context = {
-                "start_job": "test_expand_exact_middle", # ExpandExactMiddle,
-                "exact": True,
         }
 
-        build = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+
+        build = build_manager.make_build()
 
         # When
-        build.construct_build_graph(build_context)
+        build.add_job("test_expand_exact_middle", build_context, depth=1)
 
         # Then
         self.assertEqual(len(build.node), 4)
@@ -3048,31 +3050,30 @@ class GraphTest(unittest.TestCase):
         ]
 
         build_context = {
-                "start_time": arrow.get("2014-12-05-11-45"),
-                "end_time": arrow.get("2014-12-05-12-00"),
-                "force": True,
-                "start_job": "force_build_bottom", # ForceBuildBottom,
-                "depth": 2,
+                "start_time": arrow.get("2014-12-05T11:45"),
+                "end_time": arrow.get("2014-12-05T12:15"),
         }
 
-        build = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
 
         # When
-        build.construct_build_graph(build_context)
+        build.add_job("force_build_bottom", build_context, force=True, depth=2)
 
         # Then
         count = 0
+        build.write_dot("graph.dot")
         for node_id, node in build.node.iteritems():
             if node.get("object") is None:
                 continue
             if not isinstance(node["object"], builder.jobs.JobState):
                 continue
-            if "top" in node_id:
+            if "force_build_bottom" in node_id:
                 count = count + 1
-                self.assertTrue(node["object"].build_context.get("force", False))
+                self.assertTrue(node["object"].force)
             else:
                 self.assertFalse(node["object"].build_context.get("force", False))
-        self.assertEqual(count, 15)
+        self.assertEqual(count, 2)
 
     @testing.unit
     def test_update_target_cache(self):
@@ -3085,13 +3086,13 @@ class GraphTest(unittest.TestCase):
             UpdateTargetCacheTop(),
         ]
 
-        build = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
 
         build_context = {
-                "start_job": "update_target_cache_bottom", # UpdateTargetCacheBottom,
         }
 
-        build.construct_build_graph(build_context)
+        build.add_job("update_target_cache_bottom", build_context)
 
         mtime_dict = {
                 "update_target_cache_top_01_target": None,
@@ -3277,13 +3278,10 @@ class GraphTest(unittest.TestCase):
             UpdateJobCacheBottom(),
         ]
 
-        build = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
 
-        build_context = {
-                "start_job": "update_job_cache_bottom", # UpdateJobCacheBottom,
-        }
-
-        build.construct_build_graph(build_context)
+        build.add_job("update_job_cache_bottom", {})
 
         mtime_dict = {
                 "update_job_cache_top_01_target": None,
@@ -3480,13 +3478,13 @@ class GraphTest(unittest.TestCase):
             UpdateTargetCacheTop(),
         ]
 
-        build = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
 
         build_context = {
-                "start_job": "update_target_cache_bottom", # UpdateTargetCacheBottom,
         }
 
-        build.construct_build_graph(build_context)
+        build.add_job("update_target_cache_bottom", build_context)
 
         mtime_dict = {
                 "update_target_cache_top_01_target": None,
@@ -3673,28 +3671,22 @@ class GraphTest(unittest.TestCase):
             IgnoreProduceJob()
         ]
 
-        build1 = builder.build.BuildGraph(jobs)
-        build2 = builder.build.BuildGraph(jobs)
-        build3 = builder.build.BuildGraph(jobs)
-        build4 = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        build1 = build_manager.make_build()
+        build2 = build_manager.make_build()
+        build3 = build_manager.make_build()
+        build4 = build_manager.make_build()
 
-        build_context1 = {
-            "start_job": "ignore_produce_job",
-        }
-        build_context2 = {
-            "start_job": "ignore_produce_job",
-        }
-        build_context3 = {
-            "start_job": "ignore_produce_job",
-        }
-        build_context4 = {
-            "start_job": "ignore_produce_job",
-        }
+        build_context1 = "ignore_produce_job"
+        build_context2 = "ignore_produce_job"
+        build_context3 = "ignore_produce_job"
+        build_context4 = "ignore_produce_job"
 
-        build1.construct_build_graph(build_context1);
-        build2.construct_build_graph(build_context2);
-        build3.construct_build_graph(build_context3);
-        build4.construct_build_graph(build_context4);
+
+        build1.add_job(build_context1, {})
+        build2.add_job(build_context2, {})
+        build3.add_job(build_context3, {})
+        build4.add_job(build_context4, {})
 
         expected_stale1 = True
         build1.node["ignore_produce_ignore_target"]["object"].exists = False
@@ -3761,15 +3753,16 @@ class GraphTest(unittest.TestCase):
         job3 = builder.jobs.Job(unexpanded_id="job_with_no_targets",
                                 targets=targets3)
 
-        build1 = builder.build.BuildGraph([job1])
-        build2 = builder.build.BuildGraph([job2])
-        build3 = builder.build.BuildGraph([job3])
+        build_manager1 = builder.build.BuildManager([job1], [])
+        build_manager2 = builder.build.BuildManager([job2], [])
+        build_manager3 = builder.build.BuildManager([job3], [])
+        build1 = build_manager1.make_build()
+        build2 = build_manager2.make_build()
+        build3 = build_manager3.make_build()
 
-        build2.construct_rule_dependency_graph()
-
-        build1.construct_build_graph({"start_job": "job_with_no_targets"})
-        build2.construct_build_graph({"start_job": "job_with_no_targets"})
-        build3.construct_build_graph({"start_job": "job_with_no_targets"})
+        build1.add_job("job_with_no_targets", {})
+        build2.add_job("job_with_no_targets", {})
+        build3.add_job("job_with_no_targets", {})
 
         job_state1 = build1.node["job_with_no_targets"]["object"]
         job_state2 = build2.node["job_with_no_targets"]["object"]
@@ -3792,24 +3785,23 @@ class GraphTest(unittest.TestCase):
         self.assertTrue(stale3)
 
     @testing.unit
-    def test_meta_in_rule_dep_graph(self):
+    def test_meta_in_rule_dependency_graph(self):
         # Given
         job1 = builder.jobs.Job(unexpanded_id="job1")
         job2 = builder.jobs.Job(unexpanded_id="job2")
         meta = builder.jobs.MetaTarget(unexpanded_id="meta",
                                        job_collection=["job1", "job2"])
 
-        build = builder.build.BuildGraph([job1, job2], metas=[meta])
+        build_manager = builder.build.BuildManager([job1, job2], [meta])
+        build = build_manager.make_build()
 
         # When
-        build.construct_rule_dependency_graph()
-        rule_dep_graph = build.rule_dep_graph
+        rule_dependency_graph = build.rule_dependency_graph
 
         # Then
-        build.rule_dep_graph.write_dot("graph.dot")
-        self.assertEqual(len(rule_dep_graph.edge["job1"]), 1)
-        self.assertEqual(len(rule_dep_graph.edge["job2"]), 1)
-        self.assertIn("meta", rule_dep_graph)
+        self.assertEqual(len(rule_dependency_graph.edge["job1"]), 1)
+        self.assertEqual(len(rule_dependency_graph.edge["job2"]), 1)
+        self.assertIn("meta", rule_dependency_graph)
 
     @testing.unit
     def test_expand_meta(self):
@@ -3819,10 +3811,11 @@ class GraphTest(unittest.TestCase):
         meta = builder.jobs.MetaTarget(unexpanded_id="meta",
                                        job_collection=["job1", "job2"])
 
-        build = builder.build.BuildGraph([job1, job2], metas=[meta])
+        build_manager = builder.build.BuildManager([job1, job2], [meta])
+        build = build_manager.make_build()
 
         # When
-        build.construct_build_graph({"start_job": "meta"})
+        build.add_job("meta", {})
 
         # Then
         self.assertNotIn("meta", build)
@@ -3883,26 +3876,24 @@ class GraphTest(unittest.TestCase):
         build_context1 = {
                 "start_time": start_time,
                 "end_time": end_time,
-                "start_job": start_job1
         }
         build_context2 = {
                 "start_time": start_time,
                 "end_time": end_time,
-                "start_job": start_job2
         }
 
         # When
-        build = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
 
-        new_nodes1 = set([])
-        new_nodes2 = set([])
-        build.construct_build_graph(build_context1, new_nodes=new_nodes1)
-        build.construct_build_graph(build_context2, new_nodes=new_nodes2)
+        new_nodes1 = build.add_job(start_job1, build_context1)
+        new_nodes2 = build.add_job(start_job2, build_context2)
 
         # Then
         self.assertEqual(len(new_nodes1), 6)
         self.assertEqual(len(new_nodes2), 3)
 
+    @testing.unit
     def test_should_run_future(self):
         # Given
         job1 = builder.tests_jobs.ShouldRunFuture()
@@ -3910,23 +3901,22 @@ class GraphTest(unittest.TestCase):
         build_context1 = {
             "start_time": arrow.get("300"),
             "end_time": arrow.get("300"),
-            "start_job": "should_run_future",
         }
 
         build_context2 = {
             "start_time": arrow.get("99"),
             "end_time": arrow.get("99"),
-            "start_job": "should_run_future",
         }
 
-        build1 = builder.build.BuildGraph([job1])
-        build2 = builder.build.BuildGraph([job1])
+        build_manager = builder.build.BuildManager([job1], [])
+        build1 = build_manager.make_build()
+        build2 = build_manager.make_build()
 
         expected_should_run1 = False
         expected_should_run2 = True
 
-        build1 = build1.construct_build_graph(build_context1)
-        build2 = build1.construct_build_graph(build_context2)
+        build1.add_job("should_run_future", build_context1)
+        build2.add_job("should_run_future", build_context2)
 
 
         node1 = build1.node["should_run_future_1970-01-01-00-05-00"]["object"]
@@ -3955,7 +3945,8 @@ class GraphTest(unittest.TestCase):
 
     @testing.unit
     def test_filter_target_ids(self):
-        build = builder.build.BuildGraph(jobs=[])
+        build_manager = builder.build.BuildManager([], [])
+        build = build_manager.make_build()
 
         build.add_node(builder.targets.Target("", "target1", {}))
         build.add_node(builder.targets.Target("", "target2", {}))
@@ -3971,7 +3962,8 @@ class GraphTest(unittest.TestCase):
 
     @testing.unit
     def test_update_targets(self):
-        build = builder.build.BuildGraph(jobs=[])
+        build_manager = builder.build.BuildManager([], [])
+        build = build_manager.make_build()
 
         target1 = builder.targets.LocalFileSystemTarget("", "target1", {})
         target2 = builder.targets.LocalFileSystemTarget("", "target2", {})
@@ -4014,6 +4006,129 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(build.node["target4"]["object"].mtime, 600)
         self.assertEqual(build.node["target5"]["object"].mtime, None)
 
+    def test_expand(self):
+        # Given
+        target1 = builder.expanders.Expander(builder.targets.Target, "target1")
+        target2 = builder.expanders.Expander(builder.targets.Target, "target2")
+        target3 = builder.expanders.Expander(builder.targets.Target, "target3")
+        target4 = builder.expanders.Expander(builder.targets.Target, "target4")
+        target5 = builder.expanders.Expander(builder.targets.Target, "target5")
+        target6 = builder.expanders.Expander(builder.targets.Target, "target6")
+        target7 = builder.expanders.Expander(builder.targets.Target, "target7")
+        target8 = builder.expanders.Expander(builder.targets.Target, "target8")
+        target9 = builder.expanders.Expander(builder.targets.Target, "target9")
+        target10 = builder.expanders.Expander(builder.targets.Target,
+                                              "target10")
+        target11 = builder.expanders.Expander(builder.targets.Target,
+                                              "target11")
+        target12 = builder.expanders.Expander(builder.targets.Target,
+                                              "target12")
+        target13 = builder.expanders.Expander(builder.targets.Target,
+                                              "target13")
+        target14 = builder.expanders.Expander(builder.targets.Target,
+                                              "target14")
+
+        job1 = builder.tests_jobs.ExpandCounter(
+            "job1",
+            targets={
+                "produces": [target2]
+            }, dependencies={
+                "depends": [target1]
+            }
+        )
+        job2 = builder.tests_jobs.ExpandCounter(
+            "job2",
+            targets={
+                "produces": [target3, target4]
+            }, dependencies={
+                "depends": [target2]
+            }
+        )
+        job3 = builder.tests_jobs.ExpandCounter(
+            "job3",
+            targets={
+                "produces": [target5]
+            }, dependencies={
+                "depends": [target3, target11]
+            }
+        )
+        job4 = builder.tests_jobs.ExpandCounter(
+            "job4",
+            targets={
+                "produces": [target6]
+            }, dependencies={
+                "depends": [target4, target9]
+            }
+        )
+        job5 = builder.tests_jobs.ExpandCounter(
+            "job5",
+            targets={
+                "produces": [target7]
+            }, dependencies={
+                "depends": [target5]
+            }
+        )
+        job6 = builder.tests_jobs.ExpandCounter(
+            "job6",
+            targets={
+                "produces": [target8]
+            }, dependencies={
+                "depends": [target6]
+            }
+        )
+        job7 = builder.tests_jobs.ExpandCounter(
+            "job7",
+            targets={
+                "produces": [target9]
+            }, dependencies={
+                "depends": [target10]
+            }
+        )
+        job8 = builder.tests_jobs.ExpandCounter(
+            "job8",
+            targets={
+                "produces": [target11]
+            }, dependencies={
+                "depends": [target12]
+            }
+        )
+        job9 = builder.tests_jobs.ExpandCounter(
+            "job9",
+            targets={
+                "produces": [target13]
+            }, dependencies={
+                "depends": [target12]
+            }
+        )
+        job10 = builder.tests_jobs.ExpandCounter(
+            "job10",
+            targets={
+                "produces": [target14]
+            }, dependencies={
+                "depends": [target10]
+            }
+        )
+
+        jobs_list = [job1, job2, job3, job4, job5, job6, job7, job8, job9,
+                     job10]
+
+        build_manager = builder.build.BuildManager(jobs_list, [])
+        build = build_manager.make_build()
+
+        # When
+        build.add_job("job2", {}, direction=set(["up", "down"]))
+
+        # Then
+        self.assertEqual(job1.count, 1)
+        self.assertEqual(job2.count, 1)
+        self.assertEqual(job3.count, 1)
+        self.assertEqual(job4.count, 1)
+        self.assertEqual(job5.count, 1)
+        self.assertEqual(job6.count, 1)
+        self.assertEqual(job7.count, 1)
+        self.assertEqual(job8.count, 1)
+        self.assertEqual(job10.count, 0)
+        self.assertEqual(job10.count, 0)
 
 class RuleDependencyGraphTest(unittest.TestCase):
 
@@ -4023,9 +4138,10 @@ class RuleDependencyGraphTest(unittest.TestCase):
             RuleDepConstructionJobTop02Tester(),
         ]
 
-        graph = builder.build.BuildGraph(jobs)
+        build_manager = builder.build.BuildManager(jobs, [])
+        graph = build_manager.make_build()
 
-        return graph.rule_dep_graph
+        return graph.rule_dependency_graph
 
     @testing.unit
     def test_get_job(self):

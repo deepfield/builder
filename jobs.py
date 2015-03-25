@@ -12,8 +12,8 @@ class JobState(object):
     """A job state is basically a job in the build graph. It is used to keep
     state on the specific job
     """
-    def __init__(self, job, unique_id, build_context,
-            cache_time, config=None, meta=None):
+    def __init__(self, job, unique_id, build_context, cache_time, config=None,
+                 meta=None, force=False):
         if config is None:
             config = {}
         if meta is None:
@@ -32,6 +32,7 @@ class JobState(object):
         self.should_run = None
         self.parents_should_not_run = None
         self.expanded_directions = {"up": False, "down": False}
+        self.force = force
 
     def __repr__(self):
         return "{}:{}".format(self.unexpanded_id, self.unique_id)
@@ -318,7 +319,7 @@ class JobState(object):
         """Returns whether or not the node should run not caring about the
         ancestors should run status
         """
-        if self.build_context.get("force", False):
+        if self.force:
             return True
         if cached and self.should_run is not None:
             return self.should_run
@@ -356,7 +357,7 @@ class JobState(object):
 
     def get_command(self, build_graph):
         """Returns the job's expanded command"""
-        unexpanded_job = (build_graph.rule_dep_graph
+        unexpanded_job = (build_graph.rule_dependency_graph
                                      .node[self.unexpanded_id]["object"])
         return unexpanded_job.get_command(self.unique_id, self.build_context,
                                           build_graph)
