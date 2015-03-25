@@ -901,9 +901,9 @@ class BuildGraph(networkx.DiGraph):
                                                      direction, depth)
             return new_nodes
 
-
         start_job = self.rule_dependency_graph.get_job(new_job)
         expanded_jobs = start_job.expand(build_context)
+
 
         current_depth = 0
         cache_set = set()

@@ -51,7 +51,7 @@ class JobTest(unittest.TestCase):
             "end_time": arrow.get("2014-12-05T20:40"),
         }
 
-        expected_unique_id1 = "timestamp_expanded_job_2014-12-05-20-35"
+        expected_unique_id1 = "timestamp_expanded_job_2014-12-05-20-35-00"
 
         expected_command1 = ("timestamp expanded job tester command "
                              "%Y-%m-%d-%H-%M")
@@ -65,6 +65,7 @@ class JobTest(unittest.TestCase):
         self.assertEqual(len(expanded_nodes1), 1)
         self.assertEqual(unique_id1, expected_unique_id1)
         self.assertEqual(command1, expected_command1)
+
 
 
 class JobDependsPast(Job):
@@ -2287,3 +2288,7 @@ class ExpandCounter(Job):
     def expand(self, build_context):
         self.count = self.count + 1
         return super(ExpandCounter, self).expand(build_context)
+
+class TenSecondJob(TimestampExpandedJob):
+    def __init__(self):
+        super(TenSecondJob, self).__init__(unexpanded_id="test_second_job", file_step="10s")

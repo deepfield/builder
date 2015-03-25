@@ -497,7 +497,7 @@ class TimestampExpandedJob(Job):
         self.file_step = file_step
 
     def get_expandable_id(self):
-        return self.unexpanded_id + "_%Y-%m-%d-%H-%M"
+        return self.unexpanded_id + "_%Y-%m-%d-%H-%M-%S"
 
     def get_state_type(self):
         return TimestampExpandedJobState
