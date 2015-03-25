@@ -42,12 +42,12 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_expand_10s(self):
         # Given
-        build = builder.build.BuildGraph([TenSecondJob()])
+        build_manager = builder.build.BuildManager([TenSecondJob()], [])
+        build = build_manager.make_build()
 
         # When
-        build.construct_build_graph({'start_time': arrow.get("2015-01-01T00:00:00+00:00"),
-                                     'end_time': arrow.get("2015-01-01T00:01:00+00:00"),
-                                     'start_job': 'test_second_job'})
+        build.add_job("test_second_job", {'start_time': arrow.get("2015-01-01T00:00:00+00:00"),
+                                     'end_time': arrow.get("2015-01-01T00:01:00+00:00")})
 
         # Then
         self.assertEquals(len(build.node), 6)
