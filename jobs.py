@@ -319,7 +319,7 @@ class JobState(object):
         """Returns whether or not the node should run not caring about the
         ancestors should run status
         """
-        if self.build_context.get("force", False):
+        if self.force:
             return True
         if cached and self.should_run is not None:
             return self.should_run
@@ -345,9 +345,6 @@ class JobState(object):
         depends on it's current state and whether or not it's ancestors
         should run
         """
-        if self.force:
-            return True
-
         should_run_immediate = self.get_should_run_immediate(build_graph,
                                                              cached=cached)
 
