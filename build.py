@@ -400,6 +400,22 @@ class RuleDependencyGraph(networkx.DiGraph):
             targets.append(target_node['object'])
 
         return targets
+
+    def get_jobs_from_meta(self, meta_id):
+        """Returns job ids for the meta, different from job collection as metas
+        can point to other metas"""
+        job_ids = []
+        meta = self.get_meta(meta_id)
+        job_collection = meta.get_job_collection()
+        for job_id in job_collection:
+            if self.is_meta(job_id):
+                job_ids = job_ids + self.get_jobs_from_meta(job_id)
+            else:
+                self.assert_job(job_id)
+                job_ids.append(job_id)
+
+        return job_ids
+
 class BuildGraph(networkx.DiGraph):
     """The build object will control the rule dependency graph and the
     build graph"""
@@ -873,6 +889,28 @@ class BuildGraph(networkx.DiGraph):
                                              current_depth, new_nodes,
                                              cache_set, "down", direction)
 
+    def add_meta(self, new_meta, build_context, direction=None, depth=None,
+                 force=False):
+        """Adds in a specific meta and expands it using the expansion strategy
+
+        Args:
+            new_meta: the meta to add to the graph
+
+            All the rest of the args are forwarded onto add_job
+
+        Returns:
+            A list of ids of nodes that are new to the graph during the adding
+            of this new meta
+        """
+        jobs = self.rule_dependency_graph.get_jobs_from_meta(new_meta)
+        new_nodes = []
+        for job in jobs:
+            new_nodes = new_nodes + self.add_job(job, build_context,
+                                                 direction=direction,
+                                                 depth=depth, force=force)
+        return new_nodes
+
+
     def add_job(self, new_job, build_context, direction=None, depth=None,
                 force=False):
         """Adds in a specific job and expands it using the expansion strategy
@@ -893,13 +931,6 @@ class BuildGraph(networkx.DiGraph):
 
         # take care of meta targets
         new_nodes = []
-        if self.rule_dependency_graph.is_meta(new_job):
-            meta = self.rule_dependency_graph.get_meta(new_job)
-            job_collection = meta.get_job_collection()
-            for job_id in job_collection:
-                new_nodes = new_nodes + self.add_job(job_id, build_context,
-                                                     direction, depth)
-            return new_nodes
 
         start_job = self.rule_dependency_graph.get_job(new_job)
         expanded_jobs = start_job.expand(build_context)
