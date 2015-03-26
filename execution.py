@@ -21,9 +21,15 @@ class Executor(object):
 
 class LocalExecutor(Executor):
 
-    def execute(self, job):
-        command = job.get_command()
+    def execute(self, job, build_graph):
+        command = job.get_command(build_graph)
         return subprocess.check_call(command, shell=True)
+
+class PrintExecutor(Executor):
+
+    def execute(self, job, build_graph):
+        command = job.get_command(build_graph)
+        print command
 
 class ExecutionManager(object):
 
@@ -33,19 +39,29 @@ class ExecutionManager(object):
         self.executor = executor
         self._build_lock = threading.RLock()
 
-    def submit(self, job, build_context, direction=None, depth=None, force=False):
+    def submit(self, job, build_context, **kwargs):
         """
         Submit the provided job to be built
         """
         def update_build_graph():
-            self.build.add_job(job, build_context, direction=direction, depth=depth, force=force)
+            self.build.add_job(job, build_context, **kwargs)
         self._update_build(update_build_graph)
 
-    def start_execution(self):
+    def start_execution(self, run_to_completion=True):
         """
         Begin executing jobs
         """
-        pass
+
+        if run_to_completion:
+            next_jobs = self.get_next_jobs()
+            while len(next_jobs) > 0:
+                for job in next_jobs:
+                    self.executor.execute(job, self.build)
+                    self._update_build(lambda: self.build.finish_job(job))
+
+                next_jobs = self.get_next_jobs()
+        else:
+            raise NotImplementedError()
 
     def get_next_jobs(self):
         def get_next_jobs():

@@ -61,4 +61,19 @@ class ExecutionManagerTests(unittest.TestCase):
         self.assertEquals(set(map(lambda x: x.unique_id, next_jobs)), {'should_run_recurse_job_02',
             'should_run_recurse_job_06', 'should_run_recurse_job_10'})
 
-    
+
+    @unit
+    def test_start_excution_run_to_completion(self):
+        # Given
+        execution_manager = self._get_execution_manager([builder.tests_jobs.BuildableJobTester()])
+        #execution_manager.executor.execute.side_effect = lambda x: x.should_run == False
+        build_context = {
+            'start_time': arrow.get('2015-01-01')
+        }
+
+        # When
+        execution_manager.submit('buildable_job', build_context, force=True)
+        execution_manager.start_execution(run_to_completion=True)
+
+        # Then
+        self.assertTrue(execution_manager.executor.execute.called)
