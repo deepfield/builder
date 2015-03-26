@@ -1084,6 +1084,12 @@ class BuildGraph(networkx.DiGraph):
         for next_job in next_jobs:
             self.run(next_job)
 
+    def finish_job(self, build, job_id):
+        pass
+
+    def finish_target(self, build, target_id):
+        pass
+
     def update(self, target_id):
         """Checks what should happen now that there is new information
         on a target

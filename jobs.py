@@ -293,6 +293,7 @@ class JobState(object):
 
         if cache_set is None:
             cache_set = set([])
+
         if (self.unique_id in cache_set and
                 self.parents_should_not_run is not None):
             return self.parents_should_not_run
