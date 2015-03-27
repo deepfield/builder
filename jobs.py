@@ -30,7 +30,7 @@ class JobState(object):
         self.stale = None
         self.buildable = None
         self.should_run = None
-        self.parents_should_not_run = None
+        self.parents_should_run = None
         self.expanded_directions = {"up": False, "down": False}
         self.force = force
 
@@ -280,7 +280,7 @@ class JobState(object):
 
         update_set.add(self.unique_id)
 
-    def get_parents_should_not_run(self, build_graph, cache_time,
+    def get_parents_should_run(self, build_graph,
                                    cached=True, cache_set=None):
         """Returns whether or not any contiguous ancestor job with the
         same cache_time bool value should run
@@ -288,33 +288,35 @@ class JobState(object):
         False if an ancestor should run
         True if no ancestor should run
         """
-        if cached and self.parents_should_not_run is not None:
-            return self.parents_should_not_run
+        if cached and self.parents_should_run is not None:
+            return self.parents_should_run
 
         if cache_set is None:
             cache_set = set([])
 
         if (self.unique_id in cache_set and
-                self.parents_should_not_run is not None):
-            return self.parents_should_not_run
+                self.parents_should_run is not None):
+            return self.parents_should_run
+
+        if self.should_ignore_parents():
+            return False
 
         for dependency_id in self.get_parent_jobs(build_graph):
             dependency = build_graph.node[dependency_id]["object"]
-            has_cache_time = dependency.cache_time is not None
-            if has_cache_time == cache_time:
-                parents_should_not_run = dependency.get_parents_should_not_run(
-                        build_graph, has_cache_time, cached=cached,
+            if not dependency.should_ignore_parents():
+                parents_should_run = dependency.get_parents_should_run(
+                        build_graph, cached=cached,
                         cache_set=cache_set)
                 should_run_immediate = dependency.get_should_run_immediate(
                         build_graph, cached=cached)
-                if not parents_should_not_run or should_run_immediate:
-                    self.parents_should_not_run = False
+                if parents_should_run or should_run_immediate:
+                    self.parents_should_run = True
                     cache_set.add(self.unique_id)
-                    return False
+                    return True
 
         cache_set.add(self.unique_id)
-        self.parents_should_not_run = True
-        return True
+        self.parents_should_run = False
+        return False
 
     def get_should_run_immediate(self, build_graph, cached=True):
         """Returns whether or not the node should run not caring about the
@@ -326,8 +328,8 @@ class JobState(object):
             return self.should_run
 
         has_cache_time = self.cache_time is not None
-        stale = self.get_stale(build_graph)
-        buildable = self.get_buildable(build_graph)
+        stale = self.get_stale(build_graph, cached=cached)
+        buildable = self.get_buildable(build_graph, cached=cached)
         if not stale or not buildable:
             self.should_run = False
             return False
@@ -348,13 +350,17 @@ class JobState(object):
         """
         should_run_immediate = self.get_should_run_immediate(build_graph,
                                                              cached=cached)
+        parents_should_run = self.get_parents_should_run(
+            build_graph, cached=cached, cache_set=cache_set)
 
-        cache_time = self.cache_time is not None
+        return should_run_immediate and not parents_should_run
 
-        parents_should_not_run = self.get_parents_should_not_run(
-            build_graph, cache_time, cached=cached, cache_set=cache_set)
-
-        return should_run_immediate and parents_should_not_run
+    def should_ignore_parents(self):
+        """
+        Returns true if this job should ignore parents. E.g. if this job is set to run
+        on a timeout
+        """
+        return self.cache_time is not None
 
     def get_command(self, build_graph):
         """Returns the job's expanded command"""

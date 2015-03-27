@@ -59,7 +59,7 @@ class ExecutionManagerTests(unittest.TestCase):
 
         # Then
         self.assertEquals(set(map(lambda x: x.unique_id, next_jobs)), {'should_run_recurse_job_02',
-            'should_run_recurse_job_06', 'should_run_recurse_job_10'})
+            'should_run_recurse_job_06', 'should_run_recurse_job_10', 'should_run_recurse_job_08'})
 
 
     @unit

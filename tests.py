@@ -2211,8 +2211,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=True))
         graph1.node["unique_id1"]["object"].all_dependencies = (
                 mock.Mock(return_value=True))
-        graph1.node["unique_id1"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=True))
+        graph1.node["unique_id1"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=False))
         # not stale everything else true
         expected_should_run2 = False
         graph2.node["unique_id2"]["object"].stale = False
@@ -2221,8 +2221,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=True))
         graph2.node["unique_id2"]["object"].all_dependencies = (
                 mock.Mock(return_value=True))
-        graph2.node["unique_id2"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=True))
+        graph2.node["unique_id2"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=False))
         # not buildable everything else true
         expected_should_run3 = False
         graph3.node["unique_id3"]["object"].stale = True
@@ -2231,8 +2231,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=True))
         graph3.node["unique_id3"]["object"].all_dependencies = (
                 mock.Mock(return_value=True))
-        graph3.node["unique_id3"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=True))
+        graph3.node["unique_id3"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=False))
         # not past curfew everything else true
         expected_should_run4 = True
         graph4.node["unique_id4"]["object"].stale = True
@@ -2241,8 +2241,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=False))
         graph4.node["unique_id4"]["object"].all_dependencies = (
                 mock.Mock(return_value=True))
-        graph4.node["unique_id4"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=True))
+        graph4.node["unique_id4"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=False))
         # not all dependencies everything else true
         expected_should_run5 = True
         graph5.node["unique_id5"]["object"].stale = True
@@ -2251,8 +2251,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=True))
         graph5.node["unique_id5"]["object"].all_dependencies = (
                 mock.Mock(return_value=False))
-        graph5.node["unique_id5"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=True))
+        graph5.node["unique_id5"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=False))
         # parents should run, everything else is true
         expected_should_run6 = False
         graph6.node["unique_id6"]["object"].stale = True
@@ -2261,8 +2261,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=True))
         graph6.node["unique_id6"]["object"].all_dependencies = (
                 mock.Mock(return_value=True))
-        graph6.node["unique_id6"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=False))
+        graph6.node["unique_id6"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=True))
         # cache not past curfew
         expected_should_run7 = True
         graph7.node["unique_id7"]["object"].stale = True
@@ -2273,8 +2273,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=True))
         graph7.node["unique_id7"]["object"].past_cache_time = (
                 mock.Mock(return_value=True))
-        graph7.node["unique_id7"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=True))
+        graph7.node["unique_id7"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=False))
         # cache not all dependencies
         expected_should_run8 = True
         graph8.node["unique_id8"]["object"].stale = True
@@ -2285,8 +2285,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=False))
         graph8.node["unique_id8"]["object"].past_cache_time = (
                 mock.Mock(return_value=True))
-        graph8.node["unique_id8"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=True))
+        graph8.node["unique_id8"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=False))
         # cache not stale
         expected_should_run9 = False
         graph9.node["unique_id9"]["object"].stale = False
@@ -2297,8 +2297,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=True))
         graph9.node["unique_id9"]["object"].past_cache_time = (
                 mock.Mock(return_value=True))
-        graph9.node["unique_id9"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=True))
+        graph9.node["unique_id9"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=False))
         # cache not buildable
         expected_should_run10 = False
         graph10.node["unique_id10"]["object"].stale = True
@@ -2309,8 +2309,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=True))
         graph10.node["unique_id10"]["object"].past_cache_time = (
                 mock.Mock(return_value=True))
-        graph10.node["unique_id10"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=True))
+        graph10.node["unique_id10"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=False))
         # all true not past cache
         expected_should_run11 = False
         graph11.node["unique_id11"]["object"].stale = False
@@ -2321,8 +2321,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=True))
         graph11.node["unique_id11"]["object"].past_cache_time = (
                 mock.Mock(return_value=False))
-        graph11.node["unique_id11"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=True))
+        graph11.node["unique_id11"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=False))
         # parents should run
         expected_should_run12 = False
         graph12.node["unique_id12"]["object"].stale = True
@@ -2333,8 +2333,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=True))
         graph12.node["unique_id12"]["object"].past_cache_time = (
                 mock.Mock(return_value=True))
-        graph12.node["unique_id12"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=False))
+        graph12.node["unique_id12"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=True))
         # not past curfew and not all dependencies
         expected_should_run13 = False
         graph13.node["unique_id13"]["object"].stale = True
@@ -2343,8 +2343,8 @@ class GraphTest(unittest.TestCase):
                 mock.Mock(return_value=False))
         graph13.node["unique_id13"]["object"].all_dependencies = (
                 mock.Mock(return_value=False))
-        graph13.node["unique_id13"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=True))
+        graph13.node["unique_id13"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=False))
         # not past curfew and not all dependencies has cache_time
         expected_should_run14 = True
         graph14.node["unique_id14"]["object"].stale = True
@@ -2353,8 +2353,8 @@ class GraphTest(unittest.TestCase):
                mock.Mock(return_value=False))
         graph14.node["unique_id14"]["object"].all_dependencies = (
                 mock.Mock(return_value=False))
-        graph14.node["unique_id14"]["object"].get_parents_should_not_run = (
-                mock.Mock(return_value=True))
+        graph14.node["unique_id14"]["object"].get_parents_should_run = (
+                mock.Mock(return_value=False))
 
         # When
         should_run1 = graph1.node["unique_id1"]["object"].get_should_run(
@@ -2489,80 +2489,80 @@ class GraphTest(unittest.TestCase):
         build9.add_job("should_run_recurse_job_10", build_context1)
         build10.add_job("should_run_recurse_job_10", build_context1)
 
-        expected_parents_should_not_run1 = True
-        expected_parents_should_not_run2 = True
-        expected_parents_should_not_run3 = False
-        expected_parents_should_not_run4 = False
-        expected_parents_should_not_run5 = True
-        expected_parents_should_not_run6 = True
-        expected_parents_should_not_run7 = False
-        expected_parents_should_not_run8 = False
-        expected_parents_should_not_run9 = True
-        expected_parents_should_not_run10 = True
+        expected_parents_should_run1 = False
+        expected_parents_should_run2 = False
+        expected_parents_should_run3 = True
+        expected_parents_should_run4 = True
+        expected_parents_should_run5 = False
+        expected_parents_should_run6 = False
+        expected_parents_should_run7 = False
+        expected_parents_should_run8 = False
+        expected_parents_should_run9 = False
+        expected_parents_should_run10 = False
 
         # When
-        parents_should_not_run1 = (build1.node
+        parents_should_run1 = (build1.node
                 ["should_run_recurse_job_01"]
-                ["object"].get_parents_should_not_run(
-                        build1, False))
-        parents_should_not_run2 = (build2.node
+                ["object"].get_parents_should_run(
+                        build1))
+        parents_should_run2 = (build2.node
                 ["should_run_recurse_job_02"]
-                ["object"].get_parents_should_not_run(
-                        build2, False))
-        parents_should_not_run3 = (build3.node
+                ["object"].get_parents_should_run(
+                        build2))
+        parents_should_run3 = (build3.node
                 ["should_run_recurse_job_03"]
-                ["object"].get_parents_should_not_run(
-                        build3, False))
-        parents_should_not_run4 = (build4.node
+                ["object"].get_parents_should_run(
+                        build3))
+        parents_should_run4 = (build4.node
                 ["should_run_recurse_job_04"]
-                ["object"].get_parents_should_not_run(
-                        build4, False))
-        parents_should_not_run5 = (build5.node
+                ["object"].get_parents_should_run(
+                        build4))
+        parents_should_run5 = (build5.node
                 ["should_run_recurse_job_05"]
-                ["object"].get_parents_should_not_run(
-                        build5, True))
-        parents_should_not_run6 = (build6.node
+                ["object"].get_parents_should_run(
+                        build5))
+        parents_should_run6 = (build6.node
                 ["should_run_recurse_job_06"]
-                ["object"].get_parents_should_not_run(
-                        build6, True))
-        parents_should_not_run7 = (build7.node
+                ["object"].get_parents_should_run(
+                        build6))
+        parents_should_run7 = (build7.node
                 ["should_run_recurse_job_07"]
-                ["object"].get_parents_should_not_run(
-                        build7, True))
-        parents_should_not_run8 = (build8.node
+                ["object"].get_parents_should_run(
+                        build7))
+        parents_should_run8 = (build8.node
                 ["should_run_recurse_job_08"]
-                ["object"].get_parents_should_not_run(
-                        build8, True))
-        parents_should_not_run9 = (build9.node
+                ["object"].get_parents_should_run(
+                        build8))
+        parents_should_run9 = (build9.node
                 ["should_run_recurse_job_09"]
-                ["object"].get_parents_should_not_run(
-                        build9, False))
-        parents_should_not_run10 = (build10.node
+                ["object"].get_parents_should_run(
+                        build9))
+        parents_should_run10 = (build10.node
                 ["should_run_recurse_job_10"]
-                ["object"].get_parents_should_not_run(
-                        build10, False))
+                ["object"].get_parents_should_run(
+                        build10))
 
         # Then
-        self.assertEqual(parents_should_not_run1,
-                         expected_parents_should_not_run1)
-        self.assertEqual(parents_should_not_run2,
-                         expected_parents_should_not_run2)
-        self.assertEqual(parents_should_not_run3,
-                         expected_parents_should_not_run3)
-        self.assertEqual(parents_should_not_run4,
-                         expected_parents_should_not_run4)
-        self.assertEqual(parents_should_not_run5,
-                         expected_parents_should_not_run5)
-        self.assertEqual(parents_should_not_run6,
-                         expected_parents_should_not_run6)
-        self.assertEqual(parents_should_not_run7,
-                         expected_parents_should_not_run7)
-        self.assertEqual(parents_should_not_run8,
-                         expected_parents_should_not_run8)
-        self.assertEqual(parents_should_not_run9,
-                         expected_parents_should_not_run9)
-        self.assertEqual(parents_should_not_run10,
-                         expected_parents_should_not_run10)
+        self.assertEqual(parents_should_run1,
+                         expected_parents_should_run1)
+        self.assertEqual(parents_should_run2,
+                         expected_parents_should_run2)
+        self.assertEqual(parents_should_run3,
+                         expected_parents_should_run3)
+        self.assertEqual(parents_should_run4,
+                         expected_parents_should_run4)
+        self.assertEqual(parents_should_run5,
+                         expected_parents_should_run5)
+        self.assertEqual(parents_should_run6,
+                         expected_parents_should_run6)
+        self.assertEqual(parents_should_run7,
+                         expected_parents_should_run7)
+        self.assertEqual(parents_should_run8,
+                         expected_parents_should_run8)
+        self.assertEqual(parents_should_run9,
+                         expected_parents_should_run9)
+        self.assertEqual(parents_should_run10,
+                         expected_parents_should_run10)
 
     @testing.unit
     def test_get_starting_jobs(self):
@@ -2592,25 +2592,25 @@ class GraphTest(unittest.TestCase):
                 ["object"].should_run) = True
         (build1.node
                 ["get_starting_jobs_01"]
-                ["object"].parents_should_not_run) = True
+                ["object"].parents_should_run) = False
         (build1.node
                 ["get_starting_jobs_02"]
                 ["object"].should_run) = True
         (build1.node
                 ["get_starting_jobs_02"]
-                ["object"].parents_should_not_run) = False
+                ["object"].parents_should_run) = True
         (build1.node
                 ["get_starting_jobs_03"]
                 ["object"].should_run) = True
         (build1.node
                 ["get_starting_jobs_03"]
-                ["object"].parents_should_not_run) = True
+                ["object"].parents_should_run) = False
         (build1.node
                 ["get_starting_jobs_04"]
                 ["object"].should_run) = False
         (build1.node
                 ["get_starting_jobs_04"]
-                ["object"].parents_should_not_run) = True
+                ["object"].parents_should_run) = False
 
         # when
         starting_jobs = build1.get_starting_jobs()
