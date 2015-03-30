@@ -5,7 +5,10 @@ and the build graph
 import arrow
 import collections
 import copy
+import os
 import networkx
+import tempfile
+import subprocess
 
 import builder.dependencies
 import builder.jobs
@@ -39,7 +42,26 @@ class BuildManager(object):
         return build_graph
 
 
-class RuleDependencyGraph(networkx.DiGraph):
+class BaseGraph(networkx.DiGraph):
+
+    def write_dot(self, file_name):
+        """Writes the rule dependency graph to the file_name
+
+        Currently does not modify the graph in anyway before writing out
+        """
+        networkx.write_dot(self, file_name)
+
+    def write_pdf(self, file_name):
+        """
+        Writes the rule dependency graph to file_name
+        """
+        with tempfile.NamedTemporaryFile() as f:
+            self.write_dot(f.name)
+            dot = '/usr/bin/dot' if os.path.exists('/usr/bin/dot') else 'dot'
+            subprocess.check_call([dot, '-Tpdf', f.name, file_name])
+
+
+class RuleDependencyGraph(BaseGraph):
     """The rule dependency graph holds all the information on how jobs relate
     to jobs and their targets. It also holds information on what their aliases
     are
@@ -152,12 +174,7 @@ class RuleDependencyGraph(networkx.DiGraph):
                 continue
             self.add_meta(meta)
 
-    def write_dot(self, file_name):
-        """Writes the rule dependency graph to the file_name
 
-        Currently does not modify the graph in anyway before writing out
-        """
-        networkx.write_dot(self, file_name)
 
     def is_meta(self, meta_id):
         """Returns if the id passed in relates to a meta node"""
@@ -416,7 +433,7 @@ class RuleDependencyGraph(networkx.DiGraph):
 
         return job_ids
 
-class BuildGraph(networkx.DiGraph):
+class BuildGraph(BaseGraph):
     """The build object will control the rule dependency graph and the
     build graph"""
     def __init__(self, rule_dependency_graph, config=None):
@@ -426,16 +443,6 @@ class BuildGraph(networkx.DiGraph):
 
         self.rule_dependency_graph = rule_dependency_graph
         self.config = config
-
-    def write_dot(self, file_name):
-        """Writes the build graph to the file_name.
-
-        Does not ensure that the graph is built. It write's it in what ever
-        state the graph is currently in
-
-        Args:
-            file_name: the name for the file to write the dot file to"""
-        networkx.write_dot(self, file_name)
 
     def add_node(self, node, attr_dict=None, **kwargs):
         """Adds a jobstate, target, dependency node to the graph

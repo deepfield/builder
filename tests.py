@@ -4006,6 +4006,7 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(build.node["target4"]["object"].mtime, 600)
         self.assertEqual(build.node["target5"]["object"].mtime, None)
 
+    @testing.unit
     def test_expand(self):
         # Given
         target1 = builder.expanders.Expander(builder.targets.Target, "target1")
@@ -4127,7 +4128,7 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(job6.count, 1)
         self.assertEqual(job7.count, 1)
         self.assertEqual(job8.count, 1)
-        self.assertEqual(job10.count, 0)
+        self.assertEqual(job9.count, 0)
         self.assertEqual(job10.count, 0)
 
 class RuleDependencyGraphTest(unittest.TestCase):
