@@ -54,10 +54,11 @@ class PrintExecutor(Executor):
 
 class ExecutionManager(object):
 
-    def __init__(self, build_manager, executor):
+    def __init__(self, build_manager, executor, max_retries=5):
         self.build_manager = build_manager
         self.build = build_manager.make_build()
         self.executor = executor
+        self.max_retries = max_retries
         self._build_lock = threading.RLock()
 
     def submit(self, job, build_context, **kwargs):
@@ -72,20 +73,39 @@ class ExecutionManager(object):
         """
         Begin executing jobs
         """
-        work_queue = Queue.Queue()
+
         if inline:
-            next_jobs = self.get_jobs_to_run()
-            map(work_queue.put, next_jobs)
-            while not work_queue.empty():
-                job = work_queue.get()
-                success, log = self.executor.execute(job, self.build)
-                self._update_build(lambda: self.build.finish_job(job, success=success, log=log))
-                next_job_ids = self.build.get_next_jobs_to_run(job.get_id())
-                next_jobs = map(lambda x: self.build.get_job(x), next_job_ids)
-                map(work_queue.put, next_jobs)
+            self._execute_inline()
         else:
-            # Daemon
-            raise NotImplementedError()
+            self._execute_daemon()
+
+
+    def _execute_inline(self):
+        work_queue = Queue.Queue()
+        next_jobs = self.get_jobs_to_run()
+        map(work_queue.put, next_jobs)
+        while not work_queue.empty():
+            job = work_queue.get()
+
+            # Don't run a job more than the configured max number of retries
+            if job.retries >= self.max_retries:
+                job.should_build = False
+                deepy.log.error("Maximum number of retries reached for {}".format(job))
+                continue
+
+            # Execute job
+            success, log = self.executor.execute(job, self.build)
+
+            # Update job state
+            self._update_build(lambda: self.build.finish_job(job, success=success, log=log))
+
+            # Get next jobs to execute
+            next_job_ids = self.build.get_next_jobs_to_run(job.get_id())
+            next_jobs = map(lambda x: self.build.get_job_state(x), next_job_ids)
+            map(work_queue.put, next_jobs)
+
+    def _execute_daemon(self):
+        raise NotImplementedError()
 
     def get_jobs_to_run(self):
         def get_next_jobs():

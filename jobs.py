@@ -26,7 +26,8 @@ class JobState(object):
         self.config = config
         self.meta = meta
         self.job = job
-        self.failures = 0
+        self.retries = 0
+        self.last_run = None
 
         self.stale = None
         self.buildable = None

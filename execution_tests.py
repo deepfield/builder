@@ -114,3 +114,28 @@ class ExecutionManagerTests(unittest.TestCase):
 
         # Then
         self.assertEquals(executor.execute.call_count, 2)
+
+    @unit
+    def test_inline_execution_retries(self):
+        # Given
+        jobs = [
+            builder.tests_jobs.SimpleTestJob('A', targets=['target-A']),
+        ]
+        executor = mock.Mock()
+        execution_manager = self._get_execution_manager(jobs)
+        def update_job(job, build):
+            job.should_run = True
+            return False, ''
+
+        executor.execute = mock.Mock(side_effect=update_job)
+        execution_manager.executor = executor
+        build_context = {
+            'start_time': arrow.get('2015-01-01')
+        }
+
+        # When
+        execution_manager.submit('A', build_context)
+        execution_manager.start_execution(inline=True)
+
+        # Then
+        self.assertEquals(executor.execute.call_count, 5)

@@ -1091,10 +1091,12 @@ class BuildGraph(BaseGraph):
             self.run(next_job)
 
     def finish_job(self, job, success, log):
+        job.last_run = arrow.now()
+
         if not success:
-            job.failures += 1
+            job.retries += 1
         else:
-            job.failures = 0
+            job.retries = 0
             job.should_run = False
             job.force = False
             self.update_job_cache(job.get_id())
