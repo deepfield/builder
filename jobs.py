@@ -45,18 +45,15 @@ class JobState(object):
         of it's alternates don't exist otherwise returns the mtimes of
         the alternates
         """
-        alt = False
-        alternate_edges = build_graph.out_edges(self.unique_id, data=True)
+        alternate_ids = build_graph.get_targets(self.unique_id,
+                                                label="alternates")
         alternate_mtimes = []
-        for alt_edge in alternate_edges:
-            if alt_edge[2]["label"] == "alternates":
-                alt = True
-                alternate_id = alt_edge[1]
-                alternate = (build_graph.node[alternate_id]["object"])
-                if not alternate.get_exists():
-                    return True
-                alternate_mtimes.append(alternate.get_mtime())
-        if alt == False:
+        for alternate_id in alternate_ids:
+            alternate = build_graph.get_target(alternate_id)
+            if not alternate.get_exists():
+                return True
+            alternate_mtimes.append(alternate.get_mtime())
+        if not alternate_ids:
             return True
         return alternate_mtimes
 
@@ -79,16 +76,15 @@ class JobState(object):
         """
         if new_value == True and self.stale != True:
             self.stale = new_value
-            for depends_node_id in build_graph.predecessors(self.unique_id):
-                for dependency_id in build_graph.predecessors(depends_node_id):
-                    dependency = build_graph.node[dependency_id]["object"]
-                    if not dependency.get_exists():
-                        in_edges = build_graph.in_edges(
-                            dependency_id, data=True)
-                        for in_edge in in_edges:
-                            if in_edge[2]["label"] == "produces":
-                                (build_graph.node[in_edge[0]]["object"]
-                                 .update_stale(True, build_graph))
+            dependency_ids = build_graph.get_dependencies(self.unique_id)
+            for dependency_id in dependency_ids:
+                dependency = build_graph.get_target(dependency_id)
+                if not dependency.get_exists():
+                    creator_ids = build_graph.get_creators(dependency_id,
+                                                           label="produces")
+                    for creator_id in creator_ids:
+                        creator = build_graph.get_job_state(creator_id)
+                        creator.update_stale(True, build_graph)
         self.stale = new_value
 
     def get_minimum_target_mtime(self, build_graph):
@@ -113,27 +109,23 @@ class JobState(object):
 
         # The target doesn't produce anything so it only depends on it's
         # alternates
-        producing_edges = [x for x in out_edges if x[2]["label"] == "produces"]
+        producing_edges = build_graph.get_target_edges(self.unique_id,
+                                                       kind="produces")
         if not producing_edges:
             return self.get_stale_alternates(build_graph)
 
         alt_check = False
         target_mtimes = [float("inf")]
-        for produce_edge in producing_edges:
+        for _, target_id, data in producing_edges:
             # edge is form (src_node_id, dest_node_id, data_dict)
-            target = produce_edge[2]
-            if produce_edge[2].get("ignore_produce", False):
-                continue
-
-            target_id = produce_edge[1]
-            target = build_graph.node[target_id]["object"]
+            target = build_graph.get_target(target_id)
             if not target.get_exists() and not alt_check:
                 stale_alternates = self.get_stale_alternates(build_graph)
                 if stale_alternates == True:
                     return True
                 target_mtimes = target_mtimes + stale_alternates
             else:
-                if produce_edge[2].get("ignore_mtime", False):
+                if data.get("ignore_mtime", False):
                     continue
                 target_mtimes.append(target.get_mtime())
         min_target_mtime = min(target_mtimes)

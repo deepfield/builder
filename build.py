@@ -14,7 +14,6 @@ import builder.dependencies
 import builder.jobs
 import builder.targets
 
-
 class BuildManager(object):
     """A build manager holds a rule dependency graph and is then creates a new
     build graph by recieving a list of start jobs and a build_context
@@ -290,7 +289,7 @@ class RuleDependencyGraph(BaseGraph):
                 output_job_ids.append(job_id)
         return output_job_ids
 
-    def get_targets(self, job_id):
+    def get_targets(self, job_id, type=None):
         """Returns a list of the ids of all the targets for the job_id
 
         The targets for the job_id are the target nodes that are direct
@@ -546,6 +545,16 @@ class BuildGraph(BaseGraph):
         if not self.is_target(target_id):
             raise RuntimeError("{} is not a target node".format(target_id))
 
+    @staticmethod
+    def _filter_kind(edges_iter, kind):
+        edges_list = []
+        for src, dest, data in edges_iter:
+            if kind is not None:
+                if data.get("kind") != kind:
+                    continue
+            edges_list.append((src, dest, data))
+        return edges_list
+
     def filter_target_ids(self, target_ids):
         """Takes in a list of ids in the graph and returns a list of the ids
         that correspond to targets
@@ -566,7 +575,7 @@ class BuildGraph(BaseGraph):
                 output_target_ids.append(target_id)
         return output_target_ids
 
-    def filter_job_ids(self, job_ids):
+    def filter_job_state_ids(self, job_ids):
         """Takes in a list of ids in the graph and returns a list of ids that
         correspond to jobs
 
@@ -586,7 +595,73 @@ class BuildGraph(BaseGraph):
                 output_job_ids.append(job_id)
         return output_job_ids
 
-    def get_targets(self, job_id):
+    def filter_target_edges_iter(self, edge_iter):
+        for edge in edge_iter:
+            src = edge[0]
+            if self.is_target(src):
+                yield edge
+
+    def filter_job_state_edges_iter(self, edge_iter):
+        for edge in edge_iter:
+            src = edge[0]
+            if self.is_job(src):
+                yield edge
+
+    def filter_edge_kind_iter(self, edge_iter, kind):
+        for edge in edge_iter:
+            data = edge[2]
+            if kind is not None:
+                if data.get("kind") != kind:
+                    continue
+            yield edge
+
+    def get_dependency_edges_iter(self, job_state_id):
+        self.assert_job_state(job_state_id)
+        in_edges_iter = self.in_edges_iter(job_state_id)
+        return self.filter_target_edges_iter(in_edges_iter)
+
+    def get_target_edges_iter(self, job_state_id, kind=None):
+        self.assert_job_state(job_state_id)
+        out_edges_iter = self.out_edges_iter(job_state_id)
+        return self.filter_edge_kind_iter(
+                self.filter_target_edges_iter(out_edges_iter), kind)
+
+    def get_creator_edges_iter(self, target_id, kind=None):
+        self.assert_target(target_id)
+        in_edges_iter = self.in_edges_iter(target_id)
+        return self.filter_edge_kind_iter(
+                self.filter_job_state_edges_iter(in_edges_iter), kind)
+
+    def get_dependent_edges_iter(self, target_id):
+        self.assert_target(target_id)
+        out_edges_iter = self.out_edges_iter(target_id)
+        return self.filter_target_edges_iter(out_edges_iter)
+
+    def extract_src_iter(self, edge_iter):
+        for src, _, _ in edge_iter:
+            yield src
+
+    def extract_dest_iter(self, edge_iter):
+        for _, dest, _ in edge_iter:
+            yield dest
+
+    def get_dependencies_iter(self, job_state_id):
+        return self.extract_src_iter(
+                self.get_dependency_edges_iter(job_state_id))
+
+    def get_targets_iter(self, job_state_id, kind=None):
+        return self.extract_dest_iter(
+                self.get_target_edges_iter(job_state_id, kind=kind))
+
+    def get_creators_iter(self, target_id, kind=None):
+        return self.extract_src_iter(
+                self.get_creator_edges_iter(target_id, kind=kind))
+
+    def get_dependents_iter(self, target_id):
+        return self.extract_dest_iter(
+                self.get_dependent_edges_iter(target_id))
+
+    def get_targets(self, job_state_id, kind=None):
         """Returns a list of the ids of all the targets for the job_id
 
         The targets for the job_id are the target nodes that are direct
@@ -598,9 +673,14 @@ class BuildGraph(BaseGraph):
         Returns:
             A list of ids corresponding to the targets of job_id
         """
-        self.assert_job(job_id)
-        neighbor_ids = self.neighbors(job_id)
-        return self.filter_target_ids(neighbor_ids)
+        target_edges = self.get_target_edges(job_state_id, kind)
+        return [dest for _, dest, _ in target_edges]
+
+    def get_target_edges(self, job_state_id, kind=None):
+        self.assert_job(job_state_id)
+        out_edges_iter = self.out_edges_iter(job_state_id, data=True)
+        target_edges = self._filter_kind(out_edges_iter, kind)
+        return self.target_edges(target_edges)
 
     def get_dependencies(self, job_id):
         """Returns a list of the ids of all the dependency targets for the
@@ -640,7 +720,7 @@ class BuildGraph(BaseGraph):
         else:
             return self.get_targets(job_id)
 
-    def get_creators(self, target_id):
+    def get_creators(self, target_id, kind=None):
         """Returns a list of the ids of all the creators for the target_id
 
         The creators of a target are all direct predecessors of the target
@@ -651,9 +731,14 @@ class BuildGraph(BaseGraph):
         Returns:
             A list of ids corresponding to the creators of the target_id
         """
+        creator_edges = self.get_creator_edges(target_id, kind)
+        return [src for src, _, _ in creator_edges]
+
+    def get_creator_edges(self, target_id, **kwargs):
         self.assert_target(target_id)
-        parent_ids = self.predecessors(target_id)
-        return self.filter_job_ids(parent_ids)
+        in_edges_iter = self.in_edges_iter(target_id, data=True)
+        creator_edges = self._filter_kind(in_edges_iter, kind)
+        return self.filter_job_state_edges(creator_edges)
 
     def get_dependents(self, target_id):
         """Returns a list of the ids of all the dependents for the target_ids
@@ -672,7 +757,7 @@ class BuildGraph(BaseGraph):
         depends_ids = self.neighbors(target_id)
         for depends_id in depends_ids:
             job_ids = self.neighbors(depends_id)
-            dependent_ids = dependent_ids + self.filter_job_ids(job_ids)
+            dependent_ids = dependent_ids + self.filter_job_state_ids(job_ids)
         return dependent_ids
 
     def get_dependents_or_creators(self, target_id, direction):
@@ -978,6 +1063,12 @@ class BuildGraph(BaseGraph):
         if not isinstance(job_state_container["object"], builder.jobs.JobState):
             return False
         return True
+
+    def assert_job_state(self, job_state_id):
+        """Asserts it is a job_state"""
+        if not self.is_job_state(job_state_id):
+            raise RuntimeError(
+                    "{} is not a job state node".format(job_state_id))
 
     def get_job_state(self, job_state_id):
         """

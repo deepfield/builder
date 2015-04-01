@@ -730,6 +730,7 @@ class GraphTest(unittest.TestCase):
             stale3 = (build3.node
                     ["stale_standard_job_2014-12-05-10-45-00"]
                     ["object"].get_stale(build3))
+            build4.write_dot("graph.dot")
             stale4 = (build4.node
                     ["stale_standard_job_2014-12-05-10-45-00"]
                     ["object"].get_stale(build4))
@@ -2955,7 +2956,6 @@ class GraphTest(unittest.TestCase):
 
         # Then
         count = 0
-        build.write_dot("graph.dot")
         for node_id, node in build.node.iteritems():
             if node.get("object") is None:
                 continue
