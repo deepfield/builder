@@ -41,6 +41,11 @@ class BuildManager(object):
         build_graph = BuildGraph(self.rule_dependency_graph)
         return build_graph
 
+    def get_rule_dependency_graph(self):
+        """ Return the rule dependency graph that drives all builds by this BuildManager
+        """
+        return self.rule_dependency_graph
+
 
 class BaseGraph(networkx.DiGraph):
 
@@ -396,8 +401,8 @@ class RuleDependencyGraph(BaseGraph):
         """Return a list of all jobs in the rule dependency graph
         """
         jobs = []
-        for job_node in filter(lambda x: isinstance(x.get('object'), builder.jobs.Job), self.node.itervalues()):
-            jobs.append(job_node['object'])
+        for job_id in filter(lambda x: self.is_job(x), self.node):
+            jobs.append(self.get_job(job_id))
 
         return jobs
 

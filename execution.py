@@ -53,7 +53,11 @@ class LocalExecutor(Executor):
 
     def do_execute(self, job, build_graph):
         command = job.get_command(build_graph)
-        return subprocess.check_call(command, shell=True), 'Log'
+        proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (stdout, stderr) = proc.communicate()
+        deepy.log.info("{} STDOUT: {}".format(command, stdout))
+        deepy.log.info("{} STDERR: {}".format(command, stderr))
+        return proc.returncode, '===='.join((stdout, stderr))
 
 class PrintExecutor(Executor):
     """ "Executes" by printing and marking targets as available
@@ -140,6 +144,9 @@ class ExecutionManager(object):
 
     def get_build_graph(self):
         return self.build
+
+    def get_build_manager(self):
+        return self.build_manager
 
     def _update_build(self, f):
         with self._build_lock:
