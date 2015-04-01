@@ -9,7 +9,7 @@ import arrow
 import mock
 import networkx
 
-from builder.tests_jobs import TenSecondJob, UpdateTargetCacheBottom, UpdateTargetCacheMiddle03, UpdateTargetCacheMiddle02, UpdateTargetCacheMiddle01, ForceBuildBottom, ForceBuildMiddle, ForceBuildTop, ExpandExactBottom, ExpandExactMiddle, ExpandExactTop, UpdateJobCacheBottom, UpdateJobCacheMiddle03, UpdateJobCacheMiddle02, UpdateJobCacheMiddle01, UpdateJobCacheTop, GetNextJobsToRunLowest, GetNextJobsToRunBottom, GetNextJobsToRunMiddle02, GetNextJobsToRunMiddle01, GetNextJobsToRunTop, GetStartingJobs04Tester, GetStartingJobs03Tester, GetStartingJobs02Tester, GetStartingJobs01Tester, ShouldRunRecurseJob10Tester, ShouldRunRecurseJob09Tester, ShouldRunRecurseJob08Tester, ShouldRunRecurseJob07Tester, ShouldRunRecurseJob06Tester, ShouldRunRecurseJob05Tester, ShouldRunRecurseJob04Tester, ShouldRunRecurseJob03Tester, ShouldRunRecurseJob02Tester, ShouldRunRecurseJob01Tester, ShouldRunCacheLogicJobTester, ShouldRunLogicJobTester, PastCurfewJobTester, AllDependenciesJobTester, PastCacheTimeJobTester, BuildableJobTester, StaleAlternateUpdateBottomJobTester, StaleAlternateUpdateTopJobTester, StaleAlternateBottomJobTester, StaleAlternateTopJobTester, StaleIgnoreMtimeJobTester, StaleStandardJobTester, DiamondRedundancyHighestJobTester, DiamondRedundancyTopJobTester, DiamondRedundancyMiddleJob02Tester, DiamondRedundancyMiddleJob01Tester, DiamondRedundancyBottomJobTester, BackboneDependantTopJob02Tester, BackboneDependantTopJob01Tester, BackboneDependantMiddleJob02Tester, BackboneDependantMiddleJob01Tester, BackboneDependantBottomJobTester, BuildGraphConstructionJobBottom01Tester, BuildGraphConstructionJobTop02Tester, BuildGraphConstructionJobTop01Tester, RuleDepConstructionJobBottom01Tester, RuleDepConstructionJobTop02Tester, RuleDepConstructionJobTop01Tester, UpdateTargetCacheTop, PastCurfewTimestampJobTester, IgnoreProduceJob
+from builder.tests_jobs import TenSecondJob, UpdateTargetCacheBottom, UpdateTargetCacheMiddle03, UpdateTargetCacheMiddle02, UpdateTargetCacheMiddle01, ForceBuildBottom, ForceBuildMiddle, ForceBuildTop, ExpandExactBottom, ExpandExactMiddle, ExpandExactTop, UpdateJobCacheBottom, UpdateJobCacheMiddle03, UpdateJobCacheMiddle02, UpdateJobCacheMiddle01, UpdateJobCacheTop, GetNextJobsToRunLowest, GetNextJobsToRunBottom, GetNextJobsToRunMiddle02, GetNextJobsToRunMiddle01, GetNextJobsToRunTop, GetStartingJobs04Tester, GetStartingJobs03Tester, GetStartingJobs02Tester, GetStartingJobs01Tester, ShouldRunRecurseJob10Tester, ShouldRunRecurseJob09Tester, ShouldRunRecurseJob08Tester, ShouldRunRecurseJob07Tester, ShouldRunRecurseJob06Tester, ShouldRunRecurseJob05Tester, ShouldRunRecurseJob04Tester, ShouldRunRecurseJob03Tester, ShouldRunRecurseJob02Tester, ShouldRunRecurseJob01Tester, ShouldRunCacheLogicJobTester, ShouldRunLogicJobTester, PastCurfewJobTester, AllDependenciesJobTester, PastCacheTimeJobTester, BuildableJobTester, StaleAlternateUpdateBottomJobTester, StaleAlternateUpdateTopJobTester, StaleAlternateBottomJobTester, StaleAlternateTopJobTester, StaleIgnoreMtimeJobTester, StaleStandardJobTester, DiamondRedundancyHighestJobTester, DiamondRedundancyTopJobTester, DiamondRedundancyMiddleJob02Tester, DiamondRedundancyMiddleJob01Tester, DiamondRedundancyBottomJobTester, BackboneDependentTopJob02Tester, BackboneDependentTopJob01Tester, BackboneDependentMiddleJob02Tester, BackboneDependentMiddleJob01Tester, BackboneDependentBottomJobTester, BuildGraphConstructionJobBottom01Tester, BuildGraphConstructionJobTop02Tester, BuildGraphConstructionJobTop01Tester, RuleDepConstructionJobBottom01Tester, RuleDepConstructionJobTop02Tester, RuleDepConstructionJobTop01Tester, UpdateTargetCacheTop, PastCurfewTimestampJobTester, IgnoreProduceJob
 import testing
 import builder.jobs
 import builder.build
@@ -248,7 +248,7 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(expected_number_of_targets5, number_of_targets5)
 
     @testing.unit
-    def test_backbone_dependant(self):
+    def test_backbone_dependent(self):
         # Given
         config1 = {
                 "has_backbone": True,
@@ -258,19 +258,19 @@ class GraphTest(unittest.TestCase):
         }
 
         jobs1 = [
-            BackboneDependantBottomJobTester(config=config1),
-            BackboneDependantMiddleJob01Tester(config=config1),
-            BackboneDependantMiddleJob02Tester(config=config1),
-            BackboneDependantTopJob01Tester(config=config1),
-            BackboneDependantTopJob02Tester(config=config1),
+            BackboneDependentBottomJobTester(config=config1),
+            BackboneDependentMiddleJob01Tester(config=config1),
+            BackboneDependentMiddleJob02Tester(config=config1),
+            BackboneDependentTopJob01Tester(config=config1),
+            BackboneDependentTopJob02Tester(config=config1),
         ]
 
         jobs2 = [
-            BackboneDependantBottomJobTester(config=config2),
-            BackboneDependantMiddleJob01Tester(config=config2),
-            BackboneDependantMiddleJob02Tester(config=config2),
-            BackboneDependantTopJob01Tester(config=config2),
-            BackboneDependantTopJob02Tester(config=config2),
+            BackboneDependentBottomJobTester(config=config2),
+            BackboneDependentMiddleJob01Tester(config=config2),
+            BackboneDependentMiddleJob02Tester(config=config2),
+            BackboneDependentTopJob01Tester(config=config2),
+            BackboneDependentTopJob02Tester(config=config2),
         ]
 
         build_context1 = {
@@ -291,14 +291,14 @@ class GraphTest(unittest.TestCase):
         expected_build_count1 = 18
         expected_build_count2 = 10
 
-        middle_node_01 = "backbone_dependant_middle_job_01"
-        middle_node_02 = "backbone_dependant_middle_job_02"
-        top_node_01 = "backbone_dependant_top_job_01"
-        top_node_02 = "backbone_dependant_top_job_02"
+        middle_node_01 = "backbone_dependent_middle_job_01"
+        middle_node_02 = "backbone_dependent_middle_job_02"
+        top_node_01 = "backbone_dependent_top_job_01"
+        top_node_02 = "backbone_dependent_top_job_02"
 
         # When
-        build1.add_job("backbone_dependant_bottom_job", build_context1)
-        build2.add_job("backbone_dependant_bottom_job", build_context2)
+        build1.add_job("backbone_dependent_bottom_job", build_context1)
+        build2.add_job("backbone_dependent_bottom_job", build_context2)
 
         build_count1 = len(build1.nodes())
         build_count2 = len(build2.nodes())
@@ -3626,6 +3626,45 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(job8.count, 1)
         self.assertEqual(job9.count, 0)
         self.assertEqual(job10.count, 0)
+
+    def test_job_state_iter(self):
+        # Given
+        job1 = builder.tests_jobs.SimpleTestJob(
+                "job1",
+                targets=["target1", "target2"],
+                depends=["target3", "target4"])
+        job2 = builder.tests_jobs.SimpleTestJob(
+                "job2",
+                targets=["target5", "target6"],
+                depends=["target1", "target2"])
+        job3 = builder.tests_jobs.SimpleTestJob(
+                "job3",
+                targets=["target7", "target8"],
+                depends=["target5", "target6"])
+
+        jobs = [job1, job2, job3]
+
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
+        build.add_job("job3", {})
+
+        # When
+        job_state_iter = build.job_state_iter()
+        job_tuple1 = job_state_iter.next()
+        job_tuple2 = job_state_iter.next()
+        job_tuple3 = job_state_iter.next()
+        job_tuples = [job_tuple1, job_tuple2, job_tuple3]
+        job_id_matching = [(x, y.unexpanded_id) for x, y in job_tuples]
+
+        # Then
+        self.assertRaises(StopIteration, job_state_iter.next)
+        self.assertNotEqual(job_tuple1, job_tuple2)
+        self.assertNotEqual(job_tuple1, job_tuple3)
+        self.assertNotEqual(job_tuple2, job_tuple3)
+        self.assertIn(("job1", "job1"), job_id_matching)
+        self.assertIn(("job2", "job2"), job_id_matching)
+        self.assertIn(("job3", "job3"), job_id_matching)
+
 
 class RuleDependencyGraphTest(unittest.TestCase):
 

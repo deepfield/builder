@@ -97,9 +97,9 @@ class ExecutionManagerTests(unittest.TestCase):
                 target = build.get_target(target_id)
                 target.exists = True
                 target.mtime = arrow.get()
-                for dependant_id in build.get_dependants(target_id):
-                    dependant = build.get_job_state(dependant_id)
-                    dependant.should_run = True
+                for dependent_id in build.get_dependents(target_id):
+                    dependent = build.get_job_state(dependent_id)
+                    dependent.should_run = True
             return True, ''
 
         executor.execute = mock.Mock(side_effect=update_job)

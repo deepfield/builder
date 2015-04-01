@@ -339,37 +339,37 @@ class RuleDependencyGraph(BaseGraph):
         parent_ids = self.predecessors(target_id)
         return self.filter_job_ids(parent_ids)
 
-    def get_dependants(self, target_id):
-        """Returns a list of the ids of all the dependants for the target_ids
+    def get_dependents(self, target_id):
+        """Returns a list of the ids of all the dependents for the target_ids
 
-        The dependants of a target are all the direct decendants of the target
+        The dependents of a target are all the direct decendants of the target
 
         Args:
-            target_id: The target_id to return the dependants of
+            target_id: The target_id to return the dependents of
 
         Returns:
-            A list of ids corresponding to the dependants of the target_id
+            A list of ids corresponding to the dependents of the target_id
         """
         self.assert_target(target_id)
         job_ids = self.neighbors(target_id)
-        dependant_ids = self.filter_job_ids(job_ids)
-        return dependant_ids
+        dependent_ids = self.filter_job_ids(job_ids)
+        return dependent_ids
 
-    def get_dependants_or_creators(self, target_id, direction):
-        """Returns the dependants or the creators of the targets depending on
+    def get_dependents_or_creators(self, target_id, direction):
+        """Returns the dependents or the creators of the targets depending on
         the direction
 
-        direction can be up (creators) down (dependants)
+        direction can be up (creators) down (dependents)
 
         Args:
-            target_id: the target to return the dependants or creators of
+            target_id: the target to return the dependents or creators of
             direction: The direction that the returned nodes will be to the
                 target_id
         """
         if direction == "up":
             return self.get_creators(target_id)
         else:
-            return self.get_dependants(target_id)
+            return self.get_dependents(target_id)
 
     def get_meta(self, meta_id):
         """Returns the object corresponding to the meta_id"""
@@ -490,14 +490,6 @@ class BuildGraph(BaseGraph):
         super(BuildGraph, self).add_node(node.unique_id, attr_dict=node_data)
         node = self.node[node.unique_id]["object"]
         return node
-
-    def is_target(self, target_id):
-        target = self.node[target_id]
-        if "object" not in target:
-            return False
-        if not isinstance(target["object"], builder.targets.Target):
-            return False
-        return True
 
     def is_job(self, job_id):
         """Returns if the node relating to job id is a job node"""
@@ -663,41 +655,41 @@ class BuildGraph(BaseGraph):
         parent_ids = self.predecessors(target_id)
         return self.filter_job_ids(parent_ids)
 
-    def get_dependants(self, target_id):
-        """Returns a list of the ids of all the dependants for the target_ids
+    def get_dependents(self, target_id):
+        """Returns a list of the ids of all the dependents for the target_ids
 
-        The dependants of a target are all the direct decendants of all the
+        The dependents of a target are all the direct decendants of all the
         depends nodes that depend on the target
 
         Args:
-            target_id: The target_id to return the dependants of
+            target_id: The target_id to return the dependents of
 
         Returns:
-            A list of ids corresponding to the dependants of the target_id
+            A list of ids corresponding to the dependents of the target_id
         """
         self.assert_target(target_id)
-        dependant_ids = []
+        dependent_ids = []
         depends_ids = self.neighbors(target_id)
         for depends_id in depends_ids:
             job_ids = self.neighbors(depends_id)
-            dependant_ids = dependant_ids + self.filter_job_ids(job_ids)
-        return dependant_ids
+            dependent_ids = dependent_ids + self.filter_job_ids(job_ids)
+        return dependent_ids
 
-    def get_dependants_or_creators(self, target_id, direction):
-        """Returns the dependants or the creators of the targets depending on
+    def get_dependents_or_creators(self, target_id, direction):
+        """Returns the dependents or the creators of the targets depending on
         the direction
 
-        direction can be up (creators) down (dependants)
+        direction can be up (creators) down (dependents)
 
         Args:
-            target_id: the target to return the dependants or creators of
+            target_id: the target to return the dependents or creators of
             direction: The direction that the returned nodes will be to the
                 target_id
         """
         if direction == "up":
             return self.get_creators(target_id)
         else:
-            return self.get_dependants(target_id)
+            return self.get_dependents(target_id)
 
     def _connect_targets(self, node, target_type, targets, edge_data,
                          new_nodes):
@@ -829,7 +821,7 @@ class BuildGraph(BaseGraph):
             # if the node is already in the graph, then return the nodes in the
             # direction of direction
             if expanded_direction.expanded_directions[direction]:
-                next_node_ids = self.get_dependants_or_creators(
+                next_node_ids = self.get_dependents_or_creators(
                         expanded_direction.unique_id, direction)
                 for next_node_id in next_node_ids:
                     next_nodes.append(self.get_job(next_node_id))
@@ -839,7 +831,7 @@ class BuildGraph(BaseGraph):
             # graph for the next job
             unexpanded_next_node_ids = (
                     self.rule_dependency_graph
-                        .get_dependants_or_creators(
+                        .get_dependents_or_creators(
                                 expanded_direction.unexpanded_id, direction))
 
             # expand out the job and then add it to a list so that they can
@@ -958,36 +950,12 @@ class BuildGraph(BaseGraph):
                               new_nodes, cache_set)
         return new_nodes
 
-    def _remove_sibilings_recurse(self, job_id, top_jobs, cache_set):
-        """Removes all jobs from top_jobs that is below job_id"""
-        if job_id in cache_set:
-            return
-        top_jobs.discard(job_id)
-        cache_set.add(job_id)
-        for target_id in self.neighbors(job_id):
-            for depends_id in self.neighbors(target_id):
-                for next_job_id in self.neighbors(depends_id):
-                    self._remove_sibilings_recurse(
-                        next_job_id, top_jobs, cache_set)
-
-    def remove_sibilings(self, top_jobs):
-        """Removes all jobs in top_jobs that is below another job in top_jobs"""
-        cache_set = set([])
-        for top_job in top_jobs.copy():
-            for target_id in self.neighbors(top_job):
-                for depends_id in self.neighbors(target_id):
-                    for job_id in self.neighbors(depends_id):
-                        self._remove_sibilings_recurse(job_id, top_jobs,
-                                                       cache_set)
-
     def get_starting_jobs(self):
         """Used to return a list of jobs to run"""
         should_run_list = []
-        for _, node in self.node.iteritems():
-            job = node["object"]
-            if isinstance(job, builder.jobs.JobState):
-                if job.get_should_run(self):
-                    should_run_list.append(job)
+        for _, job_state in self.job_state_iter():
+            if job_state.get_should_run(self):
+                should_run_list.append(job_state)
         return should_run_list
 
     def get_target(self, target_id):
@@ -1002,11 +970,28 @@ class BuildGraph(BaseGraph):
         """
         return self.rule_dependency_graph.get_job(job_id)
 
+    def is_job_state(self, job_state_id):
+        """Returns if the id passed in relates to a job node"""
+        job_state_container = self.node[job_state_id]
+        if "object" not in job_state_container:
+            return False
+        if not isinstance(job_state_container["object"], builder.jobs.JobState):
+            return False
+        return True
+
     def get_job_state(self, job_state_id):
         """
         Fetch job state with the given ID
         """
         return self.node[job_state_id]['object']
+
+    def job_state_iter(self):
+        """Returns an iterator over the graph's (job_state_id, job_state)
+        pairs
+        """
+        for node_id in self.node:
+            if self.is_job_state(node_id):
+                yield node_id, self.get_job_state(node_id)
 
     def get_next_jobs_to_run(self, job_id, update_set=None):
         """Returns the jobs that are below job_id that need to run"""
@@ -1026,51 +1011,45 @@ class BuildGraph(BaseGraph):
 
         target_ids = self.get_targets(job_id)
         for target_id in target_ids:
-            dependant_jobs = self.get_dependants(target_id)
-            for dependant_job in dependant_jobs:
-                job = self.get_job_state(dependant_job)
+            dependent_jobs = self.get_dependents(target_id)
+            for dependent_job in dependent_jobs:
+                job = self.get_job_state(dependent_job)
                 should_run = job.get_should_run_immediate(self, cached=False)
                 if should_run:
-                    next_jobs_list.append(dependant_job)
+                    next_jobs_list.append(dependent_job)
 
         update_set.add(job_id)
 
         return next_jobs_list
 
-    def update_job_cache(self, job_id):
+    def update_job_cache(self, job_state_id):
         """Updates the cache due to a job finishing"""
-        target_ids = self.get_targets(job_id)
+        target_ids = self.get_targets(job_state_id)
         self.update_targets(target_ids)
 
-        job = self.node[job_id]["object"]
-        job.get_stale(self, cached=False)
+        job_state = self.get_job_state(job_state_id)
+        job_state.get_stale(self, cached=False)
 
         for target_id in target_ids:
-            depends_ids = self.neighbors(target_id)
-            for depends_id in depends_ids:
-                neighbor_job_ids = self.neighbors(depends_id)
-                for neighbor_job_id in neighbor_job_ids:
-                    neighbor_job = (self.node
-                                    [neighbor_job_id]
-                                    ["object"])
-                    neighbor_job.get_buildable(self, cached=False)
-                    neighbor_job.get_stale(self, cached=False)
+            dependent_ids = self.get_dependents(target_id)
+            for dependent_id in dependent_ids:
+                dependent = self.get_job_state(dependent_id)
+                dependent.get_buildable(self, cached=False)
+                dependent.get_stale(self, cached=False)
 
-        job.update_lower_nodes_should_run(self)
+        job_state.update_lower_nodes_should_run(self)
 
     def update_target_cache(self, target_id):
         """Updates the cache due to a target finishing"""
-        target = self.node[target_id]["object"]
+        target = self.get_target(target_id)
         target.get_mtime(cached=False)
 
-        depends_ids = self.neighbors(target_id)
-        for depends_id in depends_ids:
-            job_ids = self.neighbors(depends_id)
-            for job_id in job_ids:
-                job = self.node[job_id]["object"]
-                job.get_stale(self, cached=False)
-                job.get_buildable(self, cached=False)
-                job.update_lower_nodes_should_run(self)
+        dependent_ids = self.get_dependents(target_id)
+        for dependent_id in dependent_ids:
+            dependent = self.get_job_state(dependent_id)
+            dependent.get_stale(self, cached=False)
+            dependent.get_buildable(self, cached=False)
+            dependent.update_lower_nodes_should_run(self)
 
     def update_targets(self, target_ids):
         """Takes in a list of target ids and updates all of their needed
@@ -1102,19 +1081,18 @@ class BuildGraph(BaseGraph):
         on a target
         """
         self.update_target_cache(target_id)
-        producer_ids = self.predecessors(target_id)
-        producers_exist = False
-        for producer_id in producer_ids:
-            producers_exist = True
-            next_jobs = self.get_next_jobs_to_run(producer_id)
+        creator_ids = self.get_creators(target_id)
+        creators_exist = False
+        for creator_id in creator_ids:
+            creators_exist = True
+            next_jobs = self.get_next_jobs_to_run(creator_id)
             for next_job in next_jobs:
                 self.run(next_job)
-        if producers_exist == False:
-            for depends_id in self.neighbors(target_id):
-                for job_id in self.neighbors(depends_id):
-                    next_jobs = self.get_next_jobs_to_run(job_id)
-                    for next_job in next_jobs:
-                        self.run(next_job)
+        if creators_exist == False:
+            for dependent_id in self.get_dependents(target_id):
+                next_jobs = self.get_next_jobs_to_run(dependent_id)
+                for next_job in next_jobs:
+                    self.run(next_job)
 
     def run(self, job_id):
         raise NotImplementedError()

@@ -125,13 +125,13 @@ class JobDependsPast(Job):
         return depends_dict
 
 
-class JobBackboneDependantTester(Job):
+class JobBackboneDependentTester(Job):
     """A job that has targets that depend on wether or not backbone is
     enabled
     """
-    def __init__(self, unexpanded_id="job_backbone_dependant", cache_time=None,
+    def __init__(self, unexpanded_id="job_backbone_dependent", cache_time=None,
                  targets=None, dependencies=None, config=None):
-        super(JobBackboneDependantTester, self).__init__(
+        super(JobBackboneDependentTester, self).__init__(
                 unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
@@ -1637,11 +1637,11 @@ class DiamondRedundancyBottomJobTester(Job):
         }
 
 
-class BackboneDependantTopJob02Tester(Job):
+class BackboneDependentTopJob02Tester(Job):
     """Top job"""
-    def __init__(self, unexpanded_id="backbone_dependant_top_job_02",
+    def __init__(self, unexpanded_id="backbone_dependent_top_job_02",
                  config=None):
-        super(BackboneDependantTopJob02Tester, self).__init__(
+        super(BackboneDependentTopJob02Tester, self).__init__(
                 unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
@@ -1649,7 +1649,7 @@ class BackboneDependantTopJob02Tester(Job):
             "produces": [
                 builder.expanders.TimestampExpander(
                     builder.targets.LocalFileSystemTarget,
-                    "backbone_dependant_top_target_02",
+                    "backbone_dependent_top_target_02",
                     "5min"),
             ]
         }
@@ -1659,17 +1659,17 @@ class BackboneDependantTopJob02Tester(Job):
             "depends": [
                 builder.expanders.TimestampExpander(
                     builder.targets.LocalFileSystemTarget,
-                    "backbone_dependant_highest_target_02",
+                    "backbone_dependent_highest_target_02",
                     "5min"),
             ]
         }
 
 
-class BackboneDependantTopJob01Tester(Job):
+class BackboneDependentTopJob01Tester(Job):
     """Top job"""
-    def __init__(self, unexpanded_id="backbone_dependant_top_job_01",
+    def __init__(self, unexpanded_id="backbone_dependent_top_job_01",
                  config=None):
-        super(BackboneDependantTopJob01Tester, self).__init__(
+        super(BackboneDependentTopJob01Tester, self).__init__(
                 unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
@@ -1677,7 +1677,7 @@ class BackboneDependantTopJob01Tester(Job):
             "produces": [
                 builder.expanders.TimestampExpander(
                     builder.targets.LocalFileSystemTarget,
-                    "backbone_dependant_top_target_01",
+                    "backbone_dependent_top_target_01",
                     "5min"),
             ]
         }
@@ -1687,17 +1687,17 @@ class BackboneDependantTopJob01Tester(Job):
             "depends": [
                 builder.expanders.TimestampExpander(
                     builder.targets.LocalFileSystemTarget,
-                    "backbone_dependant_highest_target_01",
+                    "backbone_dependent_highest_target_01",
                     "5min"),
             ]
         }
 
 
-class BackboneDependantMiddleJob02Tester(Job):
+class BackboneDependentMiddleJob02Tester(Job):
     """Middle job"""
-    def __init__(self, unexpanded_id="backbone_dependant_middle_job_02",
+    def __init__(self, unexpanded_id="backbone_dependent_middle_job_02",
                  config=None):
-        super(BackboneDependantMiddleJob02Tester, self).__init__(
+        super(BackboneDependentMiddleJob02Tester, self).__init__(
                 unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
@@ -1705,7 +1705,7 @@ class BackboneDependantMiddleJob02Tester(Job):
             "produces": [
                 builder.expanders.TimestampExpander(
                     builder.targets.LocalFileSystemTarget,
-                    "backbone_dependant_middle_target_02",
+                    "backbone_dependent_middle_target_02",
                     "5min"),
             ]
         }
@@ -1715,17 +1715,17 @@ class BackboneDependantMiddleJob02Tester(Job):
             "depends": [
                 builder.expanders.TimestampExpander(
                     builder.targets.LocalFileSystemTarget,
-                    "backbone_dependant_top_target_02",
+                    "backbone_dependent_top_target_02",
                     "5min"),
             ]
         }
 
 
-class BackboneDependantMiddleJob01Tester(Job):
+class BackboneDependentMiddleJob01Tester(Job):
     """Middle job"""
-    def __init__(self, unexpanded_id="backbone_dependant_middle_job_01",
+    def __init__(self, unexpanded_id="backbone_dependent_middle_job_01",
                  config=None):
-        super(BackboneDependantMiddleJob01Tester, self).__init__(
+        super(BackboneDependentMiddleJob01Tester, self).__init__(
                 unexpanded_id=unexpanded_id)
 
     def get_targets(self, build_context=None):
@@ -1733,7 +1733,7 @@ class BackboneDependantMiddleJob01Tester(Job):
             "produces": [
                 builder.expanders.TimestampExpander(
                     builder.targets.LocalFileSystemTarget,
-                    "backbone_dependant_middle_target_01",
+                    "backbone_dependent_middle_target_01",
                     "5min"),
             ]
         }
@@ -1743,17 +1743,17 @@ class BackboneDependantMiddleJob01Tester(Job):
             "depends": [
                 builder.expanders.TimestampExpander(
                     builder.targets.LocalFileSystemTarget,
-                    "backbone_dependant_top_target_01",
+                    "backbone_dependent_top_target_01",
                     "5min"),
             ]
         }
 
 
-class BackboneDependantBottomJobTester(Job):
+class BackboneDependentBottomJobTester(Job):
     """Bottom job"""
-    def __init__(self, unexpanded_id="backbone_dependant_bottom_job",
+    def __init__(self, unexpanded_id="backbone_dependent_bottom_job",
                  config=None):
-        super(BackboneDependantBottomJobTester, self).__init__(
+        super(BackboneDependentBottomJobTester, self).__init__(
                 unexpanded_id=unexpanded_id, config=config)
 
     def get_targets(self, build_context=None):
@@ -1761,7 +1761,7 @@ class BackboneDependantBottomJobTester(Job):
             "produces": [
                 builder.expanders.TimestampExpander(
                     builder.targets.LocalFileSystemTarget,
-                    "backbone_dependant_bottom_target",
+                    "backbone_dependent_bottom_target",
                     "5min"),
             ]
         }
@@ -1771,7 +1771,7 @@ class BackboneDependantBottomJobTester(Job):
             "depends": [
                 builder.expanders.TimestampExpander(
                     builder.targets.LocalFileSystemTarget,
-                    "backbone_dependant_middle_target_02",
+                    "backbone_dependent_middle_target_02",
                     "5min"),
             ]
         }
@@ -1779,7 +1779,7 @@ class BackboneDependantBottomJobTester(Job):
             depends_dict["depends"].append(
                 builder.expanders.TimestampExpander(
                     builder.targets.LocalFileSystemTarget,
-                    "backbone_dependant_middle_target_01",
+                    "backbone_dependent_middle_target_01",
                     "5min"),
             )
         return depends_dict
@@ -2071,14 +2071,14 @@ class TimestampExpandedJobTester(TimestampExpandedJob):
         return command
 
 
-class JobBackboneDependantDependsOneOrMore(Job):
+class JobBackboneDependentDependsOneOrMore(Job):
     """A job that has a depends_one_or_more that is inserted if backbone
     is true
     """
     def __init__(self,
-                 unexpanded_id="job_backbone_dependant_depends_one_or_more",
+                 unexpanded_id="job_backbone_dependent_depends_one_or_more",
                  config=None):
-        super(JobBackboneDependantDependsOneOrMore, self).__init__(
+        super(JobBackboneDependentDependsOneOrMore, self).__init__(
                 unexpanded_id=unexpanded_id)
 
     def get_dependencies(self, build_context=None):
@@ -2095,7 +2095,7 @@ class JobBackboneDependantDependsOneOrMore(Job):
             depends_dict["depends_one_or_more"].append(
                 builder.expanders.Expander(
                     builder.targets.Target,
-                    "backbone_dependant_depends_one_or_more"))
+                    "backbone_dependent_depends_one_or_more"))
 
         if not depends_dict["depends_one_or_more"]:
             del depends_dict["depends_one_or_more"]
