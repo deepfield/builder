@@ -67,6 +67,41 @@ class JobTest(unittest.TestCase):
         self.assertEqual(command1, expected_command1)
 
 
+class FakeTarget(builder.targets.Target):
+
+
+
+    @staticmethod
+    def get_bulk_exists_mtime(targets):
+        return {target.get_id(): {"exists": target.exists, "mtime": target.mtime} for target in targets}
+
+class SimpleTestJob(Job):
+    """A simple API for creating a job through constructor args"""
+    def __init__(self, unexpanded_id, targets=None, depends=None, config=None, should_run=False, parents_should_run=False):
+        super(SimpleTestJob, self).__init__(unexpanded_id, config=config)
+        self.targets = targets
+        self.depends = depends
+        self.should_run = should_run
+        self.parents_should_run = parents_should_run
+
+    def get_dependencies(self, build_context=None):
+        return {
+            "depends": [
+                builder.expanders.Expander(
+                FakeTarget,
+                d) for d in self.depends or []]
+        }
+
+    def get_targets(self, build_context=None):
+        return {
+            "produces": [
+                builder.expanders.Expander(
+                    FakeTarget,
+                    t) for t in self.targets or []
+            ]
+        }
+
+
 
 class JobDependsPast(Job):
     """A job that depends on a file from the past"""
@@ -767,179 +802,6 @@ class GetNextJobsToRunTop(GetNextJobsCounter):
             ]
         }
 
-
-class GetShouldRunCounterState(builder.jobs.JobState):
-    """Used to count how many times the should run is returned"""
-
-    def __init__(self, job, unique_id, build_context,
-            cache_time, config=None):
-        super(GetShouldRunCounterState, self).__init__(job,
-                unique_id, build_context, cache_time,
-                config=config)
-        self.count = 0
-
-    def get_should_run(self, build_graph, cached=True, cache_set=None):
-        """Counts the number of times it is called"""
-        self.count += 1
-        return super(GetShouldRunCounterState, self).get_should_run(
-            build_graph, cached=cached, cache_set=cache_set)
-
-class GetShouldRunCounterJob(Job):
-    """Expands out the jobsattes into the GetShouldRunCounterState"""
-    def expand(self, build_context):
-        counting_nodes = []
-        expanded_nodes = super(GetShouldRunCounterJob, self).expand(
-                build_context)
-        for expanded_node in expanded_nodes:
-            counting_node = GetShouldRunCounterState(
-                    expanded_node,
-                    expanded_node.unique_id,
-                    expanded_node.build_context,
-                    expanded_node.cache_time,
-                    expanded_node.config)
-            counting_nodes.append(counting_node)
-        return counting_nodes
-
-
-class UpdateLowerNodesShouldRunLowest(GetShouldRunCounterJob):
-    """A job at the bottom of the graph"""
-    def __init__(self, unexpanded_id="update_lower_nodes_should_run_lowest",
-                 cache_time="10min", targets=None, dependencies=None,
-                 config=None):
-        super(UpdateLowerNodesShouldRunLowest, self).__init__(
-                unexpanded_id=unexpanded_id, cache_time=cache_time)
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "update_lower_nodes_should_run_lowest_target")
-            ]
-        }
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "update_lower_nodes_should_run_bottom_target"),
-            ]
-        }
-
-
-class UpdateLowerNodesShouldRunBottom(GetShouldRunCounterJob):
-    """A job at the bottom of the diamond"""
-    def __init__(self, unexpanded_id="update_lower_nodes_should_run_bottom",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(UpdateLowerNodesShouldRunBottom, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "update_lower_nodes_should_run_bottom_target")
-            ]
-        }
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "update_lower_nodes_should_run_middle"
-                    "_01_target"),
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "update_lower_nodes_should_run_middle"
-                    "_02_target")
-            ]
-        }
-
-
-class UpdateLowerNodesShouldRunMiddle02(GetShouldRunCounterJob):
-    """A job in the middle of the diamond"""
-    def __init__(self, unexpanded_id="update_lower_nodes_should_run_middle_02",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(UpdateLowerNodesShouldRunMiddle02, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "update_lower_nodes_should_run_middle"
-                    "_02_target")
-            ]
-        }
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "update_lower_nodes_should_run_top_target")
-            ]
-        }
-
-
-
-class UpdateLowerNodesShouldRunMiddle01(GetShouldRunCounterJob):
-    """A job in the middle of the diamond"""
-    def __init__(self, unexpanded_id="update_lower_nodes_should_run_middle_01",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(UpdateLowerNodesShouldRunMiddle01, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "update_lower_nodes_should_run_"
-                    "middle_01_target")
-            ]
-        }
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "update_lower_nodes_should_run_top_target")
-            ]
-        }
-
-
-class UpdateLowerNodesShouldRunTop(GetShouldRunCounterJob):
-    """Top most job"""
-    def __init__(self, unexpanded_id="update_lower_nodes_should_run_top",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(UpdateLowerNodesShouldRunTop, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "update_lower_nodes_should_run_top_target")
-            ]
-        }
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "update_lower_nodes_should_run_highest_target")
-            ]
-        }
-
-
 class GetStartingJobs04Tester(Job):
     """A job that will have it's should run values overwritten"""
     def __init__(self, unexpanded_id="get_starting_jobs_04",
@@ -983,7 +845,6 @@ class ShouldRunRecurseJobState(builder.jobs.JobState):
         self.should_run_immediate = should_run_immediate
 
     def get_should_run_immediate(self, build_graph, cached=True, cache_set=None):
-        """Counts the number of times it is called"""
         return self.should_run_immediate
 
 

@@ -61,6 +61,12 @@ class Target(object):
         """
         return self.mtime
 
+
+    def get_id(self):
+        """ Returns a unique ID for this target
+        """
+        return self.unique_id
+
     @staticmethod
     @abc.abstractmethod
     def get_bulk_exists_mtime(targets):
@@ -149,6 +155,7 @@ class LocalFileSystemTarget(Target):
         self.exists = mtime is not None
 
         return self.mtime
+
 
 
 class S3BackedLocalFileSystemTarget(LocalFileSystemTarget):

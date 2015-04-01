@@ -1013,21 +1013,20 @@ class BuildGraph(BaseGraph):
 
         next_jobs_list = []
 
-        job = self.node[job_id]["object"]
+        job = self.get_job_state(job_id)
         if job.get_should_run(self):
             next_jobs_list.append(job_id)
             update_set.add(job_id)
             return next_jobs_list
 
-        target_ids = self.neighbors(job_id)
+        target_ids = self.get_targets(job_id)
         for target_id in target_ids:
-            depends_ids = self.neighbors(target_id)
-            for depends_id in depends_ids:
-                neighbor_job_ids = self.neighbors(depends_id)
-                for neighbor_job_id in neighbor_job_ids:
-                    next_jobs = self.get_next_jobs_to_run(
-                        neighbor_job_id, update_set=update_set)
-                    next_jobs_list = next_jobs_list + next_jobs
+            dependant_jobs = self.get_dependants(target_id)
+            for dependant_job in dependant_jobs:
+                job = self.get_job_state(dependant_job)
+                should_run = job.get_should_run_immediate(self, cached=False)
+                if should_run:
+                    next_jobs_list.append(dependant_job)
 
         update_set.add(job_id)
 
@@ -1035,7 +1034,7 @@ class BuildGraph(BaseGraph):
 
     def update_job_cache(self, job_id):
         """Updates the cache due to a job finishing"""
-        target_ids = self.neighbors(job_id)
+        target_ids = self.get_targets(job_id)
         self.update_targets(target_ids)
 
         job = self.node[job_id]["object"]
@@ -1091,9 +1090,14 @@ class BuildGraph(BaseGraph):
         for next_job in next_jobs:
             self.run(next_job)
 
-    def finish_job(self, job):
-        job.should_run = False
-        job.force = False
+    def finish_job(self, job, success, log):
+        if not success:
+            job.failures += 1
+        else:
+            job.failures = 0
+            job.should_run = False
+            job.force = False
+            self.update_job_cache(job.get_id())
 
     def finish_target(self, target):
         pass

@@ -3,6 +3,8 @@ import builder.build
 import threading
 import time
 import subprocess
+import deepy.log
+import Queue
 
 class ExecutionThread(threading.Thread):
 
@@ -17,19 +19,38 @@ class ExecutionThread(threading.Thread):
 class Executor(object):
 
     def execute(self, job):
+        if job.is_running:
+            raise SystemError("Job {} is already running".format(job))
+        job = self.prepare_job_for_execution(job)
+        try:
+            status, log = self.do_execute(job)
+        finally:
+            self.finish_job(job, status, log)
+
+    def do_execute(self, job):
         raise NotImplementedError()
+
+    def prepare_job_for_execution(self, job):
+        job.is_running = True
+        return job
+
+    def finish_job(self, job, status, log):
+        job.is_running = False
+        deepy.log.info("Job {} complete. Status: {}".format(job.unexpaded_id, status))
+        deepy.log.debug(log)
 
 class LocalExecutor(Executor):
 
-    def execute(self, job, build_graph):
+    def do_execute(self, job, build_graph):
         command = job.get_command(build_graph)
-        return subprocess.check_call(command, shell=True)
+        return subprocess.check_call(command, shell=True), 'Log'
 
 class PrintExecutor(Executor):
 
-    def execute(self, job, build_graph):
+    def do_execute(self, job, build_graph):
         command = job.get_command(build_graph)
         print command
+        return True, 'Log'
 
 class ExecutionManager(object):
 
@@ -47,23 +68,26 @@ class ExecutionManager(object):
             self.build.add_job(job, build_context, **kwargs)
         self._update_build(update_build_graph)
 
-    def start_execution(self, run_to_completion=True):
+    def start_execution(self, inline=True):
         """
         Begin executing jobs
         """
-
-        if run_to_completion:
-            next_jobs = self.get_next_jobs()
-            while len(next_jobs) > 0:
-                for job in next_jobs:
-                    self.executor.execute(job, self.build)
-                    self._update_build(lambda: self.build.finish_job(job))
-
-                next_jobs = self.get_next_jobs()
+        work_queue = Queue.Queue()
+        if inline:
+            next_jobs = self.get_jobs_to_run()
+            map(work_queue.put, next_jobs)
+            while not work_queue.empty():
+                job = work_queue.get()
+                success, log = self.executor.execute(job, self.build)
+                self._update_build(lambda: self.build.finish_job(job, success=success, log=log))
+                next_job_ids = self.build.get_next_jobs_to_run(job.get_id())
+                next_jobs = map(lambda x: self.build.get_job(x), next_job_ids)
+                map(work_queue.put, next_jobs)
         else:
+            # Daemon
             raise NotImplementedError()
 
-    def get_next_jobs(self):
+    def get_jobs_to_run(self):
         def get_next_jobs():
             return self.build.get_starting_jobs()
         return self._update_build(get_next_jobs)

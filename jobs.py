@@ -26,6 +26,7 @@ class JobState(object):
         self.config = config
         self.meta = meta
         self.job = job
+        self.failures = 0
 
         self.stale = None
         self.buildable = None
@@ -33,6 +34,7 @@ class JobState(object):
         self.parents_should_run = None
         self.expanded_directions = {"up": False, "down": False}
         self.force = force
+        self.is_running = False
 
     def __repr__(self):
         return "{}:{}".format(self.unexpanded_id, self.unique_id)
@@ -368,6 +370,12 @@ class JobState(object):
                                      .node[self.unexpanded_id]["object"])
         return unexpanded_job.get_command(self.unique_id, self.build_context,
                                           build_graph)
+
+
+    def get_id(self):
+        """ Returns this JobState's unique id
+        """
+        return self.unique_id
 
 class TimestampExpandedJobState(JobState):
     def __init__(self, job, unique_id, build_context,
