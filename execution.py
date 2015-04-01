@@ -75,7 +75,7 @@ class PrintExecutor(Executor):
     def finish_job(self, job, status, log, build_graph):
         super(PrintExecutor, self).finish_job(job, status, log, build_graph)
         build_graph.finish_job(job, status, log, update_job_cache=False)
-        
+
 class ExecutionManager(object):
 
     def __init__(self, build_manager, executor, max_retries=5):
@@ -113,7 +113,8 @@ class ExecutionManager(object):
 
             # Don't run a job more than the configured max number of retries
             if job.retries >= self.max_retries:
-                job.should_build = False
+                job.should_run = False
+                job.force = False
                 deepy.log.error("Maximum number of retries reached for {}".format(job))
                 continue
 

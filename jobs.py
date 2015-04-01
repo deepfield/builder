@@ -356,7 +356,7 @@ class JobState(object):
         parents_should_run = self.get_parents_should_run(
             build_graph, cached=cached, cache_set=cache_set)
 
-        return should_run_immediate and not parents_should_run
+        return (should_run_immediate and not parents_should_run) or self.force
 
     def should_ignore_parents(self):
         """
