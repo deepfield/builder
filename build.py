@@ -1083,26 +1083,14 @@ class BuildGraph(BaseGraph):
                 target.exists = exists_mtime_dict[target.unique_id]["exists"]
                 target.mtime = exists_mtime_dict[target.unique_id]["mtime"]
 
-    def finish(self, job_id):
-        """Checks what should happen now that the job is done"""
-        self.update_job_cache(job_id)
-        next_jobs = self.get_next_jobs_to_run(job_id)
-        for next_job in next_jobs:
-            self.run(next_job)
-
-    def finish_job(self, job, success, log):
+    def finish_job(self, job, success, log, update_job_cache=True):
         job.last_run = arrow.now()
-
-        if not success:
-            job.retries += 1
-        else:
-            job.retries = 0
+        job.retries += 1
+        if success:
             job.should_run = False
             job.force = False
-            self.update_job_cache(job.get_id())
-
-    def finish_target(self, target):
-        pass
+            if update_job_cache:
+                self.update_job_cache(job.get_id())
 
     def update(self, target_id):
         """Checks what should happen now that there is new information

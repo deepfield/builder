@@ -5,6 +5,7 @@ import time
 import subprocess
 import deepy.log
 import Queue
+import arrow
 
 class ExecutionThread(threading.Thread):
 
@@ -18,14 +19,23 @@ class ExecutionThread(threading.Thread):
 
 class Executor(object):
 
-    def execute(self, job):
+    # Should be False if this executor will handle updating the job state
+    should_update_build_graph = True
+
+    def execute(self, job, build_graph):
         if job.is_running:
             raise SystemError("Job {} is already running".format(job))
         job = self.prepare_job_for_execution(job)
+
+        status = False
         try:
-            status, log = self.do_execute(job)
+            status, log = self.do_execute(job, build_graph)
+        except Exception as e:
+            log = unicode(e)
         finally:
-            self.finish_job(job, status, log)
+            self.finish_job(job, status, log, build_graph)
+
+        return status, log
 
     def do_execute(self, job):
         raise NotImplementedError()
@@ -34,9 +44,9 @@ class Executor(object):
         job.is_running = True
         return job
 
-    def finish_job(self, job, status, log):
+    def finish_job(self, job, status, log, build_graph):
         job.is_running = False
-        deepy.log.info("Job {} complete. Status: {}".format(job.unexpaded_id, status))
+        deepy.log.info("Job {} complete. Status: {}".format(job.get_id(), status))
         deepy.log.debug(log)
 
 class LocalExecutor(Executor):
@@ -46,12 +56,26 @@ class LocalExecutor(Executor):
         return subprocess.check_call(command, shell=True), 'Log'
 
 class PrintExecutor(Executor):
+    """ "Executes" by printing and marking targets as available
+    """
+
+    should_update_build_graph = False
 
     def do_execute(self, job, build_graph):
         command = job.get_command(build_graph)
         print command
+        target_ids = build_graph.get_targets(job.get_id())
+        for target_id in target_ids:
+            target = build_graph.get_target(target_id)
+            target.exists = True
+            target.mtime = arrow.get()
+
         return True, 'Log'
 
+    def finish_job(self, job, status, log, build_graph):
+        super(PrintExecutor, self).finish_job(job, status, log, build_graph)
+        build_graph.finish_job(job, status, log, update_job_cache=False)
+        
 class ExecutionManager(object):
 
     def __init__(self, build_manager, executor, max_retries=5):
@@ -97,7 +121,8 @@ class ExecutionManager(object):
             success, log = self.executor.execute(job, self.build)
 
             # Update job state
-            self._update_build(lambda: self.build.finish_job(job, success=success, log=log))
+            if self.executor.should_update_build_graph:
+                self._update_build(lambda: self.build.finish_job(job, success=success, log=log))
 
             # Get next jobs to execute
             next_job_ids = self.build.get_next_jobs_to_run(job.get_id())
