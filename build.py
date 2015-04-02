@@ -545,16 +545,6 @@ class BuildGraph(BaseGraph):
         if not self.is_target(target_id):
             raise RuntimeError("{} is not a target node".format(target_id))
 
-    @staticmethod
-    def _filter_kind(edges_iter, kind):
-        edges_list = []
-        for src, dest, data in edges_iter:
-            if kind is not None:
-                if data.get("kind") != kind:
-                    continue
-            edges_list.append((src, dest, data))
-        return edges_list
-
     def filter_target_ids(self, target_ids):
         """Takes in a list of ids in the graph and returns a list of the ids
         that correspond to targets
@@ -595,186 +585,422 @@ class BuildGraph(BaseGraph):
                 output_job_ids.append(job_id)
         return output_job_ids
 
-    def filter_target_edges_iter(self, edge_iter):
+    def filter_src_by_job_states_iter(self, edge_iter):
+        """Takes in an iterable of edges and returns an iterator for the edges
+        that have a job state as the source node.
+
+        Args:
+            edge_iter: An iterable of the edges to be filtered. Can be of form
+                (u, v) or (u, v, d)
+
+        Returns:
+            An iterator of edges with job states as the source node with the
+            same form as the input edge_iter
+        """
+        for edge in edge_iter:
+            src = edge[0]
+            if self.is_job_state(src):
+                yield edge
+
+    def filter_src_by_targets_iter(self, edge_iter):
+        """Takes in an iterable of edges and returns an iterator for the edges
+        that have a target as the source node.
+
+        Args:
+            edge_iter: An iterator of the edges to be filtered. Can be of form
+                (u, v) or (u, v, d)
+
+        Returns:
+            An iterator of edges with targets as the source node with the same
+            form as the input edge_iter
+        """
         for edge in edge_iter:
             src = edge[0]
             if self.is_target(src):
                 yield edge
 
-    def filter_job_state_edges_iter(self, edge_iter):
+    def filter_dest_by_job_states_iter(self, edge_iter):
+        """Takes in an iterable of edges and returns an iterator for the edges
+        that have a job state as the destination node.
+
+        Args:
+            edge_iter: An iterable of the edges to be filtered. Can be of form
+            (u, v) or (u, v, d)
+
+        Returns:
+            An iterator of edges with job states as the destination node with
+                the same form as the input edge_iter
+        """
         for edge in edge_iter:
-            src = edge[0]
-            if self.is_job(src):
+            dest = edge[1]
+            if self.is_job_state(dest):
+                yield edge
+
+    def filter_dest_by_targets_iter(self, edge_iter):
+        """Takes in an iterable of edges and returns an iterator for the edges
+        that have a target as the destination node.
+
+        Args:
+            edge_iter: An iterable of the edges to be filtered. Can be of form
+                (u, v) or (u, v, d)
+
+        Returns:
+            An iterator of edges with targets as the destination node with the
+            same form as the input edge_iter
+        """
+        for edge in edge_iter:
+            dest = edge[1]
+            if self.is_target(dest):
                 yield edge
 
     def filter_edge_kind_iter(self, edge_iter, kind):
-        for edge in edge_iter:
-            data = edge[2]
-            if kind is not None:
+        """Takes in an iterable of edges and returns an iterator for the edges
+        that have the same kind as kind
+
+        Args:
+            edge_iter: An iterable of the edges to be filtered. Must be of form
+                (u, v, d)
+            kind: The kind to filter by. The kind of the edge is taken from the
+                key "kind" from d.
+
+        Returns:
+            An iterator of edges where their kind is equivalent to kind. The
+            edges are of form (u, v, d)
+        """
+        if kind is None:
+            return iter(edge_iter)
+        else:
+            for edge in edge_iter:
+                data = edge[2]
                 if data.get("kind") != kind:
                     continue
-            yield edge
+                yield edge
 
     def get_dependency_edges_iter(self, job_state_id):
+        """TODO: Decide what this means"""
         self.assert_job_state(job_state_id)
         in_edges_iter = self.in_edges_iter(job_state_id)
-        return self.filter_target_edges_iter(in_edges_iter)
+        return self.filter_src_by_targets_iter(in_edges_iter)
+
+    def get_dependency_edges(self, job_state_id):
+        """TODO: Decide what this means"""
+        return list(self.get_dependency_edges_iter(job_state_id))
 
     def get_target_edges_iter(self, job_state_id, kind=None):
+        """Takes in an id of a job state and returns an iterator to the edges
+        that connect the job state to a target
+
+        Can also filter the edges by kind
+
+        Args:
+            job_state_id: The id of the job state that the edges should source
+                from. Raises an exception if the id is not a job state.
+            kind: The kind that the edges should be e.g. "produces",
+                "alternates", ...
+
+        Returns:
+            An iterator of the edges that connect the job state to it's targets.
+            Edges are of the form (u, v, d).
+        """
         self.assert_job_state(job_state_id)
         out_edges_iter = self.out_edges_iter(job_state_id)
         return self.filter_edge_kind_iter(
-                self.filter_target_edges_iter(out_edges_iter), kind)
+                self.filter_dest_by_targets_iter(out_edges_iter), kind)
+
+    def get_target_edges(self, job_state_id, kind=None):
+        """Takes in an id of a job state and returns a list to the edges that
+        connect the job state to a target
+
+        Can also filter the edges by kind
+
+        Args:
+            job_state_id: The id of the job state that the edges should source
+                from. Raises an exception if the id is not a job state.
+            kind: The kind that the edges should be e.g. "produces",
+                "alternates", ...
+
+        Returns:
+            A list of the edges that connect the job state to it's targets.
+            Edges are of the form (u, v, d).
+        """
+        return list(self.get_target_edges_iter(job_state_id, kind=kind))
 
     def get_creator_edges_iter(self, target_id, kind=None):
+        """Takes in an id of a target and returns an iterator to the edges that
+        connect the target to the job state that creates it
+
+        Can also filter the edges by kind
+
+        Args:
+            target_id: The id of the job state that the edges should source
+                from. Raises an exception if the id is not a job state.
+            kind: The kind that the edges should be e.g. "produces",
+                "alternates", ...
+
+        Returns:
+            An iterator of the edges that connect the target to it's creators.
+            Edges are of the form (u, v, d).
+        """
         self.assert_target(target_id)
         in_edges_iter = self.in_edges_iter(target_id)
         return self.filter_edge_kind_iter(
-                self.filter_job_state_edges_iter(in_edges_iter), kind)
+                self.filter_src_by_job_states_iter(in_edges_iter), kind)
+
+    def get_creator_edges(self, job_state_id, kind=None):
+        """Takes in an id of a target and returns a list to the edges that
+        connect the target to the job state that creates it
+
+        Can also filter the edges by kind
+
+        Args:
+            target_id: The id of the job state that the edges should source
+                from. Raises an exception if the id is not a job state.
+            kind: The kind that the edges should be e.g. "produces",
+                "alternates", ...
+
+        Returns:
+            A list of the edges that connect the target to it's creators.
+            Edges are of the form (u, v, d).
+        """
+        return list(self.get_creator_edges_iter(job_state_id, kind=kind))
 
     def get_dependent_edges_iter(self, target_id):
+        """TODO: decide what this means"""
         self.assert_target(target_id)
         out_edges_iter = self.out_edges_iter(target_id)
-        return self.filter_target_edges_iter(out_edges_iter)
+        return self.filter_dest_by_job_states_iter(out_edges_iter)
+
+    def get_dependent_edges(self, job_state_id):
+        """TODO: decide what this means"""
+        return list(self.get_dependent_edges_iter(job_state_id))
 
     def extract_src_iter(self, edge_iter):
-        for src, _, _ in edge_iter:
-            yield src
+        """Takes in an edge iterable and returns an iterator for all the source
+        nodes in the edges
+
+        Args:
+            edge_iter: An iterable of edges to get the source node of. Can be
+                of the form (u, v) or (u, v, d)
+
+        Returns:
+            An iterator for the source nodes of the edges inputted
+        """
+        for edge in edge_iter:
+            yield edge[0]
 
     def extract_dest_iter(self, edge_iter):
-        for _, dest, _ in edge_iter:
-            yield dest
+        """Takes in an edge iterable and returns an iterator for all the
+        destination nodes in the edges
+
+        Args:
+            edge_iter: An iterable of edges to get the destination node of. Can
+                be of the form (u, v) or (u, v, d)
+
+        Returns:
+            An iterator for the destination nodes of the edges inputted
+        """
+        for edge in edge_iter:
+            yield edge[1]
 
     def get_dependencies_iter(self, job_state_id):
+        """Takes in an id for a job state and returns an iterator for it's
+        dependency ids
+
+        Args:
+            job_state_id: The id of the job state to get the dependency ids
+                for. Exception is raised if it isn't an id for a job state
+
+        Returns:
+            An iterator for the dependency ids of the job state.
+        """
         return self.extract_src_iter(
                 self.get_dependency_edges_iter(job_state_id))
 
+    def get_dependencies(self, job_state_id):
+        """Takes in an id for a job state and returns a list for it's dependency
+        ids
+
+        Args:
+            job_state_id: The id of the job state to get the dependency ids
+                for. Exception is raised if it isn't an id for a job state
+
+        Returns:
+            A list for the dependency ids of the job state.
+        """
+        return list(self.get_dependencies_iter(job_state_id))
+
     def get_targets_iter(self, job_state_id, kind=None):
+        """Takes in an id for a job state and returns an iterator for it's
+        target ids
+
+        Args:
+            job_state_id: The id of the job state to get the target ids for.
+                Exception is raised if it isn't an id for a job state
+
+        Returns:
+            An iterator for the target ids of the job state.
+        """
         return self.extract_dest_iter(
                 self.get_target_edges_iter(job_state_id, kind=kind))
 
+    def get_targets(self, job_state_id, kind=None):
+        """Takes in an id for a job state and returns a list for it's target
+        ids
+
+        Args:
+            job_state_id: The id of the job state to get the target ids for.
+                Exception is raised if it isn't an id for a job state
+            kind: The kind that the edges should be of. Recieved from the
+                kind key of the edge's data dict. If kind is None then no
+                filtering is done
+
+        Returns:
+            A list for the target ids of the job state.
+        """
+        return list(self.get_targets_iter(job_state_id, kind=kind))
+
     def get_creators_iter(self, target_id, kind=None):
+        """Takes in an id for a target and returns an iterator for it's
+        creator ids
+
+        Args:
+            target_id: The id of the target to get the creator ids for.
+                Exception is raised if it isn't an id for a target
+            kind: The kind that the edges should be of. Recieved from the
+                kind key of the edge's data dict. If kind is None then no
+                filtering is done
+
+        Returns:
+            An iterator for the creator ids of the target.
+        """
         return self.extract_src_iter(
                 self.get_creator_edges_iter(target_id, kind=kind))
 
+    def get_creators(self, target_id, kind=None):
+        """Takes in an id for a target and returns a list for it's creator ids
+
+        Args:
+            target_id: The id of the target to get the creator ids for.
+                Exception is raised if it isn't an id for a target
+            kind: The kind that the edges should be of. Recieved from the
+                kind key of the edge's data dict. If kind is None then no
+                filtering is done
+
+        Returns:
+            A list for the creator ids of the target.
+        """
+        return list(self.get_creators(target_id, kind=kind))
+
     def get_dependents_iter(self, target_id):
+        """Takes in an id for a target and returns an iterator for it's
+        depndent ids
+
+        Args:
+            target_id: The id of the target to get the dependent ids for.
+                Exception is raised if it isn't an id for a target
+
+        Returns:
+            An iterator for the dependent ids of the target.
+        """
         return self.extract_dest_iter(
                 self.get_dependent_edges_iter(target_id))
 
-    def get_targets(self, job_state_id, kind=None):
-        """Returns a list of the ids of all the targets for the job_id
-
-        The targets for the job_id are the target nodes that are direct
-        decendants of job_id
+    def get_dependents(self, target_id):
+        """Takes in an id for a target and returns a list for it's depndent ids
 
         Args:
-            job_id: The job to return the targets of
+            target_id: The id of the target to get the dependent ids for.
+                Exception is raised if it isn't an id for a target
 
         Returns:
-            A list of ids corresponding to the targets of job_id
+            A list for the dependent ids of the target.
         """
-        target_edges = self.get_target_edges(job_state_id, kind)
-        return [dest for _, dest, _ in target_edges]
+        return list(self.get_dependents(target_id))
 
-    def get_target_edges(self, job_state_id, kind=None):
-        self.assert_job(job_state_id)
-        out_edges_iter = self.out_edges_iter(job_state_id, data=True)
-        target_edges = self._filter_kind(out_edges_iter, kind)
-        return self.target_edges(target_edges)
-
-    def get_dependencies(self, job_id):
-        """Returns a list of the ids of all the dependency targets for the
-        job_id
-
-        The dependencies for the job_id are the target nodes that are direct
-        predecessors of the depends nodes for the job
+    def get_targets_or_dependencies_iter(self, job_state_id, direction):
+        """Takes in a job id and returns an iterator for either the dependency
+        ids or the target id's depending on the direcion
 
         Args:
-            job_id: The job to return the targets of
+            job_state_id: the job id to get the dependency ids or the target
+                ids for
+            direction: If the direction is "up" the the dependencies are
+                retrieved and if it is "down" then the targets are retrieved.
+                Must be "up" or "down" raises a value error if it is
+                neither.
 
         Returns:
-            A list of ids corresponding to the dependencies of job_id
-        """
-        self.assert_job(job_id)
-        dependency_target_ids = []
-        depends_ids = self.predecessors(job_id)
-        for depends_id in depends_ids:
-            target_ids = self.predecessors(depends_id)
-            dependency_target_ids = (dependency_target_ids +
-                                     self.filter_target_ids(target_ids))
-        return dependency_target_ids
-
-    def get_targets_or_dependencies(self, job_id, direction):
-        """Returns either the targets or the dependencies depending on the
-        direction
-
-        direction cane be "up" (dependencies) or "down" (targets)
-
-        Args:
-            job_id: The job to return the targets or the dependencies of
-            direction: the direciton that the returned nodes will be in realtion
-                to the job.
+            An iterator for either the dependency ids or the target ids of the
+            job depending on the the direction.
         """
         if direction == "up":
-            return self.get_dependencies(job_id)
+            return self.get_dependencies_iter(job_state_id)
+        elif direction == "down":
+            return self.get_targets_iter(job_state_id)
         else:
-            return self.get_targets(job_id)
+            raise ValueError("direction must be up or down, recieved "
+                             "{}".format(direction))
 
-    def get_creators(self, target_id, kind=None):
-        """Returns a list of the ids of all the creators for the target_id
-
-        The creators of a target are all direct predecessors of the target
-
-        Args:
-            target_id: The target_id to return the creators of
-
-        Returns:
-            A list of ids corresponding to the creators of the target_id
-        """
-        creator_edges = self.get_creator_edges(target_id, kind)
-        return [src for src, _, _ in creator_edges]
-
-    def get_creator_edges(self, target_id, **kwargs):
-        self.assert_target(target_id)
-        in_edges_iter = self.in_edges_iter(target_id, data=True)
-        creator_edges = self._filter_kind(in_edges_iter, kind)
-        return self.filter_job_state_edges(creator_edges)
-
-    def get_dependents(self, target_id):
-        """Returns a list of the ids of all the dependents for the target_ids
-
-        The dependents of a target are all the direct decendants of all the
-        depends nodes that depend on the target
+    def get_targets_or_dependencies(self, job_state_id, direction):
+        """Takes in a job id and returns a list for either the dependency ids
+        or the target id's depending on the direcion
 
         Args:
-            target_id: The target_id to return the dependents of
+            job_state_id: the job id to get the dependency ids or the target
+                ids for
+            direction: If the direction is "up" the the dependencies are
+                retrieved and if it is "down" then the targets are retrieved.
+                Must be "up" or "down" raises a value error if it is
+                neither.
 
         Returns:
-            A list of ids corresponding to the dependents of the target_id
+            A list for either the dependency ids or the target ids of the job
+            depending on the the direction.
         """
-        self.assert_target(target_id)
-        dependent_ids = []
-        depends_ids = self.neighbors(target_id)
-        for depends_id in depends_ids:
-            job_ids = self.neighbors(depends_id)
-            dependent_ids = dependent_ids + self.filter_job_state_ids(job_ids)
-        return dependent_ids
+        return list(self.get_targets_or_dependencies_iter(job_state_id,
+                                                          direction))
+
+    def get_dependents_or_creators_iter(self, target_id, direction):
+        """Takes in a target id and returns an iterator for either the dependent
+        ids or the creator ids depending on the direcion
+
+        Args:
+            target_id: the target id to get the dependent ids or the creator ids
+                for
+            direction: If the direction is "up" the creators are retrieved and
+                if it is "down" then the dependents are retrieved.
+                Must be "up" or "down" raises a value error if it is
+                neither.
+
+        Returns:
+            An iterator for either the dependency ids or the target ids of the
+            job depending on the the direction.
+        """
+        if direction == "up":
+            return self.get_creators_iter(target_id)
+        elif direction == "down":
+            return self.get_dependents_iter(target_id)
+        else:
+            raise ValueError("direction must be up or down, recieved "
+                             "{}".format(direction))
 
     def get_dependents_or_creators(self, target_id, direction):
-        """Returns the dependents or the creators of the targets depending on
-        the direction
-
-        direction can be up (creators) down (dependents)
+        """Takes in a target id and returns a list for either the dependent ids
+        or the creator ids depending on the direcion
 
         Args:
-            target_id: the target to return the dependents or creators of
-            direction: The direction that the returned nodes will be to the
-                target_id
+            target_id: the target id to get the dependent ids or the creator ids
+                for
+            direction: If the direction is "up" the creators are retrieved and
+                if it is "down" then the dependents are retrieved.
+                Must be "up" or "down" raises a value error if it is
+                neither.
+
+        Returns:
+            A list for either the dependency ids or the target ids of the
+            job depending on the the direction.
         """
-        if direction == "up":
-            return self.get_creators(target_id)
-        else:
-            return self.get_dependents(target_id)
+        return list(self.get_dependents_or_creators_iter(target_id, direction))
 
     def _connect_targets(self, node, target_type, targets, edge_data,
                          new_nodes):
