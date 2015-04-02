@@ -117,7 +117,6 @@ class JobState(object):
         alt_check = False
         target_mtimes = [float("inf")]
         for target_id, data in produced_targets.iteritems():
-            # edge is form (src_node_id, dest_node_id, data_dict)
             target = build_graph.get_target(target_id)
             if not target.get_exists() and not alt_check:
                 stale_alternates = self.get_stale_alternates(build_graph)

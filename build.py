@@ -593,12 +593,11 @@ class BuildGraph(BaseGraph):
         for depends_id in self.neighbors_iter(target_id):
             if self.is_dependency_type(depends_id):
                 for dependent_id in self.neighbors_iter(depends_id):
-                    if self.is_target(dependent_id):
+                    if self.is_job_state(dependent_id):
                         yield dependent_id
 
     def get_dependents(self, target_id):
         return list(self.get_dependents_iter(target_id))
-             
 
     def get_target_relationships(self, job_state_id):
         self.assert_job_state(job_state_id)
