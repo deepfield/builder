@@ -45,15 +45,16 @@ class JobState(object):
         of it's alternates don't exist otherwise returns the mtimes of
         the alternates
         """
-        alternate_ids = build_graph.get_targets(self.unique_id,
-                                                kind="alternates")
+        targets = build_graph.get_target_relationships(self.unique_id)
+        alternates = targets.get("alternates", [])
+
         alternate_mtimes = []
-        for alternate_id in alternate_ids:
+        for alternate_id in alternates:
             alternate = build_graph.get_target(alternate_id)
             if not alternate.get_exists():
                 return True
             alternate_mtimes.append(alternate.get_mtime())
-        if not alternate_ids:
+        if not alternates:
             return True
         return alternate_mtimes
 
@@ -80,8 +81,7 @@ class JobState(object):
             for dependency_id in dependency_ids:
                 dependency = build_graph.get_target(dependency_id)
                 if not dependency.get_exists():
-                    creator_ids = build_graph.get_creators(dependency_id,
-                                                           kind="produces")
+                    creator_ids = build_graph.get_creators(dependency_id)
                     for creator_id in creator_ids:
                         creator = build_graph.get_job_state(creator_id)
                         creator.update_stale(True, build_graph)
@@ -102,21 +102,21 @@ class JobState(object):
             Minimum mtime: if no stale condition is met the lowest mtime of
                 the targets, returned
         """
-        # There are no targets so it is just a cron job with dependencies
-        out_edges = build_graph.out_edges(self.unique_id, data=True)
-        if not out_edges:
-            return True
-
         # The target doesn't produce anything so it only depends on it's
         # alternates
-        producing_edges = build_graph.get_target_edges(self.unique_id,
-                                                       kind="produces")
-        if not producing_edges:
+        target_dict = build_graph.get_target_relationships(self.unique_id)
+
+        # There are no targets so it is just a cron job with dependencies
+        if not target_dict:
+            return True
+
+        produced_targets = target_dict.get("produces")
+        if not produced_targets:
             return self.get_stale_alternates(build_graph)
 
         alt_check = False
         target_mtimes = [float("inf")]
-        for _, target_id, data in producing_edges:
+        for target_id, data in produced_targets.iteritems():
             # edge is form (src_node_id, dest_node_id, data_dict)
             target = build_graph.get_target(target_id)
             if not target.get_exists() and not alt_check:
@@ -135,15 +135,17 @@ class JobState(object):
         """Returns True if a dependency mtime is greater than the
         minimum_target_mtime
         """
-        for in_edge in build_graph.in_edges(self.unique_id, data=True):
-            if in_edge[2].get("ignore_mtime", False):
-                continue
-            dependency_node_id = in_edge[0]
-            for dependency_id in build_graph.predecessors(dependency_node_id):
-                dependency = build_graph.node[dependency_id]["object"]
-                if dependency.get_exists():
-                    if dependency.get_mtime() > minimum_target_mtime:
-                        return True
+        dependency_dict = build_graph.get_dependency_relationships(
+                self.unique_id)
+        for _, group_list in dependency_dict.iteritems():
+            for group_dict in group_list:
+                if group_dict["data"].get("ignore_mtime", False):
+                    continue
+                for dependency_id in group_dict["targets"]:
+                    dependency = build_graph.get_target(dependency_id)
+                    if dependency.get_exists():
+                        if dependency.get_mtime() > minimum_target_mtime:
+                            return True
         return False
 
     def get_stale(self, build_graph, cached=True):

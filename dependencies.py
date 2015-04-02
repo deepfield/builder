@@ -5,9 +5,10 @@ dependencies to be defined elsewhere, it might be usefull for a config file
 
 class Dependency(object):
     """Holds the dependency function and the unique_id"""
-    def __init__(self, func, unique_id):
+    def __init__(self, func, unique_id, kind):
         self.func = func
         self.unique_id = unique_id
+        self.kind = kind
 
 def get_dependencies(dependency_type):
     """Returns the function with the name of dependency_type"""
