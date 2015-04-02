@@ -46,7 +46,7 @@ class JobState(object):
         the alternates
         """
         alternate_ids = build_graph.get_targets(self.unique_id,
-                                                label="alternates")
+                                                kind="alternates")
         alternate_mtimes = []
         for alternate_id in alternate_ids:
             alternate = build_graph.get_target(alternate_id)
@@ -81,7 +81,7 @@ class JobState(object):
                 dependency = build_graph.get_target(dependency_id)
                 if not dependency.get_exists():
                     creator_ids = build_graph.get_creators(dependency_id,
-                                                           label="produces")
+                                                           kind="produces")
                     for creator_id in creator_ids:
                         creator = build_graph.get_job_state(creator_id)
                         creator.update_stale(True, build_graph)
@@ -220,7 +220,7 @@ class JobState(object):
         cache_delta = convert_to_timedelta(cache_time)
         current_time = arrow.get()
         for target_edge in build_graph.out_edges(self.unique_id, data=True):
-            if target_edge[2]["label"] == "produces":
+            if target_edge[2]["kind"] == "produces":
                 target = build_graph.node[target_edge[1]]["object"]
                 if not target.get_exists():
                     return True

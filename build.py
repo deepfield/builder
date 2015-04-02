@@ -499,6 +499,16 @@ class BuildGraph(BaseGraph):
             return False
         return True
 
+    def is_dependency(self, dependency_id):
+        """Returns if the ndoe relating to dependnecy id is a dependency node"""
+        dependency_container = self.node[dependency_id]
+        if "object" not in dependency_container:
+            return False
+        if not isinstance(dependency_container["object"],
+                          builder.dependencies.Dependency):
+            return False
+        return True
+
     def assert_job(self, job_id):
         """Raises a runtime error if the job_id doesn't correspond to a job.
 
@@ -619,13 +629,30 @@ class BuildGraph(BaseGraph):
             if self.is_target(src):
                 yield edge
 
+    def filter_src_by_dependencies_iter(self, edge_iter):
+        """Takes in an iterable of edges and returns an iterator for the edges
+        that have a dependency as the source node.
+
+        Args:
+            edge_iter: An iterator of the edges to be filtered. Can be of form
+                (u, v) or (u, v, d)
+
+        Returns:
+            An iterator of edges with dependencies as the source node with the
+            same form as the input edge_iter
+        """
+        for edge in edge_iter:
+            src = edge[0]
+            if self.is_dependency(src):
+                yield edge
+
     def filter_dest_by_job_states_iter(self, edge_iter):
         """Takes in an iterable of edges and returns an iterator for the edges
         that have a job state as the destination node.
 
         Args:
             edge_iter: An iterable of the edges to be filtered. Can be of form
-            (u, v) or (u, v, d)
+                (u, v) or (u, v, d)
 
         Returns:
             An iterator of edges with job states as the destination node with
@@ -653,6 +680,23 @@ class BuildGraph(BaseGraph):
             if self.is_target(dest):
                 yield edge
 
+    def filter_dest_by_dependencies_iter(self, edge_iter):
+        """Takes in an iterable of edges and returns an iterator for the edges
+        that have a dependency as the destination node.
+
+        Args:
+            edge_iter: An iterator of the edges to be filtered. Can be of form
+                (u, v) or (u, v, d)
+
+        Returns:
+            An iterator of edges with dependencies as the destination node with the
+            same form as the input edge_iter
+        """
+        for edge in edge_iter:
+            dest = edge[1]
+            if self.is_dependency(dest):
+                yield edge
+
     def filter_edge_kind_iter(self, edge_iter, kind):
         """Takes in an iterable of edges and returns an iterator for the edges
         that have the same kind as kind
@@ -667,23 +711,60 @@ class BuildGraph(BaseGraph):
             An iterator of edges where their kind is equivalent to kind. The
             edges are of form (u, v, d)
         """
-        if kind is None:
-            return iter(edge_iter)
-        else:
-            for edge in edge_iter:
-                data = edge[2]
+        for edge in edge_iter:
+            data = edge[2]
+            if kind is not None:
                 if data.get("kind") != kind:
                     continue
-                yield edge
+            yield edge
 
     def get_dependency_edges_iter(self, job_state_id):
-        """TODO: Decide what this means"""
+        """Takes in an id of a job state and returns an iterator of the edges
+        that connect the job state to it's dependencies 
+
+        Args:
+            job_state_id: The id of the job state that the edges should source
+                from. Raises an exception if the id is not a job state.
+
+        Returns:
+            An iterator of the edges that connect the job state to it's targets.
+            Edges are of the form (target_edge, depends_edge) where target edge
+            is an edge connecting the dependency target to the depends node and
+            depends_edge connects the dependency node to the job_state
+            Both edges are of form (u, v, d)
+        """
         self.assert_job_state(job_state_id)
-        in_edges_iter = self.in_edges_iter(job_state_id)
-        return self.filter_src_by_targets_iter(in_edges_iter)
+
+        # Get all the edges connecting the job state to the depends nodes
+        depends_edges_iter = self.in_edges_iter(job_state_id)
+        filtered_depends_edges_iter = self.filter_src_by_dependencies_iter(
+                depends_edges_iter)
+
+        for depends_edge in filtered_depends_edges_iter:
+            depends_id = depends_edge[0]
+
+            # Get all the edges connecting the depends nodes to the dependencies
+            target_edges_iter = self.in_edges_iter(depends_id)
+            filtered_target_edges_iter = self.filter_src_by_targets_iter(
+                    target_edges_iter)
+            for target_edge in filtered_target_edges_iter:
+                yield (target_edge, depends_edge)
 
     def get_dependency_edges(self, job_state_id):
-        """TODO: Decide what this means"""
+        """Takes in an id of a job state and returns a list of the edges
+        that connect the job state to it's dependencies
+
+        Args:
+            job_state_id: The id of the job state that the edges should source
+                from. Raises an exception if the id is not a job state.
+
+        Returns:
+            A list of the edges that connect the job state to it's targets.
+            Edges are of the form (target_edge, depends_edge) where target edge
+            is an edge connecting the dependency target to the depends node and
+            depends_edge connects the dependency node to the job_state
+            Both edges are of form (u, v, d)
+        """
         return list(self.get_dependency_edges_iter(job_state_id))
 
     def get_target_edges_iter(self, job_state_id, kind=None):
@@ -703,7 +784,7 @@ class BuildGraph(BaseGraph):
             Edges are of the form (u, v, d).
         """
         self.assert_job_state(job_state_id)
-        out_edges_iter = self.out_edges_iter(job_state_id)
+        out_edges_iter = self.out_edges_iter(job_state_id, data=True)
         return self.filter_edge_kind_iter(
                 self.filter_dest_by_targets_iter(out_edges_iter), kind)
 
@@ -742,7 +823,7 @@ class BuildGraph(BaseGraph):
             Edges are of the form (u, v, d).
         """
         self.assert_target(target_id)
-        in_edges_iter = self.in_edges_iter(target_id)
+        in_edges_iter = self.in_edges_iter(target_id, data=True)
         return self.filter_edge_kind_iter(
                 self.filter_src_by_job_states_iter(in_edges_iter), kind)
 
@@ -765,13 +846,52 @@ class BuildGraph(BaseGraph):
         return list(self.get_creator_edges_iter(job_state_id, kind=kind))
 
     def get_dependent_edges_iter(self, target_id):
-        """TODO: decide what this means"""
+        """Takes in an id of a target and returns an iterator of the edges
+        that connect the target to it's dependents
+
+        Args:
+            target_id: The id of the job state that the edges should source
+                from. Raises an exception if the id is not a job state.
+
+        Returns:
+            An iterator of the edges that connect the target to it's dependents.
+            Edges are of the form (target_edge, depends_edge) where target edge
+            is an edge connecting the target to the depends node and
+            depends_edge connects the depends node to the dependent 
+            Both edges are of form (u, v, d)
+        """
         self.assert_target(target_id)
-        out_edges_iter = self.out_edges_iter(target_id)
-        return self.filter_dest_by_job_states_iter(out_edges_iter)
+
+        # Get all the edges connecting the target to the depends nodes
+        depends_edges_iter = self.out_edges_iter(target_id)
+        filtered_depends_edges_iter = self.filter_dest_by_dependencies_iter(
+                depends_edges_iter)
+
+        for depends_edge in filtered_depends_edges_iter:
+            depends_id = depends_edge[1]
+
+            # Get all the edges connecting the depends nodes to the dependents
+            job_states_iter = self.out_edges_iter(depends_id)
+            filtered_target_edges_iter = self.filter_dest_by_job_states_iter(
+                    job_states_iter)
+            for target_edge in filtered_target_edges_iter:
+                yield (depends_edge, target_edge)
 
     def get_dependent_edges(self, job_state_id):
-        """TODO: decide what this means"""
+        """Takes in an id of a target and returns a list of the edges that
+        connect the target to it's dependents
+
+        Args:
+            target_id: The id of the job state that the edges should source
+                from. Raises an exception if the id is not a job state.
+
+        Returns:
+            A list of the edges that connect the target to it's dependents.
+            Edges are of the form (target_edge, depends_edge) where target edge
+            is an edge connecting the target to the depends node and
+            depends_edge connects the depends node to the dependent 
+            Both edges are of form (u, v, d)
+        """
         return list(self.get_dependent_edges_iter(job_state_id))
 
     def extract_src_iter(self, edge_iter):
@@ -813,8 +933,8 @@ class BuildGraph(BaseGraph):
         Returns:
             An iterator for the dependency ids of the job state.
         """
-        return self.extract_src_iter(
-                self.get_dependency_edges_iter(job_state_id))
+        return self.extract_src_iter(self.extract_src_iter(
+                self.get_dependency_edges_iter(job_state_id)))
 
     def get_dependencies(self, job_state_id):
         """Takes in an id for a job state and returns a list for it's dependency
@@ -889,7 +1009,7 @@ class BuildGraph(BaseGraph):
         Returns:
             A list for the creator ids of the target.
         """
-        return list(self.get_creators(target_id, kind=kind))
+        return list(self.get_creators_iter(target_id, kind=kind))
 
     def get_dependents_iter(self, target_id):
         """Takes in an id for a target and returns an iterator for it's
@@ -902,8 +1022,8 @@ class BuildGraph(BaseGraph):
         Returns:
             An iterator for the dependent ids of the target.
         """
-        return self.extract_dest_iter(
-                self.get_dependent_edges_iter(target_id))
+        return self.extract_dest_iter(self.extract_dest_iter(
+                self.get_dependent_edges_iter(target_id)))
 
     def get_dependents(self, target_id):
         """Takes in an id for a target and returns a list for it's depndent ids
@@ -915,7 +1035,7 @@ class BuildGraph(BaseGraph):
         Returns:
             A list for the dependent ids of the target.
         """
-        return list(self.get_dependents(target_id))
+        return list(self.get_dependents_iter(target_id))
 
     def get_targets_or_dependencies_iter(self, job_state_id, direction):
         """Takes in a job id and returns an iterator for either the dependency
@@ -1022,7 +1142,7 @@ class BuildGraph(BaseGraph):
             if new:
                 new_nodes.append(target.unique_id)
             self.add_edge(node.unique_id, target.unique_id, edge_data,
-                          label=target_type)
+                          label=target_type, kind=target_type)
 
     def _connect_dependencies(self, node, dependency_type, dependencies, data,
                               new_nodes):
@@ -1138,7 +1258,7 @@ class BuildGraph(BaseGraph):
                     next_nodes.append(self.get_job(next_node_id))
                 continue
 
-            # we have to use the unexpanded node to look in the rule dependnecy
+            # we have to use the unexpanded node to look in the rule dependency
             # graph for the next job
             unexpanded_next_node_ids = (
                     self.rule_dependency_graph
