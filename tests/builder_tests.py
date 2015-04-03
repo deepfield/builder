@@ -2915,9 +2915,15 @@ class GraphTest(unittest.TestCase):
     def test_expand_exact(self):
         # Given
         jobs = [
-            ExpandExactTop(),
-            ExpandExactMiddle(),
-            ExpandExactBottom(),
+            SimpleTestJob(unexpanded_id="test_expand_exact_top",
+                          targets=["test_expand_exact_top_target"],
+                          depends=["test_expand_exact_highest_target"]),
+            SimpleTestJob(unexpanded_id="test_expand_exact_middle",
+                          targets=["test_expand_exact_middle_target"],
+                          depends=["test_expand_exact_top_target"]),
+            SimpleTestJob(unexpanded_id="test_expand_exact_bottom",
+                          targets=["test_expand_exact_bottom_target"],
+                          depends=["test_expand_exact_middle_target"])
         ]
 
         build_context = {
