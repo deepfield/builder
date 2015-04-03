@@ -9,7 +9,7 @@ import arrow
 import mock
 import networkx
 
-from builder.tests.tests_jobs import TenSecondJob, UpdateTargetCacheBottom, UpdateTargetCacheMiddle03, UpdateTargetCacheMiddle02, UpdateTargetCacheMiddle01, ForceBuildBottom, ForceBuildMiddle, ForceBuildTop, ExpandExactBottom, ExpandExactMiddle, ExpandExactTop, UpdateJobCacheBottom, UpdateJobCacheMiddle03, UpdateJobCacheMiddle02, UpdateJobCacheMiddle01, UpdateJobCacheTop, GetNextJobsToRunLowest, GetNextJobsToRunBottom, GetNextJobsToRunMiddle02, GetNextJobsToRunMiddle01, GetNextJobsToRunTop, UpdateLowerNodesShouldRunLowest, UpdateLowerNodesShouldRunBottom, UpdateLowerNodesShouldRunMiddle02, UpdateLowerNodesShouldRunMiddle01, UpdateLowerNodesShouldRunTop, GetStartingJobs04Tester, GetStartingJobs03Tester, GetStartingJobs02Tester, GetStartingJobs01Tester, ShouldRunRecurseJob10Tester, ShouldRunRecurseJob09Tester, ShouldRunRecurseJob08Tester, ShouldRunRecurseJob07Tester, ShouldRunRecurseJob06Tester, ShouldRunRecurseJob05Tester, ShouldRunRecurseJob04Tester, ShouldRunRecurseJob03Tester, ShouldRunRecurseJob02Tester, ShouldRunRecurseJob01Tester, ShouldRunCacheLogicJobTester, ShouldRunLogicJobTester, PastCurfewJobTester, AllDependenciesJobTester, PastCacheTimeJobTester, BuildableJobTester, StaleAlternateUpdateBottomJobTester, StaleAlternateUpdateTopJobTester, StaleAlternateBottomJobTester, StaleAlternateTopJobTester, StaleIgnoreMtimeJobTester, StaleStandardJobTester, DiamondRedundancyHighestJobTester, DiamondRedundancyTopJobTester, DiamondRedundancyMiddleJob02Tester, DiamondRedundancyMiddleJob01Tester, DiamondRedundancyBottomJobTester, BackboneDependantTopJob02Tester, BackboneDependantTopJob01Tester, BackboneDependantMiddleJob02Tester, BackboneDependantMiddleJob01Tester, BackboneDependantBottomJobTester, BuildGraphConstructionJobBottom01Tester, BuildGraphConstructionJobTop02Tester, BuildGraphConstructionJobTop01Tester, RuleDepConstructionJobBottom01Tester, RuleDepConstructionJobTop02Tester, RuleDepConstructionJobTop01Tester, UpdateTargetCacheTop, PastCurfewTimestampJobTester, IgnoreProduceJob
+from builder.tests.tests_jobs import *
 import testing
 import builder.jobs
 import builder.build
@@ -3392,7 +3392,7 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_should_run_future(self):
         # Given
-        job1 = builder.tests.tests_jobs.ShouldRunFuture()
+        job1 = ShouldRunFuture()
 
         build_context1 = {
             "start_time": arrow.get("300"),
@@ -3525,7 +3525,7 @@ class GraphTest(unittest.TestCase):
         target14 = builder.expanders.Expander(builder.targets.Target,
                                               "target14")
 
-        job1 = builder.tests_jobs.ExpandCounter(
+        job1 = ExpandCounter(
             "job1",
             targets={
                 "produces": [target2]
@@ -3533,7 +3533,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target1]
             }
         )
-        job2 = builder.tests_jobs.ExpandCounter(
+        job2 = ExpandCounter(
             "job2",
             targets={
                 "produces": [target3, target4]
@@ -3541,7 +3541,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target2]
             }
         )
-        job3 = builder.tests_jobs.ExpandCounter(
+        job3 = ExpandCounter(
             "job3",
             targets={
                 "produces": [target5]
@@ -3549,7 +3549,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target3, target11]
             }
         )
-        job4 = builder.tests_jobs.ExpandCounter(
+        job4 = ExpandCounter(
             "job4",
             targets={
                 "produces": [target6]
@@ -3557,7 +3557,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target4, target9]
             }
         )
-        job5 = builder.tests_jobs.ExpandCounter(
+        job5 = ExpandCounter(
             "job5",
             targets={
                 "produces": [target7]
@@ -3565,7 +3565,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target5]
             }
         )
-        job6 = builder.tests_jobs.ExpandCounter(
+        job6 = ExpandCounter(
             "job6",
             targets={
                 "produces": [target8]
@@ -3573,7 +3573,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target6]
             }
         )
-        job7 = builder.tests_jobs.ExpandCounter(
+        job7 = ExpandCounter(
             "job7",
             targets={
                 "produces": [target9]
@@ -3581,7 +3581,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target10]
             }
         )
-        job8 = builder.tests_jobs.ExpandCounter(
+        job8 = ExpandCounter(
             "job8",
             targets={
                 "produces": [target11]
@@ -3589,7 +3589,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target12]
             }
         )
-        job9 = builder.tests_jobs.ExpandCounter(
+        job9 = ExpandCounter(
             "job9",
             targets={
                 "produces": [target13]
@@ -3597,7 +3597,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target12]
             }
         )
-        job10 = builder.tests_jobs.ExpandCounter(
+        job10 = ExpandCounter(
             "job10",
             targets={
                 "produces": [target14]

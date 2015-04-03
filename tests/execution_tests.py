@@ -7,7 +7,8 @@ import funcy
 
 import builder.build
 import builder.execution
-import builder.tests_jobs
+from builder.tests.tests_jobs import *
+
 from testing import unit
 
 
@@ -26,7 +27,7 @@ class ExecutionManagerTests(unittest.TestCase):
     @unit
     def test_submit(self):
         # Given
-        execution_manager = self._get_execution_manager([builder.tests_jobs.BuildableJobTester()])
+        execution_manager = self._get_execution_manager([BuildableJobTester()])
         build_context = {
             'start_time': arrow.get('2015-01-01')
         }
@@ -41,16 +42,16 @@ class ExecutionManagerTests(unittest.TestCase):
     def test_get_jobs_to_run(self):
         # Given
         jobs = [
-            builder.tests_jobs.ShouldRunRecurseJob01Tester(),
-            builder.tests_jobs.ShouldRunRecurseJob02Tester(),
-            builder.tests_jobs.ShouldRunRecurseJob03Tester(),
-            builder.tests_jobs.ShouldRunRecurseJob04Tester(),
-            builder.tests_jobs.ShouldRunRecurseJob05Tester(),
-            builder.tests_jobs.ShouldRunRecurseJob06Tester(),
-            builder.tests_jobs.ShouldRunRecurseJob07Tester(),
-            builder.tests_jobs.ShouldRunRecurseJob08Tester(),
-            builder.tests_jobs.ShouldRunRecurseJob09Tester(),
-            builder.tests_jobs.ShouldRunRecurseJob10Tester(),
+            ShouldRunRecurseJob01Tester(),
+            ShouldRunRecurseJob02Tester(),
+            ShouldRunRecurseJob03Tester(),
+            ShouldRunRecurseJob04Tester(),
+            ShouldRunRecurseJob05Tester(),
+            ShouldRunRecurseJob06Tester(),
+            ShouldRunRecurseJob07Tester(),
+            ShouldRunRecurseJob08Tester(),
+            ShouldRunRecurseJob09Tester(),
+            ShouldRunRecurseJob10Tester(),
         ]
         execution_manager = self._get_execution_manager(jobs)
         build_context = {
@@ -69,7 +70,7 @@ class ExecutionManagerTests(unittest.TestCase):
     @unit
     def test_start_excution_run_to_completion(self):
         # Given
-        execution_manager = self._get_execution_manager([builder.tests_jobs.BuildableJobTester()])
+        execution_manager = self._get_execution_manager([BuildableJobTester()])
         build_context = {
             'start_time': arrow.get('2015-01-01')
         }
@@ -85,8 +86,8 @@ class ExecutionManagerTests(unittest.TestCase):
     def test_inline_execution_simple_plan(self):
         # Given
         jobs = [
-            builder.tests_jobs.SimpleTestJob('A', targets=['target-A']),
-            builder.tests_jobs.SimpleTestJob('B', depends=['target-A'], targets=['target-B1', 'target-B2'])
+            SimpleTestJob('A', targets=['target-A']),
+            SimpleTestJob('B', depends=['target-A'], targets=['target-B1', 'target-B2'])
         ]
         executor = mock.Mock()
         execution_manager = self._get_execution_manager(jobs)
@@ -119,7 +120,7 @@ class ExecutionManagerTests(unittest.TestCase):
     def test_inline_execution_retries(self):
         # Given
         jobs = [
-            builder.tests_jobs.SimpleTestJob('A', targets=['target-A']),
+            SimpleTestJob('A', targets=['target-A']),
         ]
         executor = mock.Mock()
         execution_manager = self._get_execution_manager(jobs)
