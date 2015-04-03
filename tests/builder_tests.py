@@ -2940,7 +2940,17 @@ class GraphTest(unittest.TestCase):
         jobs = [
             ForceBuildTop(),
             ForceBuildMiddle(),
-            ForceBuildBottom(),
+            #ForceBuildBottom()
+            SimpleTimestampExpandedTestJob('force_build_bottom',
+                file_step="15min",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[
+                    {"unexpanded_id": "force_build_top_target_%Y-%m-%d-%H-%M", "file_step": "1min"},
+                    {"unexpanded_id": "force_build_middle_target_%Y-%m-%d-%H-%M", "file_step": "5min"},
+                ],
+                targets=[
+                    {"unexpanded_id": "force_build_bottom_target_%Y-%m-%d-%H-%M", "file_step": "15min"}
+                ])
         ]
 
         build_context = {

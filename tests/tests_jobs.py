@@ -73,7 +73,55 @@ class FakeTarget(builder.targets.Target):
     def get_bulk_exists_mtime(targets):
         return {target.get_id(): {"exists": target.exists, "mtime": target.mtime} for target in targets}
 
-class SimpleTestJob(Job):
+class SimpleJobTestMixin(object):
+
+    def setup_dependencies_and_targets(self, depends_dict, targets_dict, depends, targets):
+        # Set up dependency dictionary
+        depends_dict = depends_dict or {}
+        depends_dict.setdefault('depends', [])
+        if depends:
+            for depend in depends:
+                if isinstance(depend, dict):
+                    depends_dict['depends'].append(
+                        self.expander_type(
+                            self.target_type,
+                        **depend)
+                    )
+                elif isinstance(depend, basestring):
+                    depends_dict['depends'].append(
+                        self.expander_type(
+                            self.target_type,
+                        depend)
+                    )
+        self.depends_dict = depends_dict
+
+        # Set up target dictionary
+        targets_dict = targets_dict or {}
+        targets_dict.setdefault("produces", [])
+
+        if targets:
+            for target in targets:
+                if isinstance(target, dict):
+                    targets_dict["produces"].append(
+                        self.expander_type(
+                            self.target_type,
+                            **target)
+                     )
+                elif isinstance(target, basestring):
+                    targets_dict["produces"].append(
+                        self.expander_type(
+                            self.target_type,
+                            target)
+                     )
+        self.targets_dict = targets_dict
+
+    def get_dependencies(self, build_context=None):
+        return self.depends_dict
+
+    def get_targets(self, build_context=None):
+        return self.targets_dict
+
+class SimpleTestJob(SimpleJobTestMixin, Job):
     """A simple API for creating a job through constructor args"""
     def __init__(self, unexpanded_id=None, targets=None, depends=None,
             config=None, should_run=False, parents_should_run=False,
@@ -87,36 +135,23 @@ class SimpleTestJob(Job):
         self.target_type = target_type or FakeTarget
         self.expander_type = expander_type or builder.expanders.Expander
 
-        # Set up dependency dictionary
-        depends_dict = depends_dict or {}
-        depends_dict.setdefault('depends', [])
-        if depends:
-            for depend in depends:
-                depends_dict['depends'].append(
-                    self.expander_type(
-                        self.target_type,
-                    depend)
-                )
-        self.depends_dict = depends_dict
+        self.setup_dependencies_and_targets(depends_dict, targets_dict, depends, targets)
 
-        # Set up target dictionary
-        targets_dict = targets_dict or {}
-        targets_dict.setdefault("produces", [])
+class SimpleTimestampExpandedTestJob(SimpleJobTestMixin, TimestampExpandedJob):
+    """A simple API for creating a job through constructor args"""
+    def __init__(self, unexpanded_id=None, targets=None, depends=None,
+            config=None, should_run=False, parents_should_run=False,
+            target_type=None, expander_type=None,
+            depends_dict=None, targets_dict=None, file_step=None):
+        super(SimpleTimestampExpandedTestJob, self).__init__(unexpanded_id, config=config, file_step=file_step)
+        self.targets = targets
 
-        if targets:
-            for target in targets:
-                targets_dict["produces"].append(
-                    self.expander_type(
-                        self.target_type,
-                        target)
-                 )
-        self.targets_dict = targets_dict
+        self.should_run = should_run
+        self.parents_should_run = parents_should_run
+        self.target_type = target_type or FakeTarget
+        self.expander_type = expander_type or builder.expanders.Expander
 
-    def get_dependencies(self, build_context=None):
-        return self.depends_dict
-
-    def get_targets(self, build_context=None):
-        return self.targets_dict
+        self.setup_dependencies_and_targets(depends_dict, targets_dict, depends, targets)
 
 class ForceBuildBottom(TimestampExpandedJob):
     """The middle job to not force"""
