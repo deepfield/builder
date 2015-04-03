@@ -154,39 +154,6 @@ class SimpleTimestampExpandedTestJob(SimpleJobTestMixin, TimestampExpandedJob):
         self.setup_dependencies_and_targets(depends_dict, targets_dict, depends, targets)
 
 
-class IsJobImmediatlyRunnable5min(Job):
-    """The job is a 5min job"""
-    def __init__(self, unexpanded_id="is_job_immediatly_runnable_5min",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(IsJobImmediatlyRunnable5min, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "is_job_immediatly_runnable_5min_target"
-                    "_%Y-%m-%d-%H-%M",
-                    "5min")
-            ]
-        }
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "is_job_immediatly_runnable_5min_depends"
-                    "_%Y-%m-%d-%H-%M",
-                    "5min")
-            ]
-        }
-
-    def get_command(self):
-        return "command"
-
-
 class UpdateJobCacheBottom(Job):
     """The job at the bottom to easily build out the graph"""
     def __init__(self, unexpanded_id="update_job_cache_bottom",
