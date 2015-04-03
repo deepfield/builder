@@ -95,7 +95,7 @@ class SimpleJobTestMixin(object):
                             self.target_type,
                         depend)
                     )
-        self.depends_dict = depends_dict
+        self.dependencies = depends_dict
 
         # Set up target dictionary
         targets_dict = targets_dict or {}
@@ -117,13 +117,8 @@ class SimpleJobTestMixin(object):
                             self.target_type,
                             target)
                      )
-        self.targets_dict = targets_dict
+        self.targets = targets_dict
 
-    def get_dependencies(self, build_context=None):
-        return self.depends_dict
-
-    def get_targets(self, build_context=None):
-        return self.targets_dict
 
 class SimpleTestJob(SimpleJobTestMixin, Job):
     """A simple API for creating a job through constructor args"""
