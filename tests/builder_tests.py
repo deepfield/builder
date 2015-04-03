@@ -2972,11 +2972,30 @@ class GraphTest(unittest.TestCase):
     def test_update_target_cache(self):
         # Given
         jobs = [
-            UpdateTargetCacheMiddle01(),
-            UpdateTargetCacheMiddle02(),
-            UpdateTargetCacheMiddle03(),
-            UpdateTargetCacheBottom(),
-            UpdateTargetCacheTop(),
+            SimpleTestJob("update_target_cache_middle_01",
+                targets=["update_target_cache_middle_01_target"],
+                depends=["update_target_cache_top_01_target"]),
+
+            SimpleTestJob("update_target_cache_middle_02",
+                targets=["update_target_cache_middle_02_target"],
+                depends=["update_target_cache_top_02_target"]),
+
+            SimpleTestJob("update_target_cache_middle_03",
+                targets=["update_target_cache_middle_03_target"],
+                depends=["update_target_cache_top_03_target"]),
+
+            SimpleTestJob("update_target_cache_bottom",
+                targets=["update_target_cache_bottom_target"],
+                depends=["update_target_cache_middle_01_target",
+                    "update_target_cache_middle_02_target",
+                    "update_target_cache_middle_03_target"]),
+
+            SimpleTestJob("update_target_cache_top",
+                depends=["update_target_cache_highest_target"],
+                targets=["update_target_cache_top_01_target",
+                    "update_target_cache_top_02_target",
+                    "update_target_cache_top_03_target"],
+                target_type=builder.targets.LocalFileSystemTarget)
         ]
 
         build_manager = builder.build.BuildManager(jobs, [])
@@ -3627,17 +3646,18 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(job9.count, 0)
         self.assertEqual(job10.count, 0)
 
+    @testing.unit
     def test_job_state_iter(self):
         # Given
-        job1 = builder.tests_jobs.SimpleTestJob(
+        job1 = SimpleTestJob(
                 "job1",
                 targets=["target1", "target2"],
                 depends=["target3", "target4"])
-        job2 = builder.tests_jobs.SimpleTestJob(
+        job2 = SimpleTestJob(
                 "job2",
                 targets=["target5", "target6"],
                 depends=["target1", "target2"])
-        job3 = builder.tests_jobs.SimpleTestJob(
+        job3 = SimpleTestJob(
                 "job3",
                 targets=["target7", "target8"],
                 depends=["target5", "target6"])

@@ -77,252 +77,37 @@ class FakeTarget(builder.targets.Target):
 
 class SimpleTestJob(Job):
     """A simple API for creating a job through constructor args"""
-    def __init__(self, unexpanded_id, targets=None, depends=None, config=None, should_run=False, parents_should_run=False):
+    def __init__(self, unexpanded_id=None, targets=None, depends=None,
+            depends_dict=None, config=None, should_run=False, parents_should_run=False, target_type=None):
         super(SimpleTestJob, self).__init__(unexpanded_id, config=config)
         self.targets = targets
-        self.depends = depends
+
         self.should_run = should_run
         self.parents_should_run = parents_should_run
+        self.target_type = target_type or FakeTarget
+
+        depends_dict = depends_dict or {}
+        depends_dict.setdefault('depends', [])
+        if depends:
+            for depend in depends:
+                depends_dict['depends'].append(
+                    builder.expanders.Expander(
+                        self.target_type,
+                    depend)
+                )
+        self.depends_dict = depends_dict
 
     def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.Expander(
-                FakeTarget,
-                d) for d in self.depends or []]
-        }
+        return self.depends_dict
 
     def get_targets(self, build_context=None):
         return {
             "produces": [
                 builder.expanders.Expander(
-                    FakeTarget,
+                    self.target_type,
                     t) for t in self.targets or []
             ]
         }
-
-
-
-class JobDependsPast(Job):
-    """A job that depends on a file from the past"""
-    def __init__(self, unexpanded_id="job_depends_past", cache_time=None,
-                 targets=None, dependencies=None, config=None):
-        super(JobDependsPast, self).__init__(unexpanded_id=unexpanded_id)
-
-    def get_dependencies(self, build_context=None):
-        depends_dict = {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "standard_depends_target"),
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "standard_depends_past",
-                    "5min",
-                    past=3)
-            ],
-        }
-        return depends_dict
-
-
-class JobBackboneDependentTester(Job):
-    """A job that has targets that depend on wether or not backbone is
-    enabled
-    """
-    def __init__(self, unexpanded_id="job_backbone_dependent", cache_time=None,
-                 targets=None, dependencies=None, config=None):
-        super(JobBackboneDependentTester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        targets = {
-            "produces": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "non_backbone_target")
-            ]
-        }
-
-        if self.config.get("has_backbone", False):
-            targets["produces"].append(
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "backbone_target"))
-
-        return targets
-
-
-class JobAlternateTester(Job):
-    """A job that has an alternate target"""
-    def __init__(self, unexpanded_id="job_alternate", cache_time=None,
-                 targets=None, dependencies=None, config=None):
-        super(JobAlternateTester, self).__init__(unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        if build_context is None:
-            build_context = {}
-
-        return {
-            "produces": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "non_backbone_target")
-            ],
-            "alternates": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "alternate_target")
-            ],
-        }
-
-
-class UpdateTargetCacheBottom(Job):
-    """The job at the bottom to easily build out the graph"""
-    def __init__(self, unexpanded_id="update_target_cache_bottom",
-                cache_time=None, targets=None, dependencies=None, config=None):
-        super(UpdateTargetCacheBottom, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_bottom_target")
-            ]
-        }
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_middle_01_target"),
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_middle_02_target"),
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_middle_03_target")
-            ]
-        }
-
-
-class UpdateTargetCacheMiddle03(Job):
-    """The job in the middle that is buildable and not stale and will not
-    be updated
-    """
-    def __init__(self, unexpanded_id="update_target_cache_middle_03",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(UpdateTargetCacheMiddle03, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_middle_03_target"),
-            ]
-        }
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_top_03_target")
-            ]
-        }
-
-
-class UpdateTargetCacheMiddle02(Job):
-    """The job in the middle that is not stale not buildable will be
-    updated
-    """
-    def __init__(self, unexpanded_id="update_target_cache_middle_02",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(UpdateTargetCacheMiddle02, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_middle_02_target"),
-            ]
-        }
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_top_02_target")
-            ]
-        }
-
-    def get_command(self, unique_id, build_context, build_graph):
-        return unique_id
-
-
-class UpdateTargetCacheMiddle01(Job):
-    """The job in the middle that will never be buildable but has it's"""
-    def __init__(self, unexpanded_id="update_target_cache_middle_01",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(UpdateTargetCacheMiddle01, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_middle_01_target"),
-            ]
-        }
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_top_01_target")
-            ]
-        }
-
-
-class UpdateTargetCacheTop(Job):
-    """The job at the top whose mtimes will be updated"""
-    def __init__(self, unexpanded_id="update_target_cache_top",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(UpdateTargetCacheTop, self).__init__(unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_top_01_target"),
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_top_02_target"),
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_top_03_target"),
-            ]
-        }
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "update_target_cache_highest_target")
-            ]
-        }
-
 
 class ForceBuildBottom(TimestampExpandedJob):
     """The middle job to not force"""
