@@ -77,11 +77,11 @@ class JobState(object):
         """
         if new_value == True and self.stale != True:
             self.stale = new_value
-            dependency_ids = build_graph.get_dependencies(self.unique_id)
+            dependency_ids = build_graph.get_dependency_ids(self.unique_id)
             for dependency_id in dependency_ids:
                 dependency = build_graph.get_target(dependency_id)
                 if not dependency.get_exists():
-                    creator_ids = build_graph.get_creators(dependency_id)
+                    creator_ids = build_graph.get_creator_ids(dependency_id)
                     for creator_id in creator_ids:
                         creator = build_graph.get_job_state(creator_id)
                         creator.update_stale(True, build_graph)

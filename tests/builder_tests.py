@@ -3674,15 +3674,15 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_job_state_iter(self):
         # Given
-        job1 = SimpleTestJob(
+        job1 = builder.tests.tests_jobs.SimpleTestJob(
                 "job1",
                 targets=["target1", "target2"],
                 depends=["target3", "target4"])
-        job2 = SimpleTestJob(
+        job2 = builder.tests.tests_jobs.SimpleTestJob(
                 "job2",
                 targets=["target5", "target6"],
                 depends=["target1", "target2"])
-        job3 = SimpleTestJob(
+        job3 = builder.tests.tests_jobs.SimpleTestJob(
                 "job3",
                 targets=["target7", "target8"],
                 depends=["target5", "target6"])
@@ -3709,6 +3709,24 @@ class GraphTest(unittest.TestCase):
         self.assertIn(("job1", "job1"), job_id_matching)
         self.assertIn(("job2", "job2"), job_id_matching)
         self.assertIn(("job3", "job3"), job_id_matching)
+
+    def test_cache_same_job(self):
+        # Given
+        job1 = builder.tests.tests_jobs.SimpleTestJob(
+                "job1", targets=["target1"],
+                depends=["target2"])
+
+        build_manager = builder.build.BuildManager([job1], [])
+        build = build_manager.make_build()
+
+        # When
+        with mock.patch.object(builder.expanders.Expander, "expand") as \
+                mock_expander:
+            build.add_job("job1", {})
+            build.add_job("job1", {})
+
+        # Then
+        self.assertEqual(mock_expander.call_count, 2)
 
 
 class RuleDependencyGraphTest(unittest.TestCase):
