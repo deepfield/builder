@@ -3737,8 +3737,24 @@ class RuleDependencyGraphTest(unittest.TestCase):
 
     def _get_rdg(self):
         jobs = [
-            RuleDepConstructionJobTop01Tester(),
-            RuleDepConstructionJobTop02Tester(),
+            SimpleTestJob("rule_dep_construction_job_top_01",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[{"unexpanded_id": "rule_dep_construction_target_highest_01", "file_step": "5min"}],
+                targets=[{"unexpanded_id": "rule_dep_construction_top_01", "file_step": "5min"}]
+            ),
+            SimpleTestJob("rule_dep_construction_job_top_02",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[
+                    {"unexpanded_id": "rule_dep_construction_target_highest_02", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_highest_03", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_highest_04", "file_step": "5min"}
+                ],
+                targets=[
+                    {"unexpanded_id": "rule_dep_construction_target_top_02", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_top_03", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_top_04", "file_step": "5min"}
+                ]
+            ),
         ]
 
         build_manager = builder.build.BuildManager(jobs, [])
