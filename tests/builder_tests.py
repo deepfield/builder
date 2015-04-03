@@ -42,7 +42,8 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_expand_10s(self):
         # Given
-        build_manager = builder.build.BuildManager([TenSecondJob()], [])
+        build_manager = builder.build.BuildManager(
+            [SimpleTimestampExpandedTestJob("test_second_job", file_step="10s")], [])
         build = build_manager.make_build()
 
         # When
@@ -56,9 +57,61 @@ class GraphTest(unittest.TestCase):
     def test_rule_dep_construction(self):
         # Given
         jobs = [
-            RuleDepConstructionJobTop01Tester(),
-            RuleDepConstructionJobTop02Tester(),
-            RuleDepConstructionJobBottom01Tester(),
+            SimpleTestJob("rule_dep_construction_job_top_01",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[{"unexpanded_id": "rule_dep_construction_target_highest_01", "file_step": "5min"}],
+                targets=[{"unexpanded_id": "rule_dep_construction_top_01", "file_step": "5min"}]
+            ),
+            SimpleTestJob("rule_dep_construction_job_top_02",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[
+                    {"unexpanded_id": "rule_dep_construction_target_highest_02", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_highest_03", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_highest_04", "file_step": "5min"}
+                ],
+                targets=[
+                    {"unexpanded_id": "rule_dep_construction_target_top_02", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_top_03", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_top_04", "file_step": "5min"}
+                ],
+                depends_dict={
+                    "depends_one_or_more": [
+                        builder.expanders.TimestampExpander(
+                        builder.targets.LocalFileSystemTarget,
+                        "rule_dep_construction_target_highest_04",
+                        "5min")
+                ]},
+                targets_dict={
+                    "alternates": [
+                        builder.expanders.TimestampExpander(
+                            builder.targets.LocalFileSystemTarget,
+                            "rule_dep_construction_target_top_04",
+                            "5min"),
+                    ]}),
+            SimpleTestJob("rule_dep_construction_job_bottom_01",
+                expander_type=builder.expanders.TimestampExpander,
+                depends_dict={
+                    "depends": [
+                        builder.expanders.TimestampExpander(
+                            builder.targets.LocalFileSystemTarget,
+                            "rule_dep_construction_target_top_02",
+                            "5min"),
+                        builder.expanders.TimestampExpander(
+                            builder.targets.LocalFileSystemTarget,
+                            "rule_dep_construction_target_top_03",
+                            "5min",
+                            past=3),
+                    ],
+                    "depends_one_or_more": [
+                        builder.expanders.TimestampExpander(
+                            builder.targets.LocalFileSystemTarget,
+                            "rule_dep_construction_target_top_04",
+                            "5min"),
+                    ],
+                },
+                targets=[
+                    {"unexpanded_id": "rule_dep_construction_target_bottom_01", "file_step": "5min"},
+                ])
         ]
 
         expected_edges = (
@@ -247,73 +300,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(expected_number_of_targets4, number_of_targets4)
         self.assertEqual(expected_number_of_targets5, number_of_targets5)
 
-    @testing.unit
-    def test_backbone_dependent(self):
-        # Given
-        config1 = {
-                "has_backbone": True,
-        }
-        config2 = {
-                "has_backbone": False,
-        }
-
-        jobs1 = [
-            BackboneDependentBottomJobTester(config=config1),
-            BackboneDependentMiddleJob01Tester(config=config1),
-            BackboneDependentMiddleJob02Tester(config=config1),
-            BackboneDependentTopJob01Tester(config=config1),
-            BackboneDependentTopJob02Tester(config=config1),
-        ]
-
-        jobs2 = [
-            BackboneDependentBottomJobTester(config=config2),
-            BackboneDependentMiddleJob01Tester(config=config2),
-            BackboneDependentMiddleJob02Tester(config=config2),
-            BackboneDependentTopJob01Tester(config=config2),
-            BackboneDependentTopJob02Tester(config=config2),
-        ]
-
-        build_context1 = {
-                "start_time": arrow.get("2014-12-05T10:50"),
-                "end_time": arrow.get("2014-12-05T10:55"),
-        }
-        build_context2 = {
-                "start_time": arrow.get("2014-12-05T10:50"),
-                "end_time": arrow.get("2014-12-05T10:55"),
-        }
-
-        build_manager1 = builder.build.BuildManager(jobs1, [], config=config1)
-        build_manager2 = builder.build.BuildManager(jobs2, [], config=config2)
-
-        build1 = build_manager1.make_build()
-        build2 = build_manager2.make_build()
-
-        expected_build_count1 = 18
-        expected_build_count2 = 10
-
-        middle_node_01 = "backbone_dependent_middle_job_01"
-        middle_node_02 = "backbone_dependent_middle_job_02"
-        top_node_01 = "backbone_dependent_top_job_01"
-        top_node_02 = "backbone_dependent_top_job_02"
-
-        # When
-        build1.add_job("backbone_dependent_bottom_job", build_context1)
-        build2.add_job("backbone_dependent_bottom_job", build_context2)
-
-        build_count1 = len(build1.nodes())
-        build_count2 = len(build2.nodes())
-
-        # Then
-        self.assertEqual(build_count1, expected_build_count1)
-        self.assertEqual(build_count2, expected_build_count2)
-        self.assertIn(middle_node_01, build1.nodes())
-        self.assertIn(middle_node_02, build1.nodes())
-        self.assertIn(top_node_01, build1.nodes())
-        self.assertIn(top_node_02, build1.nodes())
-        self.assertNotIn(middle_node_01, build2.nodes())
-        self.assertIn(middle_node_02, build2.nodes())
-        self.assertNotIn(top_node_01, build2.nodes())
-        self.assertIn(top_node_02, build2.nodes())
 
     @testing.unit
     def test_diamond_redundancy(self):
