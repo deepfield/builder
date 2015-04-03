@@ -3,13 +3,13 @@
 import copy
 import unittest
 import datetime
-import dateutil
 
+import dateutil
 import arrow
 import mock
 import networkx
 
-from builder.tests_jobs import TenSecondJob, UpdateTargetCacheBottom, UpdateTargetCacheMiddle03, UpdateTargetCacheMiddle02, UpdateTargetCacheMiddle01, ForceBuildBottom, ForceBuildMiddle, ForceBuildTop, ExpandExactBottom, ExpandExactMiddle, ExpandExactTop, UpdateJobCacheBottom, UpdateJobCacheMiddle03, UpdateJobCacheMiddle02, UpdateJobCacheMiddle01, UpdateJobCacheTop, GetNextJobsToRunLowest, GetNextJobsToRunBottom, GetNextJobsToRunMiddle02, GetNextJobsToRunMiddle01, GetNextJobsToRunTop, GetStartingJobs04Tester, GetStartingJobs03Tester, GetStartingJobs02Tester, GetStartingJobs01Tester, ShouldRunRecurseJob10Tester, ShouldRunRecurseJob09Tester, ShouldRunRecurseJob08Tester, ShouldRunRecurseJob07Tester, ShouldRunRecurseJob06Tester, ShouldRunRecurseJob05Tester, ShouldRunRecurseJob04Tester, ShouldRunRecurseJob03Tester, ShouldRunRecurseJob02Tester, ShouldRunRecurseJob01Tester, ShouldRunCacheLogicJobTester, ShouldRunLogicJobTester, PastCurfewJobTester, AllDependenciesJobTester, PastCacheTimeJobTester, BuildableJobTester, StaleAlternateUpdateBottomJobTester, StaleAlternateUpdateTopJobTester, StaleAlternateBottomJobTester, StaleAlternateTopJobTester, StaleIgnoreMtimeJobTester, StaleStandardJobTester, DiamondRedundancyHighestJobTester, DiamondRedundancyTopJobTester, DiamondRedundancyMiddleJob02Tester, DiamondRedundancyMiddleJob01Tester, DiamondRedundancyBottomJobTester, BackboneDependantTopJob02Tester, BackboneDependantTopJob01Tester, BackboneDependantMiddleJob02Tester, BackboneDependantMiddleJob01Tester, BackboneDependantBottomJobTester, BuildGraphConstructionJobBottom01Tester, BuildGraphConstructionJobTop02Tester, BuildGraphConstructionJobTop01Tester, RuleDepConstructionJobBottom01Tester, RuleDepConstructionJobTop02Tester, RuleDepConstructionJobTop01Tester, UpdateTargetCacheTop, PastCurfewTimestampJobTester, IgnoreProduceJob
+from builder.tests.tests_jobs import TenSecondJob, UpdateTargetCacheBottom, UpdateTargetCacheMiddle03, UpdateTargetCacheMiddle02, UpdateTargetCacheMiddle01, ForceBuildBottom, ForceBuildMiddle, ForceBuildTop, ExpandExactBottom, ExpandExactMiddle, ExpandExactTop, UpdateJobCacheBottom, UpdateJobCacheMiddle03, UpdateJobCacheMiddle02, UpdateJobCacheMiddle01, UpdateJobCacheTop, GetNextJobsToRunLowest, GetNextJobsToRunBottom, GetNextJobsToRunMiddle02, GetNextJobsToRunMiddle01, GetNextJobsToRunTop, UpdateLowerNodesShouldRunLowest, UpdateLowerNodesShouldRunBottom, UpdateLowerNodesShouldRunMiddle02, UpdateLowerNodesShouldRunMiddle01, UpdateLowerNodesShouldRunTop, GetStartingJobs04Tester, GetStartingJobs03Tester, GetStartingJobs02Tester, GetStartingJobs01Tester, ShouldRunRecurseJob10Tester, ShouldRunRecurseJob09Tester, ShouldRunRecurseJob08Tester, ShouldRunRecurseJob07Tester, ShouldRunRecurseJob06Tester, ShouldRunRecurseJob05Tester, ShouldRunRecurseJob04Tester, ShouldRunRecurseJob03Tester, ShouldRunRecurseJob02Tester, ShouldRunRecurseJob01Tester, ShouldRunCacheLogicJobTester, ShouldRunLogicJobTester, PastCurfewJobTester, AllDependenciesJobTester, PastCacheTimeJobTester, BuildableJobTester, StaleAlternateUpdateBottomJobTester, StaleAlternateUpdateTopJobTester, StaleAlternateBottomJobTester, StaleAlternateTopJobTester, StaleIgnoreMtimeJobTester, StaleStandardJobTester, DiamondRedundancyHighestJobTester, DiamondRedundancyTopJobTester, DiamondRedundancyMiddleJob02Tester, DiamondRedundancyMiddleJob01Tester, DiamondRedundancyBottomJobTester, BackboneDependantTopJob02Tester, BackboneDependantTopJob01Tester, BackboneDependantMiddleJob02Tester, BackboneDependantMiddleJob01Tester, BackboneDependantBottomJobTester, BuildGraphConstructionJobBottom01Tester, BuildGraphConstructionJobTop02Tester, BuildGraphConstructionJobTop01Tester, RuleDepConstructionJobBottom01Tester, RuleDepConstructionJobTop02Tester, RuleDepConstructionJobTop01Tester, UpdateTargetCacheTop, PastCurfewTimestampJobTester, IgnoreProduceJob
 import testing
 import builder.jobs
 import builder.build
@@ -3392,7 +3392,7 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_should_run_future(self):
         # Given
-        job1 = builder.tests_jobs.ShouldRunFuture()
+        job1 = builder.tests.tests_jobs.ShouldRunFuture()
 
         build_context1 = {
             "start_time": arrow.get("300"),

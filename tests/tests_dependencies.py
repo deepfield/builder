@@ -3,16 +3,16 @@
 import unittest
 
 import builder.dependencies
-import builder.tests_jobs
+import builder.tests.tests_jobs
 
 class DependenciesTest(unittest.TestCase):
     """Used to test the general dependecy api"""
 
     def test_get_dependencies_to_depends(self):
         # Given
-        dependency_job1 = (builder.tests_jobs
+        dependency_job1 = (builder.tests.tests_jobs
                                 .StandardDependsTargetTester())
-        dependency_job2 = (builder.tests_jobs
+        dependency_job2 = (builder.tests.tests_jobs
                                 .StandardDependsOneOrMoreTargetTester())
 
         expected_dependency1_1 = builder.dependencies.depends
