@@ -139,10 +139,10 @@ class SimpleTestJob(SimpleJobTestMixin, Job):
 class SimpleTimestampExpandedTestJob(SimpleJobTestMixin, TimestampExpandedJob):
     """A simple API for creating a job through constructor args"""
     def __init__(self, unexpanded_id=None, targets=None, depends=None,
-            config=None, should_run=False, parents_should_run=False,
+            should_run=False, parents_should_run=False,
             target_type=None, expander_type=None,
-            depends_dict=None, targets_dict=None, file_step=None):
-        super(SimpleTimestampExpandedTestJob, self).__init__(unexpanded_id, config=config, file_step=file_step)
+            depends_dict=None, targets_dict=None, **kwargs):
+        super(SimpleTimestampExpandedTestJob, self).__init__(unexpanded_id, **kwargs)
         self.targets = targets
 
         self.should_run = should_run
@@ -907,68 +907,6 @@ class StaleAlternateTopJobTester(TimestampExpandedJob):
         }
 
 
-class StaleIgnoreMtimeJobTester(TimestampExpandedJob):
-    """Depends on a target that has an ignoredmtime"""
-    def __init__(self, unexpanded_id="stale_ignore_mtime_job",
-                 file_step="15min", config=None):
-        super(StaleIgnoreMtimeJobTester, self).__init__(
-                unexpanded_id=unexpanded_id, file_step=file_step)
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_ignore_mtime_input_target_01-%Y-%m-%d-%H-%M",
-                    "5min"),
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_ignore_mtime_input_target_02-%Y-%m-%d-%H-%M",
-                    "5min", ignore_mtime=True),
-
-            ]
-        }
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_ignore_mtime_output_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-        }
-
-
-class StaleStandardJobTester(TimestampExpandedJob):
-    """A target with dependencies and targets"""
-    def __init__(self, unexpanded_id="stale_standard_job",
-                 file_step="15min", cache_time="5min", config=None):
-        super(StaleStandardJobTester, self).__init__(
-                unexpanded_id=unexpanded_id, file_step=file_step,
-                cache_time=cache_time)
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_top_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-        }
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_standard_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ]
-        }
-
-
 class DiamondRedundancyHighestJobTester(TimestampExpandedJob):
     """Highest job"""
     count = 0
@@ -1127,45 +1065,6 @@ class DiamondRedundancyBottomJobTester(Job):
                     "diamond_redundancy_middle_target_02",
                     "5min"),
             ]
-        }
-
-
-class RuleDepConstructionJobBottom01Tester(Job):
-    """bottom job"""
-    def __init__(self, unexpanded_id="rule_dep_construction_job_bottom_01",
-                 config=None):
-        super(RuleDepConstructionJobBottom01Tester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "rule_dep_construction_target_bottom_01",
-                    "5min")
-            ]
-        }
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "rule_dep_construction_target_top_02",
-                    "5min"),
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "rule_dep_construction_target_top_03",
-                    "5min",
-                    past=3),
-            ],
-            "depends_one_or_more": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "rule_dep_construction_target_top_04",
-                    "5min"),
-            ],
         }
 
 

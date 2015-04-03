@@ -347,11 +347,18 @@ class GraphTest(unittest.TestCase):
         # Given
         current_time = 600
         jobs1 = [
-            StaleStandardJobTester(),
+            SimpleTimestampExpandedTestJob("stale_standard_job", file_step="15min", cache_time="5min",
+                expander_type=builder.expanders.TimestampExpander,
+                targets=[{"unexpanded_id": "stale_standard_target-%Y-%m-%d-%H-%M", "file_step": "5min"}],
+                depends=[{"unexpanded_id": "stale_top_target-%Y-%m-%d-%H-%M", "file_step": "5min"}]),
         ]
 
         jobs2 = [
-            StaleIgnoreMtimeJobTester(),
+            SimpleTimestampExpandedTestJob("stale_ignore_mtime_job", file_step="15min",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[{"unexpanded_id": "stale_ignore_mtime_input_target_01-%Y-%m-%d-%H-%M", "file_step": "5min"},
+                    {"unexpanded_id": "stale_ignore_mtime_input_target_02-%Y-%m-%d-%H-%M", "file_step": "5min", "ignore_mtime": True}],
+                targets=[{"unexpanded_id": "stale_ignore_mtime_output_target-%Y-%m-%d-%H-%M", "file_step": "5min"}]),
         ]
 
         build_context1 = {
