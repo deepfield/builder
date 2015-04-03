@@ -12,61 +12,6 @@ import builder.targets
 import builder.expanders
 
 
-
-class JobTest(unittest.TestCase):
-    @testing.unit
-    def test_get_command(self):
-        # given
-        timestamp1 = arrow.get("2014-12-05T20:35")
-
-        build_context1 = {
-            "start_time": timestamp1,
-        }
-
-        job1 = TimestampExpandedJobTester()
-        job1_state = job1.expand({
-            "start_time": arrow.get("2014-12-05T20:35"),
-            "end_time": arrow.get("2014-12-05T20:35")
-        })[0]
-        build_graph = networkx.DiGraph()
-
-        expected_command1 = ("timestamp expanded job tester command "
-                             "%Y-%m-%d-%H-%M")
-
-        # when
-        command1 = job1.get_command("timestamp_expanded_job", job1_state, None)
-
-        # then
-        self.assertEqual(command1, expected_command1)
-
-    @testing.unit
-    def test_expand(self):
-        # given
-        timestamp1 = arrow.get("2014-12-05T20:35")
-
-        job_type1 = TimestampExpandedJobTester()
-
-        build_context1 = {
-            "start_time": timestamp1,
-            "end_time": arrow.get("2014-12-05T20:40"),
-        }
-
-        expected_unique_id1 = "timestamp_expanded_job_2014-12-05-20-35-00"
-
-        expected_command1 = ("timestamp expanded job tester command "
-                             "%Y-%m-%d-%H-%M")
-
-        # when
-        expanded_nodes1 = job_type1.expand(build_context1)
-        unique_id1 = expanded_nodes1[0].unique_id
-        command1 = job_type1.get_command("unique_id", {}, None)
-
-        # then
-        self.assertEqual(len(expanded_nodes1), 1)
-        self.assertEqual(unique_id1, expected_unique_id1)
-        self.assertEqual(command1, expected_command1)
-
-
 class FakeTarget(builder.targets.Target):
 
     @staticmethod
@@ -1104,51 +1049,6 @@ class StandardDependsTargetTester(Job):
             ]
         }
 
-
-class TimestampExpandedJobTester(TimestampExpandedJob):
-    """Used to test that jobs are expanded correctly and their commands
-    are retrieved correctly
-    """
-    def __init__(self, unexpanded_id="timestamp_expanded_job",
-                 config=None):
-        super(TimestampExpandedJobTester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_command(self, unique_id, build_context, build_graph):
-        command = "timestamp expanded job tester command %Y-%m-%d-%H-%M"
-        return command
-
-
-class JobBackboneDependentDependsOneOrMore(Job):
-    """A job that has a depends_one_or_more that is inserted if backbone
-    is true
-    """
-    def __init__(self,
-                 unexpanded_id="job_backbone_dependent_depends_one_or_more",
-                 config=None):
-        super(JobBackboneDependentDependsOneOrMore, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_dependencies(self, build_context=None):
-        depends_dict = {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.LocalFileSystemTarget,
-                    "standard_depends_target")
-            ],
-            "depends_one_or_more": []
-        }
-
-        if self.config.get("has_backbone", False):
-            depends_dict["depends_one_or_more"].append(
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "backbone_dependent_depends_one_or_more"))
-
-        if not depends_dict["depends_one_or_more"]:
-            del depends_dict["depends_one_or_more"]
-
-        return depends_dict
 
 class RangeJob(TimestampExpandedJob):
     """Used to test that the range value is followed"""
