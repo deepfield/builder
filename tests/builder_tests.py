@@ -77,25 +77,9 @@ class GraphTest(unittest.TestCase):
                 ]),
             SimpleTestJob("rule_dep_construction_job_bottom_01",
                 expander_type=builder.expanders.TimestampExpander,
-                depends_dict={
-                    "depends": [
-                        builder.expanders.TimestampExpander(
-                            builder.targets.LocalFileSystemTarget,
-                            "rule_dep_construction_target_top_02",
-                            "5min"),
-                        builder.expanders.TimestampExpander(
-                            builder.targets.LocalFileSystemTarget,
-                            "rule_dep_construction_target_top_03",
-                            "5min",
-                            past=3),
-                    ],
-                    "depends_one_or_more": [
-                        builder.expanders.TimestampExpander(
-                            builder.targets.LocalFileSystemTarget,
-                            "rule_dep_construction_target_top_04",
-                            "5min"),
-                    ],
-                },
+                depends=[{"unexpanded_id": "rule_dep_construction_target_top_02", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_top_03", "file_step": "5min", "past": 3},
+                    {"unexpanded_id": "rule_dep_construction_target_top_04", "file_step": "5min", "type": "depends_one_or_more"}],
                 targets=[
                     {"unexpanded_id": "rule_dep_construction_target_bottom_01", "file_step": "5min"},
                 ])
