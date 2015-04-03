@@ -79,10 +79,12 @@ class SimpleJobTestMixin(object):
         # Set up dependency dictionary
         depends_dict = depends_dict or {}
         depends_dict.setdefault('depends', [])
+        depends_dict.setdefault('depends_one_or_more', [])
         if depends:
             for depend in depends:
                 if isinstance(depend, dict):
-                    depends_dict['depends'].append(
+                    depends_type = depend.pop('type', 'depends')
+                    depends_dict[depends_type].append(
                         self.expander_type(
                             self.target_type,
                         **depend)
@@ -98,16 +100,18 @@ class SimpleJobTestMixin(object):
         # Set up target dictionary
         targets_dict = targets_dict or {}
         targets_dict.setdefault("produces", [])
-
+        targets_dict.setdefault("alternates", [])
         if targets:
             for target in targets:
                 if isinstance(target, dict):
-                    targets_dict["produces"].append(
+                    target_type = target.pop('type', 'produces')
+                    targets_dict[target_type].append(
                         self.expander_type(
                             self.target_type,
                             **target)
                      )
                 elif isinstance(target, basestring):
+
                     targets_dict["produces"].append(
                         self.expander_type(
                             self.target_type,

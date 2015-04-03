@@ -67,20 +67,14 @@ class GraphTest(unittest.TestCase):
                 depends=[
                     {"unexpanded_id": "rule_dep_construction_target_highest_02", "file_step": "5min"},
                     {"unexpanded_id": "rule_dep_construction_target_highest_03", "file_step": "5min"},
-                    {"unexpanded_id": "rule_dep_construction_target_highest_04", "file_step": "5min"}
+                    {"unexpanded_id": "rule_dep_construction_target_highest_04", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_highest_04", "file_step": "5min", "type": "depends_one_or_more"}
                 ],
                 targets=[
                     {"unexpanded_id": "rule_dep_construction_target_top_02", "file_step": "5min"},
                     {"unexpanded_id": "rule_dep_construction_target_top_03", "file_step": "5min"},
                     {"unexpanded_id": "rule_dep_construction_target_top_04", "file_step": "5min"}
                 ],
-                depends_dict={
-                    "depends_one_or_more": [
-                        builder.expanders.TimestampExpander(
-                        builder.targets.LocalFileSystemTarget,
-                        "rule_dep_construction_target_highest_04",
-                        "5min")
-                ]},
                 targets_dict={
                     "alternates": [
                         builder.expanders.TimestampExpander(
@@ -175,44 +169,24 @@ class GraphTest(unittest.TestCase):
                 target_type=builder.targets.LocalFileSystemTarget,
                 depends=[{"unexpanded_id": "build_graph_construction_target_highest_01-%Y-%m-%d-%H-%M", "file_step": "1min"}],
                 targets=[{"unexpanded_id": "build_graph_construction_target_top_01-%Y-%m-%d-%H-%M", "file_step": "5min"}]
-
             ),
             SimpleTimestampExpandedTestJob("build_graph_construction_job_top_02", file_step="5min",
                 expander_type=builder.expanders.TimestampExpander,
                 targets=[
                     {"unexpanded_id": "build_graph_construction_target_top_02-%Y-%m-%d-%H-%M", "file_step": "1min"},
-                    {"unexpanded_id": "build_graph_construction_target_top_03-%Y-%m-%d-%H-%M", "file_step": "5min"}],
-                targets_dict={
-                    "alternates":  [
-                    builder.expanders.TimestampExpander(    builder.targets.LocalFileSystemTarget,
-                        "build_graph_construction_target_top_04-%Y-%m-%d-%H-%M",
-                        "5min"),
-                    ]
-                },
+                    {"unexpanded_id": "build_graph_construction_target_top_03-%Y-%m-%d-%H-%M", "file_step": "5min"},
+                    {"unexpanded_id": "build_graph_construction_target_top_04-%Y-%m-%d-%H-%M", "file_step": "5min", "type": "alternates"}],
                 depends=[
                     {"unexpanded_id": "build_graph_construction_target_highest_02-%Y-%m-%d-%H-%M", "file_step": "5min"},
-                    {"unexpanded_id": "build_graph_construction_target_highest_03-%Y-%m-%d-%H-%M", "file_step": "1min"}],
-                depends_dict={
-                    "depends_one_or_more":  [builder.expanders.TimestampExpander(
-                        builder.targets.LocalFileSystemTarget,
-                        "build_graph_construction_target_highest_04-%Y-%m-%d-%H-%M",
-                        "1min")]
-                }
+                    {"unexpanded_id": "build_graph_construction_target_highest_03-%Y-%m-%d-%H-%M", "file_step": "1min"},
+                    {"unexpanded_id": "build_graph_construction_target_highest_04-%Y-%m-%d-%H-%M", "file_step": "1min", "type": "depends_one_or_more"}],
             ),
             SimpleTimestampExpandedTestJob("build_graph_construction_job_bottom_01", file_step="1h",
                 expander_type=builder.expanders.TimestampExpander,
                 targets=[{"unexpanded_id": "build_graph_construction_target_bottom_01-%Y-%m-%d-%H-%M", "file_step": "5min"}],
-                depends=[{"unexpanded_id": "build_graph_construction_target_top_02-%Y-%m-%d-%H-%M", "file_step": "1min"}],
-                depends_dict={
-                    "depends": [builder.expanders.TimestampExpander(
-                        builder.targets.LocalFileSystemTarget,
-                        "build_graph_construction_target_top_03-%Y-%m-%d-%H-%M",
-                        "5min", past=3)],
-                    "depends_one_or_more":  [builder.expanders.TimestampExpander(
-                        builder.targets.LocalFileSystemTarget,
-                        "build_graph_construction_target_top_04-%Y-%m-%d-%H-%M",
-                        "5min")]
-                }
+                depends=[{"unexpanded_id": "build_graph_construction_target_top_02-%Y-%m-%d-%H-%M", "file_step": "1min"},
+                    {"unexpanded_id": "build_graph_construction_target_top_03-%Y-%m-%d-%H-%M", "file_step": "5min", "past": 3},
+                    {"unexpanded_id": "build_graph_construction_target_top_04-%Y-%m-%d-%H-%M", "file_step": "5min", "type": "depends_one_or_more"}],
             )
         ]
 
