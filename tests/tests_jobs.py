@@ -1603,29 +1603,6 @@ class RangeJob(TimestampExpandedJob):
         super(RangeJob, self).__init__(
                 unexpanded_id=unexpanded_id, file_step=file_step)
 
-class IgnoreProduceJob(Job):
-    """A job that has a produced target that should be completely ignored in
-    stale checking
-    """
-    def __init__(self, unexpanded_id="ignore_produce_job", config=None):
-        super(IgnoreProduceJob, self).__init__(unexpanded_id=unexpanded_id)
-
-    def get_dependencies(self, build_context=None):
-        return {}
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.Expander(
-                        builder.targets.Target,
-                        "ignore_produce_marker_target"),
-            ],
-            "untracked": [
-                builder.expanders.Expander(
-                        builder.targets.Target,
-                        "ignore_produce_ignore_target"),
-            ]
-        }
 
 class ShouldRunFuture(TimestampExpandedJob):
     unexpanded_id = "should_run_future"

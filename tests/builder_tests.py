@@ -3224,7 +3224,13 @@ class GraphTest(unittest.TestCase):
     def test_ignore_produce(self):
         # Given
         jobs = [
-            IgnoreProduceJob()
+            SimpleTestJob("ignore_produce_job",
+                targets=["ignore_produce_marker_target"],
+                targets_dict={
+                    'untracked': [builder.expanders.Expander(
+                        builder.targets.Target,
+                        "ignore_produce_ignore_target")]
+                })
         ]
 
         build_manager = builder.build.BuildManager(jobs, [])
