@@ -599,15 +599,6 @@ class BuildGraph(BaseGraph):
     def get_dependent_ids(self, target_id):
         return list(self.get_dependent_ids_iter(target_id))
 
-    def get_target_relationships(self, job_state_id):
-        self.assert_job_state(job_state_id)
-        out_edges_iter = self.out_edges_iter(job_state_id, data=True)
-        target_dict = collections.defaultdict(dict)
-        for _, target_id, data in out_edges_iter:
-            if self.is_target(target_id):
-                target_dict[data["kind"]][target_id] = data
-        return target_dict
-
     def get_target_or_dependency_ids_iter(self, job_state_id, direction):
         if direction == "up":
             return self.get_dependency_ids_iter(job_state_id)
@@ -627,6 +618,15 @@ class BuildGraph(BaseGraph):
     def get_dependent_or_creator_ids(self, target_id, direction):
         return list(self.get_dependent_or_creator_ids_iter(target_id,
                                                            direction))
+
+    def get_target_relationships(self, job_state_id):
+        self.assert_job_state(job_state_id)
+        out_edges_iter = self.out_edges_iter(job_state_id, data=True)
+        target_dict = collections.defaultdict(dict)
+        for _, target_id, data in out_edges_iter:
+            if self.is_target(target_id):
+                target_dict[data["kind"]][target_id] = data
+        return target_dict
 
     def get_dependency_relationships(self, job_state_id):
         self.assert_job_state(job_state_id)
@@ -661,9 +661,9 @@ class BuildGraph(BaseGraph):
             job depending on the the direction.
         """
         if direction == "up":
-            return self.get_creators_iter(target_id)
+            return self.get_creator_ids_iter(target_id)
         elif direction == "down":
-            return self.get_dependents_iter(target_id)
+            return self.get_dependent_ids_iter(target_id)
         else:
             raise ValueError("direction must be up or down, recieved "
                              "{}".format(direction))
