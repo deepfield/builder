@@ -93,12 +93,12 @@ class ExecutionManagerTests(unittest.TestCase):
         execution_manager = self._get_execution_manager(jobs)
         def update_job(job, build):
             job.should_run = False
-            target_ids = build.get_targets(job.get_id())
+            target_ids = build.get_target_ids(job.get_id())
             for target_id in target_ids:
                 target = build.get_target(target_id)
                 target.exists = True
                 target.mtime = arrow.get()
-                for dependent_id in build.get_dependents(target_id):
+                for dependent_id in build.get_dependent_ids(target_id):
                     dependent = build.get_job_state(dependent_id)
                     dependent.should_run = True
             return True, ''
