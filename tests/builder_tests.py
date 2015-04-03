@@ -2719,11 +2719,24 @@ class GraphTest(unittest.TestCase):
     def test_update_job_cache(self):
         # Given
         jobs = [
-            UpdateJobCacheTop(),
-            UpdateJobCacheMiddle01(),
-            UpdateJobCacheMiddle02(),
-            UpdateJobCacheMiddle03(),
-            UpdateJobCacheBottom(),
+            SimpleTestJob("update_job_cache_top",
+                target_type=builder.targets.LocalFileSystemTarget,
+                targets=["update_job_cache_top_01_target",
+                         "update_job_cache_top_02_target", "update_job_cache_top_03_target"],
+                depends=["update_job_cache_highest_target"]),
+            SimpleTestJob("update_job_cache_middle_01",
+                targets=["update_job_cache_middle_01_target"],
+                depends=["update_job_cache_top_01_target"]),
+            SimpleTestJob("update_job_cache_middle_02",
+                targets=["update_job_cache_middle_02_target"],
+                depends=["update_job_cache_top_02_target"]),
+            SimpleTestJob("update_job_cache_middle_03",
+                targets=["update_job_cache_middle_03_target"],
+                depends=["update_job_cache_top_03_target"]),
+            SimpleTestJob("update_job_cache_bottom",
+                targets=["update_job_cache_bottom_target"],
+                depends=["update_job_cache_middle_01_target",
+                         "update_job_cache_middle_02_target", "update_job_cache_middle_03_target"]),
         ]
 
         build_manager = builder.build.BuildManager(jobs, [])
