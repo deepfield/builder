@@ -1604,9 +1604,6 @@ class RangeJob(TimestampExpandedJob):
                 unexpanded_id=unexpanded_id, file_step=file_step)
 
 
-class ShouldRunFuture(TimestampExpandedJob):
-    unexpanded_id = "should_run_future"
-
 class ExpandCounter(Job):
     def __init__(self, unexpanded_id=None, cache_time=None, targets=None,
                  dependencies=None, config=None):

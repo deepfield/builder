@@ -3458,7 +3458,7 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_should_run_future(self):
         # Given
-        job1 = ShouldRunFuture()
+        job1 = SimpleTimestampExpandedTestJob("should_run_future", file_step="5min")
 
         build_context1 = {
             "start_time": arrow.get("300"),
