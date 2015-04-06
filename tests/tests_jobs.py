@@ -240,37 +240,6 @@ class GetNextJobsToRunTop(GetNextJobsCounter):
             ]
         }
 
-class GetStartingJobs04Tester(Job):
-    """A job that will have it's should run values overwritten"""
-    def __init__(self, unexpanded_id="get_starting_jobs_04",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(GetStartingJobs04Tester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-
-class GetStartingJobs03Tester(Job):
-    """A job that will have it's should run values overwritten"""
-    def __init__(self, unexpanded_id="get_starting_jobs_03",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(GetStartingJobs03Tester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-
-class GetStartingJobs02Tester(Job):
-    """A job that will have it's should run values overwritten"""
-    def __init__(self, unexpanded_id="get_starting_jobs_02",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(GetStartingJobs02Tester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-
-class GetStartingJobs01Tester(Job):
-    """A job that will have it's should run values overwritten"""
-    def __init__(self, unexpanded_id="get_starting_jobs_01",
-                 cache_time=None, targets=None, dependencies=None, config=None):
-        super(GetStartingJobs01Tester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
 
 class ShouldRunRecurseJobState(builder.jobs.JobState):
     """Used to count how many times the should run is returned"""
@@ -1048,14 +1017,6 @@ class StandardDependsTargetTester(Job):
                     "standard_target")
             ]
         }
-
-
-class RangeJob(TimestampExpandedJob):
-    """Used to test that the range value is followed"""
-    def __init__(self, unexpanded_id="range_job", file_step="5min",
-                 config=None):
-        super(RangeJob, self).__init__(
-                unexpanded_id=unexpanded_id, file_step=file_step)
 
 
 class ExpandCounter(Job):

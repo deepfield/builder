@@ -2553,10 +2553,10 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_get_starting_jobs(self):
         # given
-        jobs = [GetStartingJobs01Tester(),
-                GetStartingJobs02Tester(),
-                GetStartingJobs03Tester(),
-                GetStartingJobs04Tester()]
+        jobs = [SimpleTestJob('get_starting_jobs_01'),
+                SimpleTestJob('get_starting_jobs_02'),
+                SimpleTestJob('get_starting_jobs_03'),
+                SimpleTestJob('get_starting_jobs_04')]
 
         build_manager = builder.build.BuildManager(jobs, [])
         build1 = build_manager.make_build()
