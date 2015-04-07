@@ -271,28 +271,6 @@ class ShouldRunRecurseJobDefinition(SimpleTestJobDefinition):
         return counting_nodes
 
 
-class PastCacheTimeJobTester(TimestampExpandedJobDefinition):
-    """Job for testing cache time"""
-    def __init__(self, unexpanded_id="past_cache_time_job", file_step="15min",
-                 cache_time="5min", config=None):
-        super(PastCacheTimeJobTester, self).__init__(
-                unexpanded_id=unexpanded_id, file_step=file_step,
-                cache_time=cache_time)
-
-    def get_dependencies(self, build_context=None):
-        return {}
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "past_cache_time_target-%Y-%m-%d-%H-%M",
-                    "5min")
-            ]
-        }
-
-
 class BuildableJobTester(TimestampExpandedJobDefinition):
     """Has multiple kinds of dependencies that will be tested"""
     def __init__(self, unexpanded_id="buildable_job", file_step="15min",

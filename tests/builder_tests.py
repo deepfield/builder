@@ -1887,9 +1887,10 @@ class GraphTest(unittest.TestCase):
             "start_time": arrow.get("2014-12-05T10:55"),
             "end_time": arrow.get("2014-12-05T10:55"),
         }
-
         jobs1 = [
-            PastCacheTimeJobTester(),
+            SimpleTimestampExpandedTestJob('past_cache_time_job', file_step="15min", cache_time="5min",
+                expander_type=builder.expanders.TimestampExpander,
+                targets=[{'unexpanded_id': 'past_cache_time_target-%Y-%m-%d-%H-%M', 'file_step': '5min'}]),
         ]
 
         build_manager = builder.build.BuildManager(jobs1, [])
