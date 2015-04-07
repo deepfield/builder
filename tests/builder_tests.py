@@ -42,7 +42,8 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_expand_10s(self):
         # Given
-        build_manager = builder.build.BuildManager([TenSecondJob()], [])
+        build_manager = builder.build.BuildManager(
+            [SimpleTimestampExpandedTestJob("test_second_job", file_step="10s")], [])
         build = build_manager.make_build()
 
         # When
@@ -56,9 +57,32 @@ class GraphTest(unittest.TestCase):
     def test_rule_dep_construction(self):
         # Given
         jobs = [
-            RuleDepConstructionJobTop01Tester(),
-            RuleDepConstructionJobTop02Tester(),
-            RuleDepConstructionJobBottom01Tester(),
+            SimpleTestJob("rule_dep_construction_job_top_01",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[{"unexpanded_id": "rule_dep_construction_target_highest_01", "file_step": "5min"}],
+                targets=[{"unexpanded_id": "rule_dep_construction_top_01", "file_step": "5min"}]
+            ),
+            SimpleTestJob("rule_dep_construction_job_top_02",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[
+                    {"unexpanded_id": "rule_dep_construction_target_highest_02", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_highest_03", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_highest_04", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_highest_04", "file_step": "5min", "type": "depends_one_or_more"}
+                ],
+                targets=[
+                    {"unexpanded_id": "rule_dep_construction_target_top_02", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_top_03", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_top_04", "file_step": "5min", "type": "alternates"}
+                ]),
+            SimpleTestJob("rule_dep_construction_job_bottom_01",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[{"unexpanded_id": "rule_dep_construction_target_top_02", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_top_03", "file_step": "5min", "past": 3},
+                    {"unexpanded_id": "rule_dep_construction_target_top_04", "file_step": "5min", "type": "depends_one_or_more"}],
+                targets=[
+                    {"unexpanded_id": "rule_dep_construction_target_bottom_01", "file_step": "5min"},
+                ])
         ]
 
         expected_edges = (
@@ -117,9 +141,30 @@ class GraphTest(unittest.TestCase):
     def test_build_plan_construction(self):
         # Given
         jobs = [
-            BuildGraphConstructionJobTop01Tester(),
-            BuildGraphConstructionJobTop02Tester(),
-            BuildGraphConstructionJobBottom01Tester(),
+            SimpleTimestampExpandedTestJob("build_graph_construction_job_top_01", file_step="5min",
+                expander_type=builder.expanders.TimestampExpander,
+                target_type=builder.targets.LocalFileSystemTarget,
+                depends=[{"unexpanded_id": "build_graph_construction_target_highest_01-%Y-%m-%d-%H-%M", "file_step": "1min"}],
+                targets=[{"unexpanded_id": "build_graph_construction_target_top_01-%Y-%m-%d-%H-%M", "file_step": "5min"}]
+            ),
+            SimpleTimestampExpandedTestJob("build_graph_construction_job_top_02", file_step="5min",
+                expander_type=builder.expanders.TimestampExpander,
+                targets=[
+                    {"unexpanded_id": "build_graph_construction_target_top_02-%Y-%m-%d-%H-%M", "file_step": "1min"},
+                    {"unexpanded_id": "build_graph_construction_target_top_03-%Y-%m-%d-%H-%M", "file_step": "5min"},
+                    {"unexpanded_id": "build_graph_construction_target_top_04-%Y-%m-%d-%H-%M", "file_step": "5min", "type": "alternates"}],
+                depends=[
+                    {"unexpanded_id": "build_graph_construction_target_highest_02-%Y-%m-%d-%H-%M", "file_step": "5min"},
+                    {"unexpanded_id": "build_graph_construction_target_highest_03-%Y-%m-%d-%H-%M", "file_step": "1min"},
+                    {"unexpanded_id": "build_graph_construction_target_highest_04-%Y-%m-%d-%H-%M", "file_step": "1min", "type": "depends_one_or_more"}],
+            ),
+            SimpleTimestampExpandedTestJob("build_graph_construction_job_bottom_01", file_step="1h",
+                expander_type=builder.expanders.TimestampExpander,
+                targets=[{"unexpanded_id": "build_graph_construction_target_bottom_01-%Y-%m-%d-%H-%M", "file_step": "5min"}],
+                depends=[{"unexpanded_id": "build_graph_construction_target_top_02-%Y-%m-%d-%H-%M", "file_step": "1min"},
+                    {"unexpanded_id": "build_graph_construction_target_top_03-%Y-%m-%d-%H-%M", "file_step": "5min", "past": 3},
+                    {"unexpanded_id": "build_graph_construction_target_top_04-%Y-%m-%d-%H-%M", "file_step": "5min", "type": "depends_one_or_more"}],
+            )
         ]
 
         start_time = "2014-12-05T10:30"
@@ -247,73 +292,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(expected_number_of_targets4, number_of_targets4)
         self.assertEqual(expected_number_of_targets5, number_of_targets5)
 
-    @testing.unit
-    def test_backbone_dependent(self):
-        # Given
-        config1 = {
-                "has_backbone": True,
-        }
-        config2 = {
-                "has_backbone": False,
-        }
-
-        jobs1 = [
-            BackboneDependentBottomJobTester(config=config1),
-            BackboneDependentMiddleJob01Tester(config=config1),
-            BackboneDependentMiddleJob02Tester(config=config1),
-            BackboneDependentTopJob01Tester(config=config1),
-            BackboneDependentTopJob02Tester(config=config1),
-        ]
-
-        jobs2 = [
-            BackboneDependentBottomJobTester(config=config2),
-            BackboneDependentMiddleJob01Tester(config=config2),
-            BackboneDependentMiddleJob02Tester(config=config2),
-            BackboneDependentTopJob01Tester(config=config2),
-            BackboneDependentTopJob02Tester(config=config2),
-        ]
-
-        build_context1 = {
-                "start_time": arrow.get("2014-12-05T10:50"),
-                "end_time": arrow.get("2014-12-05T10:55"),
-        }
-        build_context2 = {
-                "start_time": arrow.get("2014-12-05T10:50"),
-                "end_time": arrow.get("2014-12-05T10:55"),
-        }
-
-        build_manager1 = builder.build.BuildManager(jobs1, [], config=config1)
-        build_manager2 = builder.build.BuildManager(jobs2, [], config=config2)
-
-        build1 = build_manager1.make_build()
-        build2 = build_manager2.make_build()
-
-        expected_build_count1 = 18
-        expected_build_count2 = 10
-
-        middle_node_01 = "backbone_dependent_middle_job_01"
-        middle_node_02 = "backbone_dependent_middle_job_02"
-        top_node_01 = "backbone_dependent_top_job_01"
-        top_node_02 = "backbone_dependent_top_job_02"
-
-        # When
-        build1.add_job("backbone_dependent_bottom_job", build_context1)
-        build2.add_job("backbone_dependent_bottom_job", build_context2)
-
-        build_count1 = len(build1.nodes())
-        build_count2 = len(build2.nodes())
-
-        # Then
-        self.assertEqual(build_count1, expected_build_count1)
-        self.assertEqual(build_count2, expected_build_count2)
-        self.assertIn(middle_node_01, build1.nodes())
-        self.assertIn(middle_node_02, build1.nodes())
-        self.assertIn(top_node_01, build1.nodes())
-        self.assertIn(top_node_02, build1.nodes())
-        self.assertNotIn(middle_node_01, build2.nodes())
-        self.assertIn(middle_node_02, build2.nodes())
-        self.assertNotIn(top_node_01, build2.nodes())
-        self.assertIn(top_node_02, build2.nodes())
 
     @testing.unit
     def test_diamond_redundancy(self):
@@ -369,11 +347,18 @@ class GraphTest(unittest.TestCase):
         # Given
         current_time = 600
         jobs1 = [
-            StaleStandardJobTester(),
+            SimpleTimestampExpandedTestJob("stale_standard_job", file_step="15min", cache_time="5min",
+                expander_type=builder.expanders.TimestampExpander,
+                targets=[{"unexpanded_id": "stale_standard_target-%Y-%m-%d-%H-%M", "file_step": "5min"}],
+                depends=[{"unexpanded_id": "stale_top_target-%Y-%m-%d-%H-%M", "file_step": "5min"}]),
         ]
 
         jobs2 = [
-            StaleIgnoreMtimeJobTester(),
+            SimpleTimestampExpandedTestJob("stale_ignore_mtime_job", file_step="15min",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[{"unexpanded_id": "stale_ignore_mtime_input_target_01-%Y-%m-%d-%H-%M", "file_step": "5min"},
+                    {"unexpanded_id": "stale_ignore_mtime_input_target_02-%Y-%m-%d-%H-%M", "file_step": "5min", "ignore_mtime": True}],
+                targets=[{"unexpanded_id": "stale_ignore_mtime_output_target-%Y-%m-%d-%H-%M", "file_step": "5min"}]),
         ]
 
         build_context1 = {
@@ -2719,11 +2704,24 @@ class GraphTest(unittest.TestCase):
     def test_update_job_cache(self):
         # Given
         jobs = [
-            UpdateJobCacheTop(),
-            UpdateJobCacheMiddle01(),
-            UpdateJobCacheMiddle02(),
-            UpdateJobCacheMiddle03(),
-            UpdateJobCacheBottom(),
+            SimpleTestJob("update_job_cache_top",
+                target_type=builder.targets.LocalFileSystemTarget,
+                targets=["update_job_cache_top_01_target",
+                         "update_job_cache_top_02_target", "update_job_cache_top_03_target"],
+                depends=["update_job_cache_highest_target"]),
+            SimpleTestJob("update_job_cache_middle_01",
+                targets=["update_job_cache_middle_01_target"],
+                depends=["update_job_cache_top_01_target"]),
+            SimpleTestJob("update_job_cache_middle_02",
+                targets=["update_job_cache_middle_02_target"],
+                depends=["update_job_cache_top_02_target"]),
+            SimpleTestJob("update_job_cache_middle_03",
+                targets=["update_job_cache_middle_03_target"],
+                depends=["update_job_cache_top_03_target"]),
+            SimpleTestJob("update_job_cache_bottom",
+                targets=["update_job_cache_bottom_target"],
+                depends=["update_job_cache_middle_01_target",
+                         "update_job_cache_middle_02_target", "update_job_cache_middle_03_target"]),
         ]
 
         build_manager = builder.build.BuildManager(jobs, [])
@@ -2915,9 +2913,15 @@ class GraphTest(unittest.TestCase):
     def test_expand_exact(self):
         # Given
         jobs = [
-            ExpandExactTop(),
-            ExpandExactMiddle(),
-            ExpandExactBottom(),
+            SimpleTestJob(unexpanded_id="test_expand_exact_top",
+                          targets=["test_expand_exact_top_target"],
+                          depends=["test_expand_exact_highest_target"]),
+            SimpleTestJob(unexpanded_id="test_expand_exact_middle",
+                          targets=["test_expand_exact_middle_target"],
+                          depends=["test_expand_exact_top_target"]),
+            SimpleTestJob(unexpanded_id="test_expand_exact_bottom",
+                          targets=["test_expand_exact_bottom_target"],
+                          depends=["test_expand_exact_middle_target"])
         ]
 
         build_context = {
@@ -2938,9 +2942,31 @@ class GraphTest(unittest.TestCase):
     def test_force_build(self):
         # Given
         jobs = [
-            ForceBuildTop(),
-            ForceBuildMiddle(),
-            ForceBuildBottom(),
+            SimpleTimestampExpandedTestJob('force_build_top',
+                file_step="1min",
+                expander_type=builder.expanders.TimestampExpander,
+                targets=[
+                    {"unexpanded_id": "force_build_top_target_%Y-%m-%d-%H-%M", "file_step": "1min"}
+            ]),
+            SimpleTimestampExpandedTestJob('force_build_middle',
+                file_step="5min",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[
+                    {"unexpanded_id": "force_build_top_target_%Y-%m-%d-%H-%M", "file_step": "1min"}
+                ],
+                targets=[
+                    {"unexpanded_id": "force_build_middle_target_%Y-%m-%d-%H-%M", "file_step": "5min"}
+            ]),
+            SimpleTimestampExpandedTestJob('force_build_bottom',
+                file_step="15min",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[
+                    {"unexpanded_id": "force_build_top_target_%Y-%m-%d-%H-%M", "file_step": "1min"},
+                    {"unexpanded_id": "force_build_middle_target_%Y-%m-%d-%H-%M", "file_step": "5min"},
+                ],
+                targets=[
+                    {"unexpanded_id": "force_build_bottom_target_%Y-%m-%d-%H-%M", "file_step": "15min"}
+                ])
         ]
 
         build_context = {
@@ -2972,11 +2998,30 @@ class GraphTest(unittest.TestCase):
     def test_update_target_cache(self):
         # Given
         jobs = [
-            UpdateTargetCacheMiddle01(),
-            UpdateTargetCacheMiddle02(),
-            UpdateTargetCacheMiddle03(),
-            UpdateTargetCacheBottom(),
-            UpdateTargetCacheTop(),
+            SimpleTestJob("update_target_cache_middle_01",
+                targets=["update_target_cache_middle_01_target"],
+                depends=["update_target_cache_top_01_target"]),
+
+            SimpleTestJob("update_target_cache_middle_02",
+                targets=["update_target_cache_middle_02_target"],
+                depends=["update_target_cache_top_02_target"]),
+
+            SimpleTestJob("update_target_cache_middle_03",
+                targets=["update_target_cache_middle_03_target"],
+                depends=["update_target_cache_top_03_target"]),
+
+            SimpleTestJob("update_target_cache_bottom",
+                targets=["update_target_cache_bottom_target"],
+                depends=["update_target_cache_middle_01_target",
+                    "update_target_cache_middle_02_target",
+                    "update_target_cache_middle_03_target"]),
+
+            SimpleTestJob("update_target_cache_top",
+                depends=["update_target_cache_highest_target"],
+                targets=["update_target_cache_top_01_target",
+                    "update_target_cache_top_02_target",
+                    "update_target_cache_top_03_target"],
+                target_type=builder.targets.LocalFileSystemTarget)
         ]
 
         build_manager = builder.build.BuildManager(jobs, [])
@@ -3164,7 +3209,13 @@ class GraphTest(unittest.TestCase):
     def test_ignore_produce(self):
         # Given
         jobs = [
-            IgnoreProduceJob()
+            SimpleTestJob("ignore_produce_job",
+                targets=["ignore_produce_marker_target"],
+                targets_dict={
+                    'untracked': [builder.expanders.Expander(
+                        builder.targets.Target,
+                        "ignore_produce_ignore_target")]
+                })
         ]
 
         build_manager = builder.build.BuildManager(jobs, [])
@@ -3392,7 +3443,7 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_should_run_future(self):
         # Given
-        job1 = ShouldRunFuture()
+        job1 = SimpleTimestampExpandedTestJob("should_run_future", file_step="5min")
 
         build_context1 = {
             "start_time": arrow.get("300"),
@@ -3627,6 +3678,7 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(job9.count, 0)
         self.assertEqual(job10.count, 0)
 
+    @testing.unit
     def test_job_state_iter(self):
         # Given
         job1 = builder.tests.tests_jobs.SimpleTestJob(
@@ -3894,8 +3946,24 @@ class RuleDependencyGraphTest(unittest.TestCase):
 
     def _get_rdg(self):
         jobs = [
-            RuleDepConstructionJobTop01Tester(),
-            RuleDepConstructionJobTop02Tester(),
+            SimpleTestJob("rule_dep_construction_job_top_01",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[{"unexpanded_id": "rule_dep_construction_target_highest_01", "file_step": "5min"}],
+                targets=[{"unexpanded_id": "rule_dep_construction_top_01", "file_step": "5min"}]
+            ),
+            SimpleTestJob("rule_dep_construction_job_top_02",
+                expander_type=builder.expanders.TimestampExpander,
+                depends=[
+                    {"unexpanded_id": "rule_dep_construction_target_highest_02", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_highest_03", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_highest_04", "file_step": "5min"}
+                ],
+                targets=[
+                    {"unexpanded_id": "rule_dep_construction_target_top_02", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_top_03", "file_step": "5min"},
+                    {"unexpanded_id": "rule_dep_construction_target_top_04", "file_step": "5min"}
+                ]
+            ),
         ]
 
         build_manager = builder.build.BuildManager(jobs, [])
