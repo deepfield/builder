@@ -2632,11 +2632,21 @@ class GraphTest(unittest.TestCase):
     def test_get_next_jobs_to_run(self):
         # Given
         jobs = [
-            GetNextJobsToRunTop(),
-            GetNextJobsToRunBottom(),
-            GetNextJobsToRunLowest(),
-            GetNextJobsToRunMiddle01(),
-            GetNextJobsToRunMiddle02(),
+            SimpleTestJobDefinition("get_next_jobs_to_run_top",
+                depends=["get_next_jobs_to_run_highest_target"],
+                targets=["get_next_jobs_to_run_top_target"]),
+            SimpleTestJobDefinition("get_next_jobs_to_run_bottom",
+                depends=["get_next_jobs_to_run_middle_01_target", "get_next_jobs_to_run_middle_02_target"],
+                targets=["get_next_jobs_to_run_bottom_target"]),
+            SimpleTestJobDefinition("get_next_jobs_to_run_lowest",
+                depends=["get_next_jobs_to_run_bottom_target"],
+                targets=["get_next_jobs_to_run_lowest_target"]),
+            SimpleTestJobDefinition("get_next_jobs_to_run_middle_01",
+                depends=["get_next_jobs_to_run_top_target"],
+                targets=["get_next_jobs_to_run_middle_01_target"]),
+            SimpleTestJobDefinition("get_next_jobs_to_run_middle_02",
+                depends=["get_next_jobs_to_run_top_target"],
+                targets=["get_next_jobs_to_run_middle_02_target"]),
         ]
 
         build_manager = builder.build.BuildManager(jobs, [])
