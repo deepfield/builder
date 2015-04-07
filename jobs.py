@@ -358,7 +358,7 @@ class Job(object):
 
 
     def get_id(self):
-        """ Returns this JobState's unique id
+        """ Returns this Job's unique id
         """
         return self.unique_id
 
@@ -382,7 +382,7 @@ class TimestampExpandedJob(Job):
         else:
             return super(TimestampExpandedJob, self).get_should_run(cached=cached, cache_set=cache_set)
 
-class MetaJobState(TimestampExpandedJob):
+class MetaJob(TimestampExpandedJob):
 
     def get_should_run_immediate(self, cached=True):
         return False
@@ -421,7 +421,7 @@ class JobDefinition(object):
         """
         return self.unexpanded_id
 
-    def get_state_type(self):
+    def get_job_type(self):
         """Returns the type of state to use for expansions"""
         return Job
 
@@ -433,7 +433,7 @@ class JobDefinition(object):
         context would use start time and end time and the node
         would expand from there
         """
-        state_type = self.get_state_type()
+        state_type = self.get_job_type()
         return [state_type(self, self.get_expandable_id(), build_graph, build_context)]
 
     def get_enable(self):
@@ -489,14 +489,14 @@ class TimestampExpandedJobDefinition(JobDefinition):
     def get_expandable_id(self):
         return self.unexpanded_id + "_%Y-%m-%d-%H-%M-%S"
 
-    def get_state_type(self):
+    def get_job_type(self):
         return TimestampExpandedJob
 
     def expand(self, build_graph, build_context):
         """Expands the node based off of the file step and the start and
         end times
         """
-        job_type = self.get_state_type()
+        job_type = self.get_job_type()
         expanded_contexts = (builder.expanders
                                     .TimestampExpander
                                     .expand_build_context(
