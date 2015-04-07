@@ -3876,7 +3876,7 @@ class GraphTest(unittest.TestCase):
         previous_depends_or_ids = []
         for target_id, depends_or_id in zip(depends_ids1_iter, depends_or_ids1_iter):
             self.assertNotIn(target_id, previous_depends_ids)
-            self.assertNotIn(target_id, previous_depends_or_ids)
+            self.assertNotIn(depends_or_id, previous_depends_or_ids)
             self.assertIn(target_id, ("target1", "target2", "target3", "target4"))
             self.assertIn(depends_or_id, ("target1", "target2", "target3", "target4"))
             previous_depends_ids.append(target_id)
@@ -3932,15 +3932,55 @@ class GraphTest(unittest.TestCase):
                 ]
             }
         )
+        job4 = builder.jobs.Job(
+            unexpanded_id="job4",
+            targets={
+                "produces": [
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target4")
+                ]
+            }
+        )
 
-        build_manager = builder.build.BuildManager([job1, job2, job3], [])
+        build_manager = builder.build.BuildManager([job1, job2, job3, job4], [])
         build = build_manager.make_build()
+        build.add_job("job1", {})
+        build.add_job("job2", {})
+        build.add_job("job3", {})
+        build.add_job("job4", {})
 
         # When
+        creator_ids = build.get_creator_ids("target1")
+        creator_ids_iter = build.get_creator_ids_iter("target1")
+        creator_or_ids = build.get_dependent_or_creator_ids("target1", "up")
+        creator_or_ids_iter = build.get_dependent_or_creator_ids_iter("target1", "up")
          
 
         # Then
+        self.assertEqual(len(creator_ids), 3)
+        self.assertIn("job1", creator_ids)
+        self.assertIn("job2", creator_ids)
+        self.assertIn("job3", creator_ids)
 
+        self.assertEqual(len(creator_or_ids), 3)
+        self.assertIn("job1", creator_or_ids)
+        self.assertIn("job2", creator_or_ids)
+        self.assertIn("job3", creator_or_ids)
+
+        count = 0
+        previous_creator_ids = []
+        previous_creator_or_ids = []
+        for creator_id, creator_or_id in zip(creator_ids_iter, creator_or_ids_iter):
+            self.assertNotIn(creator_id, previous_creator_ids)
+            self.assertNotIn(creator_or_id, previous_creator_or_ids)
+            self.assertIn(creator_id, ("job1", "job2", "job3"))
+            self.assertIn(creator_or_id, ("job1", "job2", "job3"))
+            previous_creator_ids.append(creator_id)
+            previous_creator_or_ids.append(creator_or_id)
+            count = count + 1
+
+        self.assertEqual(count, 3)
 
 class RuleDependencyGraphTest(unittest.TestCase):
 
