@@ -3987,7 +3987,7 @@ class GraphTest(unittest.TestCase):
                 {
                     "type": "produces",
                     "unexpanded_id": "target1",
-                    "ignore_mtime": False,
+                    "ignore_mtime": True,
                 },
                 {
                     "type": "produces",
@@ -4004,41 +4004,41 @@ class GraphTest(unittest.TestCase):
                 },
             ],
         )
-        job2 = builder.jobs.JobDefinition(
+        job2 = SimpleTestJobDefinition(
             unexpanded_id="job2",
-            targets={
-                "alternates": [
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target1"),
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target3"),
-                ]
-            }
+            targets=[
+                {
+                    "type": "alternates",
+                    "unexpanded_id": "target1",
+                },
+                {
+                    "type": "alternates",
+                    "unexpanded_id": "target3",
+                }
+            ]
         )
-        job3 = builder.jobs.JobDefinition(
+        job3 = SimpleTestJobDefinition(
             unexpanded_id="job3",
-            targets={
-                "alternates": [
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target1"),
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target4"),
-                ]
-            }
+            targets=[
+                {
+                    "type": "alternates",
+                    "unexpanded_id": "target1",
+                    "edge_data": {"fake": "fake"},
+                },
+                {
+                    "type": "alternates",
+                    "unexpanded_id": "target3",
+                }
+            ]
         )
-        job4 = builder.jobs.JobDefinition(
+        job4 = SimpleTestJobDefinition(
             unexpanded_id="job4",
-            targets={
-                "produces": [
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target4")
-                ]
-            }
+            targets=[
+                {
+                    "type": "alternates",
+                    "unexpanded_id": "target3",
+                }
+            ]
         )
 
         build_manager = builder.build.BuildManager([job1, job2, job3, job4], [])
@@ -4053,6 +4053,7 @@ class GraphTest(unittest.TestCase):
         creator_ids_iter = build.get_creator_ids_iter("target1")
         creator_or_ids = build.get_dependent_or_creator_ids("target1", "up")
         creator_or_ids_iter = build.get_dependent_or_creator_ids_iter("target1", "up")
+        creator_relationships = build.get_creator_relationships("target1")
          
 
         # Then
@@ -4080,11 +4081,23 @@ class GraphTest(unittest.TestCase):
 
         self.assertEqual(count, 3)
 
+        self.assertEqual(len(creator_relationships), 2)
+        self.assertIn("produces", creator_relationships)
+        self.assertIn("alternates", creator_relationships)
+        self.assertEqual(len(creator_relationships["produces"]), 1)
+        self.assertEqual(len(creator_relationships["alternates"]), 2)
+        self.assertIn("job1", creator_relationships["produces"])
+        self.assertIn("job2", creator_relationships["alternates"])
+        self.assertIn("job3", creator_relationships["alternates"])
+        self.assertEqual(creator_relationships["produces"]["job1"]["ignore_mtime"], True)
+        self.assertEqual(creator_relationships["alternates"]["job2"].get("ignore_mtime",False), False)
+        self.assertEqual(creator_relationships["alternates"]["job3"].get("fake"), "fake")
+
     def test_get_dependents(self):
         # Given
         job1 = SimpleTestJobDefinition(
             unexpanded_id="job1",
-            depends=[{"type": "depends", "unexpanded_id": "target1"},
+            depends=[{"type": "depends", "unexpanded_id": "target1", "ignore_mtime": True},
                      {"type": "depends_one_or_more", "unexpanded_id": "target2"}]
         )
         job2 = SimpleTestJobDefinition(
@@ -4094,7 +4107,7 @@ class GraphTest(unittest.TestCase):
         )
         job3 = SimpleTestJobDefinition(
             unexpanded_id="job3",
-            depends=[{"type": "depends", "unexpanded_id": "target1"},
+            depends=[{"type": "depends", "unexpanded_id": "target1", "edge_data": {"fake": "fake"}},
                      {"type": "depends_one_or_more", "unexpanded_id": "target2"}]
         )
         job4 = SimpleTestJobDefinition(
@@ -4118,6 +4131,8 @@ class GraphTest(unittest.TestCase):
         dependent_ids_iter2 = build.get_dependent_ids_iter("target3")
         dependent_or_ids2 = build.get_dependent_or_creator_ids("target3", "down")
         dependent_or_ids_iter2 = build.get_dependent_or_creator_ids_iter("target3", "down")
+        dependent_relationships1 = build.get_dependent_relationships("target1")
+        dependent_relationships2 = build.get_dependent_relationships("target3")
 
         # Then
         self.assertEqual(len(dependent_ids1), 3)
@@ -4149,9 +4164,18 @@ class GraphTest(unittest.TestCase):
 
         for dependent_id in dependent_ids_iter2:
             self.assertTrue(False)
-        for dependent_Id in dependent_or_ids_iter2:
+        for dependent_id in dependent_or_ids_iter2:
             self.assertTrue(False)
 
+        self.assertEqual(len(dependent_relationships1), 2)
+        self.assertEqual(len(dependent_relationships2), 0)
+        self.assertIn("depends", dependent_relationships1)
+        self.assertIn("depends_one_or_more", dependent_relationships1)
+        self.assertEqual(len(dependent_relationships1["depends"]), 2)
+        self.assertEqual(len(dependent_relationships1["depends_one_or_more"]), 1)
+        self.assertEqual(dependent_relationships1["depends"]["job1"]["ignore_mtime"], True)
+        self.assertEqual(dependent_relationships1["depends_one_or_more"]["job2"].get("ignore_mtime", False), False)
+        self.assertEqual(dependent_relationships1["depends"]["job3"]["fake"], "fake")
 
 class RuleDependencyGraphTest(unittest.TestCase):
 

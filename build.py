@@ -651,13 +651,33 @@ class BuildGraph(BaseGraph):
             if self.is_dependency_type(depends_node_id):
                 depends_node = self.get_dependency_type(depends_node_id)
                 group_dict = {}
-                group_dict["function"] = depends_node.func
                 group_dict["data"] = data
                 group_dict["targets"] = self.filter_target_ids(
                         self.predecessors(depends_node_id))
                 dependency_dict[depends_node.kind].append(group_dict)
         return dependency_dict
 
+    def get_creator_relationships(self, target_id):
+        self.assert_target(target_id)
+        in_edges_iter = self.in_edges_iter(target_id, data=True)
+        creator_dict = collections.defaultdict(dict)
+        for creator_id, _, data in in_edges_iter:
+            if self.is_job_state(creator_id):
+                creator_dict[data["kind"]][creator_id] = data
+        return creator_dict
+
+    def get_dependent_relationships(self, target_id):
+        self.assert_target(target_id)
+        out_edges = self.out_edges_iter(target_id)
+        dependent_dict = collections.defaultdict(dict)
+        for _, depends_id in out_edges:
+            if self.is_dependency_type(depends_id):
+                dependent_edges = self.out_edges_iter(depends_id, data=True)
+                for _, dependent_id, data in dependent_edges:
+                    if self.is_job_state(dependent_id):
+                        dependent_dict[data["kind"]][dependent_id] = data 
+        return dependent_dict
+            
 
     def get_dependents_or_creators_iter(self, target_id, direction):
         """Takes in a target id and returns an iterator for either the dependent
@@ -736,7 +756,8 @@ class BuildGraph(BaseGraph):
             new_nodes.append(dependency.unique_id)
 
         self.add_edge(dependency_node_id, node.unique_id, data,
-                      label=dependency_type.func_name)
+                      label=dependency_type.func_name,
+                      kind=dependency_type.func_name)
 
         for dependency in dependencies:
             new = dependency.unique_id not in self
@@ -744,7 +765,8 @@ class BuildGraph(BaseGraph):
             if new:
                 new_nodes.append(dependency.unique_id)
             self.add_edge(dependency.unique_id, dependency_node_id, data,
-                          label=dependency_type.func_name)
+                          label=dependency_type.func_name,
+                          kind=dependency_type.func_name)
 
     def _expand_direction(self, job, direction, new_nodes):
         """Takes in a node and expands it's targets or dependencies and adds
