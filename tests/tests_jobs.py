@@ -523,43 +523,6 @@ class StaleAlternateTopJobTester(TimestampExpandedJob):
         }
 
 
-class StandardDependsOneOrMoreTargetTester(Job):
-    """Used to test a job in the depends section"""
-    unexpanded_id = "standard_depends_target"
-    def __init__(self, unexpanded_id="standard_depends_target",
-                 config=None):
-        super(StandardDependsOneOrMoreTargetTester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.targets.Target
-            ],
-            "depends_one_or_more": [
-                builder.targets.Target,
-                builder.targets.Target
-            ],
-        }
-
-
-class StandardDependsTargetTester(Job):
-    """Used to test a job in the depends section"""
-    def __init__(self, unexpanded_id="standard_depends_target",
-                 config=None):
-        super(StandardDependsTargetTester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.Expander(
-                    builder.targets.Target,
-                    "standard_target")
-            ]
-        }
-
-
 class ExpandCounter(Job):
     def __init__(self, unexpanded_id=None, cache_time=None, targets=None,
                  dependencies=None, config=None):
