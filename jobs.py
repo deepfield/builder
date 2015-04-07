@@ -179,6 +179,9 @@ class Job(object):
         self.update_stale(False)
         return False
 
+    def set_stale(self, stale):
+        self.stale = stale
+
     def get_buildable(self, cached=True):
         """Returns whether or not the job is buildable
 
@@ -206,6 +209,9 @@ class Job(object):
 
         self.buildable = True
         return True
+
+    def set_buildable(self, buildable):
+        self.buildable = buildable
 
     def past_cache_time(self):
         """Returns true if the job is past it's cache time
@@ -307,6 +313,14 @@ class Job(object):
         self.parents_should_run = False
         return False
 
+    def get_force(self):
+        return self.force
+
+
+    def set_force(self, force):
+        self.force = force
+
+
     def get_should_run_immediate(self, cached=True):
         """Returns whether or not the node should run not caring about the
         ancestors should run status
@@ -342,6 +356,9 @@ class Job(object):
 
         return (should_run_immediate and not parents_should_run) or self.force
 
+    def set_should_run(self, should_run):
+        self.should_run = should_run
+
     def should_ignore_parents(self):
         """
         Returns true if this job should ignore parents. E.g. if this job is set to run
@@ -351,9 +368,7 @@ class Job(object):
 
     def get_command(self):
         """Returns the job's expanded command"""
-        unexpanded_job = (self.build_graph.rule_dependency_graph
-                                     .node[self.unexpanded_id]["object"])
-        return unexpanded_job.get_command(self.unique_id, self.build_context,
+        return self.job.get_command(self.unique_id, self.build_context,
                                           self.build_graph)
 
 
