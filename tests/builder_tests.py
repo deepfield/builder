@@ -3738,15 +3738,15 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_job_state_iter(self):
         # Given
-        job1 = builder.tests.tests_jobs.SimpleTestJob(
+        job1 = SimpleTestJob(
                 "job1",
                 targets=["target1", "target2"],
                 depends=["target3", "target4"])
-        job2 = builder.tests.tests_jobs.SimpleTestJob(
+        job2 = SimpleTestJob(
                 "job2",
                 targets=["target5", "target6"],
                 depends=["target1", "target2"])
-        job3 = builder.tests.tests_jobs.SimpleTestJob(
+        job3 = SimpleTestJob(
                 "job3",
                 targets=["target7", "target8"],
                 depends=["target5", "target6"])
@@ -3776,7 +3776,7 @@ class GraphTest(unittest.TestCase):
 
     def test_cache_same_job(self):
         # Given
-        job1 = builder.tests.tests_jobs.SimpleTestJob(
+        job1 = SimpleTestJob(
                 "job1", targets=["target1"],
                 depends=["target2"])
 
@@ -3792,31 +3792,33 @@ class GraphTest(unittest.TestCase):
         # Then
         self.assertEqual(mock_expander.call_count, 2)
 
-    def test_get_target_ids(self):
+    def test_get_targets(self):
         # Given
-        job1 = builder.jobs.Job(
+        job1 = SimpleTestJob(
             unexpanded_id="job1",
-            targets={
-                "alternates": [
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target1"),
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target3")
-                ],
-                "produces": [
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target2"),
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target4")
-                ]
-            }
+            targets=[
+                {
+                    "type": "alternates",
+                    "unexpanded_id": "target1",
+                    "ignore_mtime": True,
+                },
+                {
+                    "type": "alternates",
+                    "unexpanded_id": "target3",
+                },
+                {
+                    "type": "produces",
+                    "unexpanded_id": "target2",
+                    "edge_data": {"fake": "fake"},
+                },
+                {
+                    "type": "produces",
+                    "unexpanded_id": "target4",
+                },
+            ]
         )
 
-        job2 = builder.jobs.Job(unexpanded_id="job2")
+        job2 = SimpleTestJob(unexpanded_id="job2")
 
         build_manager = builder.build.BuildManager([job1, job2], [])
         build = build_manager.make_build()
@@ -3832,6 +3834,9 @@ class GraphTest(unittest.TestCase):
         target_ids2_iter = build.get_target_ids_iter("job2")
         target_or_ids2 = build.get_target_or_dependency_ids("job2", "down")
         target_or_ids2_iter = build.get_target_or_dependency_ids_iter("job2", "down")
+
+        target_relationships1 = build.get_target_relationships("job1")
+        target_relationships2 = build.get_target_relationships("job2")
 
         # Then
         self.assertEqual(len(target_ids1), 4)
@@ -3869,6 +3874,31 @@ class GraphTest(unittest.TestCase):
 
         for target_id in target_or_ids2_iter:
             self.assertTrue(False)
+
+        self.assertEqual(len(target_relationships1), 2)
+        self.assertEqual(len(target_relationships2), 0)
+        self.assertIn("produces", target_relationships1)
+        self.assertIn("alternates", target_relationships1)
+
+        self.assertEqual(len(target_relationships1["produces"]), 2)
+        self.assertEqual(len(target_relationships1["alternates"]), 2)
+        self.assertIn("target1", target_relationships1["alternates"])
+        self.assertIn("target2", target_relationships1["produces"])
+        self.assertIn("target3", target_relationships1["alternates"])
+        self.assertIn("target4", target_relationships1["produces"])
+        self.assertEqual(
+            target_relationships1["alternates"]["target1"]["ignore_mtime"],
+            True)
+        self.assertEqual(
+            target_relationships1["produces"]["target2"]["fake"],
+            "fake")
+        self.assertEqual(
+            target_relationships1["alternates"]["target3"].get("ignore_mtime", False),
+            False)
+        self.assertEqual(
+            target_relationships1["produces"]["target4"].get("ignore_mtime", False),
+            False)
+            
 
     def test_get_dependencies(self):
         # Given
@@ -4038,6 +4068,79 @@ class GraphTest(unittest.TestCase):
             count = count + 1
 
         self.assertEqual(count, 3)
+
+    def test_get_dependents(self):
+        # Given
+        job1 = SimpleTestJob(
+            unexpanded_id="job1",
+            depends=[{"type": "depends", "unexpanded_id": "target1"},
+                     {"type": "depends_one_or_more", "unexpanded_id": "target2"}]
+        )
+        job2 = SimpleTestJob(
+            unexpanded_id="job2",
+            depends=[{"type": "depends_one_or_more", "unexpanded_id": "target1"},
+                     {"type": "depends", "unexpanded_id": "target2"}]
+        )
+        job3 = SimpleTestJob(
+            unexpanded_id="job3",
+            depends=[{"type": "depends", "unexpanded_id": "target1"},
+                     {"type": "depends_one_or_more", "unexpanded_id": "target2"}]
+        )
+        job4 = SimpleTestJob(
+            unexpanded_id="job4",
+            targets=[{"type": "produces", "unexpanded_id": "target3"}]
+        )
+
+        build_manager = builder.build.BuildManager([job1, job2, job3, job4], [])
+        build = build_manager.make_build()
+        build.add_job("job1", {})
+        build.add_job("job2", {})
+        build.add_job("job3", {})
+        build.add_job("job4", {})
+
+        # When
+        dependent_ids1 = build.get_dependent_ids("target1")
+        dependent_ids_iter1 = build.get_dependent_ids_iter("target1")
+        dependent_or_ids1 = build.get_dependent_or_creator_ids("target1", "down")
+        dependent_or_ids_iter1 = build.get_dependent_or_creator_ids_iter("target1", "down")
+        dependent_ids2 = build.get_dependent_ids("target3")
+        dependent_ids_iter2 = build.get_dependent_ids_iter("target3")
+        dependent_or_ids2 = build.get_dependent_or_creator_ids("target3", "down")
+        dependent_or_ids_iter2 = build.get_dependent_or_creator_ids_iter("target3", "down")
+
+        # Then
+        self.assertEqual(len(dependent_ids1), 3)
+        self.assertIn("job1", dependent_ids1)
+        self.assertIn("job2", dependent_ids1)
+        self.assertIn("job3", dependent_ids1)
+
+        self.assertEqual(len(dependent_or_ids1), 3)
+        self.assertIn("job1", dependent_or_ids1)
+        self.assertIn("job2", dependent_or_ids1)
+        self.assertIn("job3", dependent_or_ids1)
+
+        self.assertEqual(len(dependent_ids2), 0)
+        self.assertEqual(len(dependent_or_ids2), 0)
+
+        count = 0
+        previous_dependent_ids = []
+        previous_dependent_or_ids = []
+        for dependent_id, dependent_or_id in zip(dependent_ids_iter1, dependent_or_ids_iter1):
+            self.assertNotIn(dependent_id, previous_dependent_ids)
+            self.assertNotIn(dependent_or_id, previous_dependent_or_ids)
+            self.assertIn(dependent_id, ("job1", "job2", "job3"))
+            self.assertIn(dependent_or_id, ("job1", "job2", "job3"))
+            previous_dependent_ids.append(dependent_id)
+            previous_dependent_or_ids.append(dependent_or_id)
+            count = count + 1
+
+        self.assertEqual(count, 3)
+
+        for dependent_id in dependent_ids_iter2:
+            self.assertTrue(False)
+        for dependent_Id in dependent_or_ids_iter2:
+            self.assertTrue(False)
+
 
 class RuleDependencyGraphTest(unittest.TestCase):
 
