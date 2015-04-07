@@ -88,8 +88,8 @@ class ExecutionManagerTests(unittest.TestCase):
     def test_inline_execution_simple_plan(self):
         # Given
         jobs = [
-            SimpleTestJob('A', targets=['target-A']),
-            SimpleTestJob('B', depends=['target-A'], targets=['target-B1', 'target-B2'])
+            SimpleTestJobDefinition('A', targets=['target-A']),
+            SimpleTestJobDefinition('B', depends=['target-A'], targets=['target-B1', 'target-B2'])
         ]
         executor = mock.Mock()
         execution_manager = self._get_execution_manager(jobs)
@@ -122,7 +122,7 @@ class ExecutionManagerTests(unittest.TestCase):
     def test_inline_execution_retries(self):
         # Given
         jobs = [
-            SimpleTestJob('A', targets=['target-A']),
+            SimpleTestJobDefinition('A', targets=['target-A']),
         ]
         executor = mock.Mock()
         execution_manager = self._get_execution_manager(jobs)

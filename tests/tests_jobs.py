@@ -5,7 +5,7 @@ import arrow
 import networkx
 
 import builder
-from builder.jobs import Job, TimestampExpandedJob
+from builder.jobs import JobDefinition, TimestampExpandedJobDefinition
 import testing
 import builder.jobs
 import builder.targets
@@ -65,13 +65,13 @@ class SimpleJobTestMixin(object):
         self.targets = targets_dict
 
 
-class SimpleTestJob(SimpleJobTestMixin, Job):
+class SimpleTestJobDefinition(SimpleJobTestMixin, JobDefinition):
     """A simple API for creating a job through constructor args"""
     def __init__(self, unexpanded_id=None, targets=None, depends=None,
             config=None, should_run=False, parents_should_run=False,
             target_type=None, expander_type=None,
             depends_dict=None, targets_dict=None, **kwargs):
-        super(SimpleTestJob, self).__init__(unexpanded_id, config=config, **kwargs)
+        super(SimpleTestJobDefinition, self).__init__(unexpanded_id, config=config, **kwargs)
         self.targets = targets
 
         self.should_run = should_run
@@ -81,7 +81,7 @@ class SimpleTestJob(SimpleJobTestMixin, Job):
 
         self.setup_dependencies_and_targets(depends_dict, targets_dict, depends, targets)
 
-class SimpleTimestampExpandedTestJob(SimpleJobTestMixin, TimestampExpandedJob):
+class SimpleTimestampExpandedTestJob(SimpleJobTestMixin, TimestampExpandedJobDefinition):
     """A simple API for creating a job through constructor args"""
     def __init__(self, unexpanded_id=None, targets=None, depends=None,
             should_run=False, parents_should_run=False,
@@ -98,7 +98,7 @@ class SimpleTimestampExpandedTestJob(SimpleJobTestMixin, TimestampExpandedJob):
         self.setup_dependencies_and_targets(depends_dict, targets_dict, depends, targets)
 
 
-class GetNextJobsCounter(Job):
+class GetNextJobsCounter(JobDefinition):
     """Used to count how many times the next job was looked for"""
 
     def __init__(self, unexpanded_id="get_next_jobs_counter", config=None):
@@ -244,33 +244,34 @@ class GetNextJobsToRunTop(GetNextJobsCounter):
 class ShouldRunRecurseJobState(builder.jobs.JobState):
     """Used to count how many times the should run is returned"""
 
-    def __init__(self, job, unique_id, build_context,
+    def __init__(self, job, unique_id, build_graph, build_context,
             should_run_immediate):
         super(ShouldRunRecurseJobState, self).__init__(job,
-                unique_id, build_context)
+                unique_id, build_graph, build_context)
         self.should_run_immediate = should_run_immediate
 
-    def get_should_run_immediate(self, build_graph, cached=True, cache_set=None):
+    def get_should_run_immediate(self, cached=True, cache_set=None):
         return self.should_run_immediate
 
 
-class ShouldRunRecurseJob(SimpleTestJob):
-    def expand(self, build_context):
+class ShouldRunRecurseJob(SimpleTestJobDefinition):
+    def expand(self, build_graph, build_context):
         print self.should_run_immediate, self.unexpanded_id
         counting_nodes = []
-        expanded_nodes = super(ShouldRunRecurseJob, self).expand(
+        expanded_nodes = super(ShouldRunRecurseJob, self).expand(build_graph,
                 build_context)
         for expanded_node in expanded_nodes:
             counting_node = ShouldRunRecurseJobState(
                     expanded_node,
                     expanded_node.unique_id,
+                    build_graph,
                     expanded_node.build_context,
                     self.should_run_immediate)
             counting_nodes.append(counting_node)
         return counting_nodes
 
 
-class PastCacheTimeJobTester(TimestampExpandedJob):
+class PastCacheTimeJobTester(TimestampExpandedJobDefinition):
     """Job for testing cache time"""
     def __init__(self, unexpanded_id="past_cache_time_job", file_step="15min",
                  cache_time="5min", config=None):
@@ -292,7 +293,7 @@ class PastCacheTimeJobTester(TimestampExpandedJob):
         }
 
 
-class BuildableJobTester(TimestampExpandedJob):
+class BuildableJobTester(TimestampExpandedJobDefinition):
     """Has multiple kinds of dependencies that will be tested"""
     def __init__(self, unexpanded_id="buildable_job", file_step="15min",
                  config=None):
@@ -327,7 +328,7 @@ class BuildableJobTester(TimestampExpandedJob):
         return {}
 
 
-class ExpandCounter(Job):
+class ExpandCounter(JobDefinition):
     def __init__(self, unexpanded_id=None, cache_time=None, targets=None,
                  dependencies=None, config=None):
         self.count = 0
@@ -337,6 +338,6 @@ class ExpandCounter(Job):
                                             dependencies=dependencies,
                                             config=config)
 
-    def expand(self, build_context):
+    def expand(self, *args, **kwargs):
         self.count = self.count + 1
-        return super(ExpandCounter, self).expand(build_context)
+        return super(ExpandCounter, self).expand(*args, **kwargs)

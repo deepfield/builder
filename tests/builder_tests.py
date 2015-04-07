@@ -57,12 +57,12 @@ class GraphTest(unittest.TestCase):
     def test_rule_dep_construction(self):
         # Given
         jobs = [
-            SimpleTestJob("rule_dep_construction_job_top_01",
+            SimpleTestJobDefinition("rule_dep_construction_job_top_01",
                 expander_type=builder.expanders.TimestampExpander,
                 depends=[{"unexpanded_id": "rule_dep_construction_target_highest_01", "file_step": "5min"}],
                 targets=[{"unexpanded_id": "rule_dep_construction_top_01", "file_step": "5min"}]
             ),
-            SimpleTestJob("rule_dep_construction_job_top_02",
+            SimpleTestJobDefinition("rule_dep_construction_job_top_02",
                 expander_type=builder.expanders.TimestampExpander,
                 depends=[
                     {"unexpanded_id": "rule_dep_construction_target_highest_02", "file_step": "5min"},
@@ -75,7 +75,7 @@ class GraphTest(unittest.TestCase):
                     {"unexpanded_id": "rule_dep_construction_target_top_03", "file_step": "5min"},
                     {"unexpanded_id": "rule_dep_construction_target_top_04", "file_step": "5min", "type": "alternates"}
                 ]),
-            SimpleTestJob("rule_dep_construction_job_bottom_01",
+            SimpleTestJobDefinition("rule_dep_construction_job_bottom_01",
                 expander_type=builder.expanders.TimestampExpander,
                 depends=[{"unexpanded_id": "rule_dep_construction_target_top_02", "file_step": "5min"},
                     {"unexpanded_id": "rule_dep_construction_target_top_03", "file_step": "5min", "past": 3},
@@ -1981,13 +1981,13 @@ class GraphTest(unittest.TestCase):
         with mock.patch("arrow.get", mock_arrow_get):
             past_cache_time1 = (build1.node
                     ["past_cache_time_job_2014-12-05-10-45-00"]
-                    ["object"].past_cache_time(build1))
+                    ["object"].past_cache_time())
             past_cache_time2 = (build2.node
                     ["past_cache_time_job_2014-12-05-10-45-00"]
-                    ["object"].past_cache_time(build2))
+                    ["object"].past_cache_time())
             past_cache_time3 = (build3.node
                     ["past_cache_time_job_2014-12-05-10-45-00"]
-                    ["object"].past_cache_time(build3))
+                    ["object"].past_cache_time())
 
         # Then
         self.assertEqual(past_cache_time1, expected_past_cache_time1)
@@ -2000,7 +2000,8 @@ class GraphTest(unittest.TestCase):
         jobs1 = [
             SimpleTimestampExpandedTestJob("all_dependencies_job", file_step="15min",
             expander_type=builder.expanders.TimestampExpander,
-            depends=[{'unexpanded_id': 'all_dependencies_target_02-%Y-%m-%d-%H-%M', 'file_step': '5min', 'type': 'depends_one_or_more'},
+            depends=[
+                {'unexpanded_id': 'all_dependencies_target_02-%Y-%m-%d-%H-%M', 'file_step': '5min', 'type': 'depends_one_or_more'},
                 {'unexpanded_id': 'all_dependencies_target_01-%Y-%m-%d-%H-%M', 'file_step': '5min'}]),
         ]
 
@@ -2177,16 +2178,16 @@ class GraphTest(unittest.TestCase):
         # When
         all_dependencies1 = (build1.node
                 ["all_dependencies_job_2014-12-05-10-45-00"]
-                ["object"].all_dependencies(build1))
-        all_dependencies2 = (build1.node
+                ["object"].all_dependencies())
+        all_dependencies2 = (build2.node
                 ["all_dependencies_job_2014-12-05-10-45-00"]
-                ["object"].all_dependencies(build2))
-        all_dependencies3 = (build1.node
+                ["object"].all_dependencies())
+        all_dependencies3 = (build3.node
                 ["all_dependencies_job_2014-12-05-10-45-00"]
-                ["object"].all_dependencies(build3))
-        all_dependencies4 = (build1.node
+                ["object"].all_dependencies())
+        all_dependencies4 = (build4.node
                 ["all_dependencies_job_2014-12-05-10-45-00"]
-                ["object"].all_dependencies(build4))
+                ["object"].all_dependencies())
 
         # Then
         self.assertEqual(all_dependencies1, expected_all_dependencies1)
@@ -2197,234 +2198,176 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_should_run_logic(self):
         # Given
-        ShouldRunLogicJobTester = lambda: SimpleTestJob('should_run_logic')
-        ShouldRunCacheLogicJobTester = lambda: SimpleTestJob('should_run_cache_logic', cache_time='5min')
-        job1 = ShouldRunLogicJobTester().expand({})[0]
-        job2 = ShouldRunLogicJobTester().expand({})[0]
-        job3 = ShouldRunLogicJobTester().expand({})[0]
-        job4 = ShouldRunLogicJobTester().expand({})[0]
-        job5 = ShouldRunLogicJobTester().expand({})[0]
-        job6 = ShouldRunLogicJobTester().expand({})[0]
-        job7 = ShouldRunCacheLogicJobTester().expand({})[0]
-        job8 = ShouldRunCacheLogicJobTester().expand({})[0]
-        job9 = ShouldRunCacheLogicJobTester().expand({})[0]
-        job10 = ShouldRunCacheLogicJobTester().expand({})[0]
-        job11 = ShouldRunCacheLogicJobTester().expand({})[0]
-        job12 = ShouldRunCacheLogicJobTester().expand({})[0]
-        job13 = ShouldRunLogicJobTester().expand({})[0]
-        job14 = ShouldRunCacheLogicJobTester().expand({})[0]
+        build_context = {}
+        ShouldRunLogicJobTester = lambda: SimpleTestJobDefinition('should_run_logic')
+        ShouldRunCacheLogicJobTester = lambda: SimpleTestJobDefinition('should_run_cache_logic', cache_time='5min')
 
         graph1 = networkx.DiGraph()
-        graph1.add_node("unique_id1", object=job1)
         graph2 = networkx.DiGraph()
-        graph2.add_node("unique_id2", object=job2)
         graph3 = networkx.DiGraph()
-        graph3.add_node("unique_id3", object=job3)
         graph4 = networkx.DiGraph()
-        graph4.add_node("unique_id4", object=job4)
         graph5 = networkx.DiGraph()
-        graph5.add_node("unique_id5", object=job5)
         graph6 = networkx.DiGraph()
-        graph6.add_node("unique_id6", object=job6)
         graph7 = networkx.DiGraph()
-        graph7.add_node("unique_id7", object=job7)
         graph8 = networkx.DiGraph()
-        graph8.add_node("unique_id8", object=job8)
         graph9 = networkx.DiGraph()
-        graph9.add_node("unique_id9", object=job9)
         graph10 = networkx.DiGraph()
-        graph10.add_node("unique_id10", object=job10)
         graph11 = networkx.DiGraph()
-        graph11.add_node("unique_id11", object=job11)
         graph12 = networkx.DiGraph()
-        graph12.add_node("unique_id12", object=job12)
         graph13 = networkx.DiGraph()
-        graph13.add_node("unique_id13", object=job13)
         graph14 = networkx.DiGraph()
+
+        job1 = ShouldRunLogicJobTester().expand(graph1, build_context)[0]
+        job2 = ShouldRunLogicJobTester().expand(graph2, build_context)[0]
+        job3 = ShouldRunLogicJobTester().expand(graph3, build_context)[0]
+        job4 = ShouldRunLogicJobTester().expand(graph4, build_context)[0]
+        job5 = ShouldRunLogicJobTester().expand(graph5, build_context)[0]
+        job6 = ShouldRunLogicJobTester().expand(graph6, build_context)[0]
+        job7 = ShouldRunCacheLogicJobTester().expand(graph7, build_context)[0]
+        job8 = ShouldRunCacheLogicJobTester().expand(graph8, build_context)[0]
+        job9 = ShouldRunCacheLogicJobTester().expand(graph9, build_context)[0]
+        job10 = ShouldRunCacheLogicJobTester().expand(graph10, build_context)[0]
+        job11 = ShouldRunCacheLogicJobTester().expand(graph11, build_context)[0]
+        job12 = ShouldRunCacheLogicJobTester().expand(graph12, build_context)[0]
+        job13 = ShouldRunLogicJobTester().expand(graph13, build_context)[0]
+        job14 = ShouldRunCacheLogicJobTester().expand(graph14, build_context)[0]
+
+        graph1.add_node("unique_id1", object=job1)
+        graph2.add_node("unique_id2", object=job2)
+        graph3.add_node("unique_id3", object=job3)
+        graph4.add_node("unique_id4", object=job4)
+        graph5.add_node("unique_id5", object=job5)
+        graph6.add_node("unique_id6", object=job6)
+        graph7.add_node("unique_id7", object=job7)
+        graph8.add_node("unique_id8", object=job8)
+        graph9.add_node("unique_id9", object=job9)
+        graph10.add_node("unique_id10", object=job10)
+        graph11.add_node("unique_id11", object=job11)
+        graph12.add_node("unique_id12", object=job12)
+        graph13.add_node("unique_id13", object=job13)
         graph14.add_node("unique_id14", object=job14)
 
         # all true
         expected_should_run1 = True
         graph1.node["unique_id1"]["object"].stale = True
         graph1.node["unique_id1"]["object"].buildable = True
-        graph1.node["unique_id1"]["object"].past_curfew = (
-                mock.Mock(return_value=True))
-        graph1.node["unique_id1"]["object"].all_dependencies = (
-                mock.Mock(return_value=True))
-        graph1.node["unique_id1"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=False))
+        graph1.node["unique_id1"]["object"].past_curfew = mock.Mock(return_value=True)
+        graph1.node["unique_id1"]["object"].all_dependencies = mock.Mock(return_value=True)
+        graph1.node["unique_id1"]["object"].get_parents_should_run = mock.Mock(return_value=False)
         # not stale everything else true
         expected_should_run2 = False
         graph2.node["unique_id2"]["object"].stale = False
         graph2.node["unique_id2"]["object"].buildable = True
-        graph2.node["unique_id2"]["object"].past_curfew = (
-                mock.Mock(return_value=True))
-        graph2.node["unique_id2"]["object"].all_dependencies = (
-                mock.Mock(return_value=True))
-        graph2.node["unique_id2"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=False))
+        graph2.node["unique_id2"]["object"].past_curfew = mock.Mock(return_value=True)
+        graph2.node["unique_id2"]["object"].all_dependencies = mock.Mock(return_value=True)
+        graph2.node["unique_id2"]["object"].get_parents_should_run = mock.Mock(return_value=False)
         # not buildable everything else true
         expected_should_run3 = False
         graph3.node["unique_id3"]["object"].stale = True
         graph3.node["unique_id3"]["object"].buildable = False
-        graph3.node["unique_id3"]["object"].past_curfew = (
-                mock.Mock(return_value=True))
-        graph3.node["unique_id3"]["object"].all_dependencies = (
-                mock.Mock(return_value=True))
-        graph3.node["unique_id3"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=False))
+        graph3.node["unique_id3"]["object"].past_curfew = mock.Mock(return_value=True)
+        graph3.node["unique_id3"]["object"].all_dependencies = mock.Mock(return_value=True)
+        graph3.node["unique_id3"]["object"].get_parents_should_run = mock.Mock(return_value=False)
         # not past curfew everything else true
         expected_should_run4 = True
         graph4.node["unique_id4"]["object"].stale = True
         graph4.node["unique_id4"]["object"].buildable = True
-        graph4.node["unique_id4"]["object"].past_curfew = (
-                mock.Mock(return_value=False))
-        graph4.node["unique_id4"]["object"].all_dependencies = (
-                mock.Mock(return_value=True))
-        graph4.node["unique_id4"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=False))
+        graph4.node["unique_id4"]["object"].past_curfew = mock.Mock(return_value=False)
+        graph4.node["unique_id4"]["object"].all_dependencies = mock.Mock(return_value=True)
+        graph4.node["unique_id4"]["object"].get_parents_should_run = mock.Mock(return_value=False)
         # not all dependencies everything else true
         expected_should_run5 = True
         graph5.node["unique_id5"]["object"].stale = True
         graph5.node["unique_id5"]["object"].buildable = True
-        graph5.node["unique_id5"]["object"].past_curfew = (
-                mock.Mock(return_value=True))
-        graph5.node["unique_id5"]["object"].all_dependencies = (
-                mock.Mock(return_value=False))
-        graph5.node["unique_id5"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=False))
+        graph5.node["unique_id5"]["object"].past_curfew = mock.Mock(return_value=True)
+        graph5.node["unique_id5"]["object"].all_dependencies = mock.Mock(return_value=False)
+        graph5.node["unique_id5"]["object"].get_parents_should_run = mock.Mock(return_value=False)
         # parents should run, everything else is true
         expected_should_run6 = False
         graph6.node["unique_id6"]["object"].stale = True
         graph6.node["unique_id6"]["object"].buildable = True
-        graph6.node["unique_id6"]["object"].past_curfew = (
-                mock.Mock(return_value=True))
-        graph6.node["unique_id6"]["object"].all_dependencies = (
-                mock.Mock(return_value=True))
-        graph6.node["unique_id6"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=True))
+        graph6.node["unique_id6"]["object"].past_curfew = mock.Mock(return_value=True)
+        graph6.node["unique_id6"]["object"].all_dependencies = mock.Mock(return_value=True)
+        graph6.node["unique_id6"]["object"].get_parents_should_run = mock.Mock(return_value=True)
         # cache not past curfew
         expected_should_run7 = True
         graph7.node["unique_id7"]["object"].stale = True
         graph7.node["unique_id7"]["object"].buildable = True
-        graph7.node["unique_id7"]["object"].past_curfew = (
-                mock.Mock(return_value=False))
-        graph7.node["unique_id7"]["object"].all_dependencies = (
-                mock.Mock(return_value=True))
-        graph7.node["unique_id7"]["object"].past_cache_time = (
-                mock.Mock(return_value=True))
-        graph7.node["unique_id7"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=False))
+        graph7.node["unique_id7"]["object"].past_curfew = mock.Mock(return_value=False)
+        graph7.node["unique_id7"]["object"].all_dependencies = mock.Mock(return_value=True)
+        graph7.node["unique_id7"]["object"].past_cache_time = mock.Mock(return_value=True)
+        graph7.node["unique_id7"]["object"].get_parents_should_run = mock.Mock(return_value=False)
         # cache not all dependencies
         expected_should_run8 = True
         graph8.node["unique_id8"]["object"].stale = True
         graph8.node["unique_id8"]["object"].buildable = True
-        graph8.node["unique_id8"]["object"].past_curfew = (
-                mock.Mock(return_value=True))
-        graph8.node["unique_id8"]["object"].all_dependencies = (
-                mock.Mock(return_value=False))
-        graph8.node["unique_id8"]["object"].past_cache_time = (
-                mock.Mock(return_value=True))
-        graph8.node["unique_id8"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=False))
+        graph8.node["unique_id8"]["object"].past_curfew = mock.Mock(return_value=True)
+        graph8.node["unique_id8"]["object"].all_dependencies = mock.Mock(return_value=False)
+        graph8.node["unique_id8"]["object"].past_cache_time = mock.Mock(return_value=True)
+        graph8.node["unique_id8"]["object"].get_parents_should_run = mock.Mock(return_value=False)
         # cache not stale
         expected_should_run9 = False
         graph9.node["unique_id9"]["object"].stale = False
         graph9.node["unique_id9"]["object"].buildable = True
-        graph9.node["unique_id9"]["object"].past_curfew = (
-                mock.Mock(return_value=True))
-        graph9.node["unique_id9"]["object"].all_dependencies = (
-                mock.Mock(return_value=True))
-        graph9.node["unique_id9"]["object"].past_cache_time = (
-                mock.Mock(return_value=True))
-        graph9.node["unique_id9"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=False))
+        graph9.node["unique_id9"]["object"].past_curfew = mock.Mock(return_value=True)
+        graph9.node["unique_id9"]["object"].all_dependencies = mock.Mock(return_value=True)
+        graph9.node["unique_id9"]["object"].past_cache_time = mock.Mock(return_value=True)
+        graph9.node["unique_id9"]["object"].get_parents_should_run = mock.Mock(return_value=False)
         # cache not buildable
         expected_should_run10 = False
         graph10.node["unique_id10"]["object"].stale = True
         graph10.node["unique_id10"]["object"].buildable = False
-        graph10.node["unique_id10"]["object"].past_curfew = (
-                mock.Mock(return_value=True))
-        graph10.node["unique_id10"]["object"].all_dependencies = (
-                mock.Mock(return_value=True))
-        graph10.node["unique_id10"]["object"].past_cache_time = (
-                mock.Mock(return_value=True))
-        graph10.node["unique_id10"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=False))
+        graph10.node["unique_id10"]["object"].past_curfew = mock.Mock(return_value=True)
+        graph10.node["unique_id10"]["object"].all_dependencies = mock.Mock(return_value=True)
+        graph10.node["unique_id10"]["object"].past_cache_time = mock.Mock(return_value=True)
+        graph10.node["unique_id10"]["object"].get_parents_should_run = mock.Mock(return_value=False)
+
         # all true not past cache
         expected_should_run11 = False
         graph11.node["unique_id11"]["object"].stale = False
         graph11.node["unique_id11"]["object"].buildable = True
-        graph11.node["unique_id11"]["object"].past_curfew = (
-                mock.Mock(return_value=True))
-        graph11.node["unique_id11"]["object"].all_dependencies = (
-                mock.Mock(return_value=True))
-        graph11.node["unique_id11"]["object"].past_cache_time = (
-                mock.Mock(return_value=False))
-        graph11.node["unique_id11"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=False))
+        graph11.node["unique_id11"]["object"].past_curfew = mock.Mock(return_value=True)
+        graph11.node["unique_id11"]["object"].all_dependencies = mock.Mock(return_value=True)
+        graph11.node["unique_id11"]["object"].past_cache_time = mock.Mock(return_value=False)
+        graph11.node["unique_id11"]["object"].get_parents_should_run = mock.Mock(return_value=False)
         # parents should run
         expected_should_run12 = False
         graph12.node["unique_id12"]["object"].stale = True
         graph12.node["unique_id12"]["object"].buildable = True
-        graph12.node["unique_id12"]["object"].past_curfew = (
-                mock.Mock(return_value=True))
-        graph12.node["unique_id12"]["object"].all_dependencies = (
-                mock.Mock(return_value=True))
-        graph12.node["unique_id12"]["object"].past_cache_time = (
-                mock.Mock(return_value=True))
-        graph12.node["unique_id12"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=True))
+        graph12.node["unique_id12"]["object"].past_curfew = mock.Mock(return_value=True)
+        graph12.node["unique_id12"]["object"].all_dependencies = mock.Mock(return_value=True)
+        graph12.node["unique_id12"]["object"].past_cache_time = mock.Mock(return_value=True)
+        graph12.node["unique_id12"]["object"].get_parents_should_run = mock.Mock(return_value=True)
         # not past curfew and not all dependencies
         expected_should_run13 = False
         graph13.node["unique_id13"]["object"].stale = True
         graph13.node["unique_id13"]["object"].buildable = True
-        graph13.node["unique_id13"]["object"].past_curfew = (
-                mock.Mock(return_value=False))
-        graph13.node["unique_id13"]["object"].all_dependencies = (
-                mock.Mock(return_value=False))
-        graph13.node["unique_id13"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=False))
+        graph13.node["unique_id13"]["object"].past_curfew = mock.Mock(return_value=False)
+        graph13.node["unique_id13"]["object"].all_dependencies = mock.Mock(return_value=False)
+        graph13.node["unique_id13"]["object"].get_parents_should_run = mock.Mock(return_value=False)
         # not past curfew and not all dependencies has cache_time
         expected_should_run14 = True
         graph14.node["unique_id14"]["object"].stale = True
         graph14.node["unique_id14"]["object"].buildable = True
-        graph14.node["unique_id14"]["object"].past_curfew = (
-               mock.Mock(return_value=False))
-        graph14.node["unique_id14"]["object"].all_dependencies = (
-                mock.Mock(return_value=False))
-        graph14.node["unique_id14"]["object"].get_parents_should_run = (
-                mock.Mock(return_value=False))
+        graph14.node["unique_id14"]["object"].past_curfew = mock.Mock(return_value=False)
+        graph14.node["unique_id14"]["object"].all_dependencies = mock.Mock(return_value=False)
+        graph14.node["unique_id14"]["object"].get_parents_should_run = mock.Mock(return_value=False)
 
         # When
-        should_run1 = graph1.node["unique_id1"]["object"].get_should_run(
-                graph1)
-        should_run2 = graph2.node["unique_id2"]["object"].get_should_run(
-                graph2)
-        should_run3 = graph3.node["unique_id3"]["object"].get_should_run(
-                graph3)
-        should_run4 = graph4.node["unique_id4"]["object"].get_should_run(
-                graph4)
-        should_run5 = graph5.node["unique_id5"]["object"].get_should_run(
-                graph5)
-        should_run6 = graph6.node["unique_id6"]["object"].get_should_run(
-                graph6)
-        should_run7 = graph7.node["unique_id7"]["object"].get_should_run(
-                graph7)
-        should_run8 = graph8.node["unique_id8"]["object"].get_should_run(
-                graph8)
-        should_run9 = graph9.node["unique_id9"]["object"].get_should_run(
-                graph9)
-        should_run10 = graph10.node["unique_id10"]["object"].get_should_run(
-                graph10)
-        should_run11 = graph11.node["unique_id11"]["object"].get_should_run(
-                graph11)
-        should_run12 = graph12.node["unique_id12"]["object"].get_should_run(
-                graph12)
-        should_run13 = graph13.node["unique_id13"]["object"].get_should_run(
-                graph13)
-        should_run14 = graph14.node["unique_id14"]["object"].get_should_run(
-                graph14)
+        should_run1 = graph1.node["unique_id1"]["object"].get_should_run(graph1)
+        should_run2 = graph2.node["unique_id2"]["object"].get_should_run(graph2)
+        should_run3 = graph3.node["unique_id3"]["object"].get_should_run(graph3)
+        should_run4 = graph4.node["unique_id4"]["object"].get_should_run(graph4)
+        should_run5 = graph5.node["unique_id5"]["object"].get_should_run(graph5)
+        should_run6 = graph6.node["unique_id6"]["object"].get_should_run(graph6)
+        should_run7 = graph7.node["unique_id7"]["object"].get_should_run(graph7)
+        should_run8 = graph8.node["unique_id8"]["object"].get_should_run(graph8)
+        should_run9 = graph9.node["unique_id9"]["object"].get_should_run(graph9)
+        should_run10 = graph10.node["unique_id10"]["object"].get_should_run(graph10)
+        should_run11 = graph11.node["unique_id11"]["object"].get_should_run(graph11)
+        should_run12 = graph12.node["unique_id12"]["object"].get_should_run(graph12)
+        should_run13 = graph13.node["unique_id13"]["object"].get_should_run(graph13)
+        should_run14 = graph14.node["unique_id14"]["object"].get_should_run(graph14)
 
         # Then
         self.assertEqual(should_run1, expected_should_run1)
@@ -2446,14 +2389,16 @@ class GraphTest(unittest.TestCase):
     def test_past_curfew(self):
         # Given
         PastCurfewTimestampJobTester = lambda: SimpleTimestampExpandedTestJob("past_curfew_timestamp_job")
-        PastCurfewJobTester = lambda: SimpleTestJob("past_curfew_job")
-        job1 = PastCurfewJobTester().expand({})[0]
-        job2 = PastCurfewTimestampJobTester().expand(
+        PastCurfewJobTester = lambda: SimpleTestJobDefinition("past_curfew_job")
+        build_graph = mock.Mock()
+        build_context = {}
+        job1 = PastCurfewJobTester().expand(build_graph, build_context)[0]
+        job2 = PastCurfewTimestampJobTester().expand(build_graph,
                 {
                     "start_time": arrow.get(400),
                     "end_time": arrow.get(400),
                 })[0]
-        job3 = PastCurfewTimestampJobTester().expand(
+        job3 = PastCurfewTimestampJobTester().expand(build_graph,
                 {
                     "start_time": arrow.get(100),
                     "end_time": arrow.get(100),
@@ -2626,10 +2571,10 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_get_starting_jobs(self):
         # given
-        jobs = [SimpleTestJob('get_starting_jobs_01'),
-                SimpleTestJob('get_starting_jobs_02'),
-                SimpleTestJob('get_starting_jobs_03'),
-                SimpleTestJob('get_starting_jobs_04')]
+        jobs = [SimpleTestJobDefinition('get_starting_jobs_01'),
+                SimpleTestJobDefinition('get_starting_jobs_02'),
+                SimpleTestJobDefinition('get_starting_jobs_03'),
+                SimpleTestJobDefinition('get_starting_jobs_04')]
 
         build_manager = builder.build.BuildManager(jobs, [])
         build1 = build_manager.make_build()
@@ -2777,21 +2722,21 @@ class GraphTest(unittest.TestCase):
     def test_update_job_cache(self):
         # Given
         jobs = [
-            SimpleTestJob("update_job_cache_top",
+            SimpleTestJobDefinition("update_job_cache_top",
                 target_type=builder.targets.LocalFileSystemTarget,
                 targets=["update_job_cache_top_01_target",
                          "update_job_cache_top_02_target", "update_job_cache_top_03_target"],
                 depends=["update_job_cache_highest_target"]),
-            SimpleTestJob("update_job_cache_middle_01",
+            SimpleTestJobDefinition("update_job_cache_middle_01",
                 targets=["update_job_cache_middle_01_target"],
                 depends=["update_job_cache_top_01_target"]),
-            SimpleTestJob("update_job_cache_middle_02",
+            SimpleTestJobDefinition("update_job_cache_middle_02",
                 targets=["update_job_cache_middle_02_target"],
                 depends=["update_job_cache_top_02_target"]),
-            SimpleTestJob("update_job_cache_middle_03",
+            SimpleTestJobDefinition("update_job_cache_middle_03",
                 targets=["update_job_cache_middle_03_target"],
                 depends=["update_job_cache_top_03_target"]),
-            SimpleTestJob("update_job_cache_bottom",
+            SimpleTestJobDefinition("update_job_cache_bottom",
                 targets=["update_job_cache_bottom_target"],
                 depends=["update_job_cache_middle_01_target",
                          "update_job_cache_middle_02_target", "update_job_cache_middle_03_target"]),
@@ -2986,13 +2931,13 @@ class GraphTest(unittest.TestCase):
     def test_expand_exact(self):
         # Given
         jobs = [
-            SimpleTestJob(unexpanded_id="test_expand_exact_top",
+            SimpleTestJobDefinition(unexpanded_id="test_expand_exact_top",
                           targets=["test_expand_exact_top_target"],
                           depends=["test_expand_exact_highest_target"]),
-            SimpleTestJob(unexpanded_id="test_expand_exact_middle",
+            SimpleTestJobDefinition(unexpanded_id="test_expand_exact_middle",
                           targets=["test_expand_exact_middle_target"],
                           depends=["test_expand_exact_top_target"]),
-            SimpleTestJob(unexpanded_id="test_expand_exact_bottom",
+            SimpleTestJobDefinition(unexpanded_id="test_expand_exact_bottom",
                           targets=["test_expand_exact_bottom_target"],
                           depends=["test_expand_exact_middle_target"])
         ]
@@ -3071,25 +3016,25 @@ class GraphTest(unittest.TestCase):
     def test_update_target_cache(self):
         # Given
         jobs = [
-            SimpleTestJob("update_target_cache_middle_01",
+            SimpleTestJobDefinition("update_target_cache_middle_01",
                 targets=["update_target_cache_middle_01_target"],
                 depends=["update_target_cache_top_01_target"]),
 
-            SimpleTestJob("update_target_cache_middle_02",
+            SimpleTestJobDefinition("update_target_cache_middle_02",
                 targets=["update_target_cache_middle_02_target"],
                 depends=["update_target_cache_top_02_target"]),
 
-            SimpleTestJob("update_target_cache_middle_03",
+            SimpleTestJobDefinition("update_target_cache_middle_03",
                 targets=["update_target_cache_middle_03_target"],
                 depends=["update_target_cache_top_03_target"]),
 
-            SimpleTestJob("update_target_cache_bottom",
+            SimpleTestJobDefinition("update_target_cache_bottom",
                 targets=["update_target_cache_bottom_target"],
                 depends=["update_target_cache_middle_01_target",
                     "update_target_cache_middle_02_target",
                     "update_target_cache_middle_03_target"]),
 
-            SimpleTestJob("update_target_cache_top",
+            SimpleTestJobDefinition("update_target_cache_top",
                 depends=["update_target_cache_highest_target"],
                 targets=["update_target_cache_top_01_target",
                     "update_target_cache_top_02_target",
@@ -3282,7 +3227,7 @@ class GraphTest(unittest.TestCase):
     def test_ignore_produce(self):
         # Given
         jobs = [
-            SimpleTestJob("ignore_produce_job",
+            SimpleTestJobDefinition("ignore_produce_job",
                 targets=["ignore_produce_marker_target"],
                 targets_dict={
                     'untracked': [builder.expanders.Expander(
@@ -3366,11 +3311,11 @@ class GraphTest(unittest.TestCase):
             ]
         }
 
-        job1 = builder.jobs.Job(unexpanded_id="job_with_no_targets",
+        job1 = builder.jobs.JobDefinition(unexpanded_id="job_with_no_targets",
                                 targets=targets1)
-        job2 = builder.jobs.Job(unexpanded_id="job_with_no_targets",
+        job2 = builder.jobs.JobDefinition(unexpanded_id="job_with_no_targets",
                                 targets=targets2)
-        job3 = builder.jobs.Job(unexpanded_id="job_with_no_targets",
+        job3 = builder.jobs.JobDefinition(unexpanded_id="job_with_no_targets",
                                 targets=targets3)
 
         build_manager1 = builder.build.BuildManager([job1], [])
@@ -3407,8 +3352,8 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_meta_in_rule_dependency_graph(self):
         # Given
-        job1 = builder.jobs.Job(unexpanded_id="job1")
-        job2 = builder.jobs.Job(unexpanded_id="job2")
+        job1 = builder.jobs.JobDefinition(unexpanded_id="job1")
+        job2 = builder.jobs.JobDefinition(unexpanded_id="job2")
         meta = builder.jobs.MetaTarget(unexpanded_id="meta",
                                        job_collection=["job1", "job2"])
 
@@ -3426,8 +3371,8 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_expand_meta(self):
         # Given
-        job1 = builder.jobs.Job(unexpanded_id="job1")
-        job2 = builder.jobs.Job(unexpanded_id="job2")
+        job1 = builder.jobs.JobDefinition(unexpanded_id="job1")
+        job2 = builder.jobs.JobDefinition(unexpanded_id="job2")
         meta = builder.jobs.MetaTarget(unexpanded_id="meta",
                                        job_collection=["job1", "job2"])
 
@@ -3446,7 +3391,7 @@ class GraphTest(unittest.TestCase):
     def test_new_nodes(self):
         # Given
         jobs = [
-            builder.jobs.Job(
+            builder.jobs.JobDefinition(
                 "top_job",
                 targets={
                     "produces": [
@@ -3466,7 +3411,7 @@ class GraphTest(unittest.TestCase):
                     ],
                 }
             ),
-            builder.jobs.Job(
+            builder.jobs.JobDefinition(
                 "bottom_job",
                 targets={
                     "produces": [
@@ -3570,7 +3515,7 @@ class GraphTest(unittest.TestCase):
 
         build.add_node(builder.targets.Target("", "target1", {}))
         build.add_node(builder.targets.Target("", "target2", {}))
-        build.add_node(builder.jobs.JobState(builder.jobs.Job(), "target3", {}, None))
+        build.add_node(builder.jobs.JobState(builder.jobs.JobDefinition(), "target3", {}, None))
 
         id_list = ["target1", "target2", "target3"]
 
@@ -3754,15 +3699,15 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_job_state_iter(self):
         # Given
-        job1 = SimpleTestJob(
+        job1 = SimpleTestJobDefinition(
                 "job1",
                 targets=["target1", "target2"],
                 depends=["target3", "target4"])
-        job2 = SimpleTestJob(
+        job2 = SimpleTestJobDefinition(
                 "job2",
                 targets=["target5", "target6"],
                 depends=["target1", "target2"])
-        job3 = SimpleTestJob(
+        job3 = SimpleTestJobDefinition(
                 "job3",
                 targets=["target7", "target8"],
                 depends=["target5", "target6"])
@@ -3792,7 +3737,7 @@ class GraphTest(unittest.TestCase):
 
     def test_cache_same_job(self):
         # Given
-        job1 = SimpleTestJob(
+        job1 = SimpleTestJobDefinition(
                 "job1", targets=["target1"],
                 depends=["target2"])
 
@@ -3810,7 +3755,7 @@ class GraphTest(unittest.TestCase):
 
     def test_get_targets(self):
         # Given
-        job1 = SimpleTestJob(
+        job1 = SimpleTestJobDefinition(
             unexpanded_id="job1",
             targets=[
                 {
@@ -3834,7 +3779,7 @@ class GraphTest(unittest.TestCase):
             ]
         )
 
-        job2 = SimpleTestJob(unexpanded_id="job2")
+        job2 = SimpleTestJobDefinition(unexpanded_id="job2")
 
         build_manager = builder.build.BuildManager([job1, job2], [])
         build = build_manager.make_build()
@@ -3918,7 +3863,7 @@ class GraphTest(unittest.TestCase):
 
     def test_get_dependencies(self):
         # Given
-        job1 = builder.jobs.Job(
+        job1 = builder.jobs.JobDefinition(
             unexpanded_id="job1",
             dependencies={
                 "depends": [
@@ -3940,7 +3885,7 @@ class GraphTest(unittest.TestCase):
             }
         )
 
-        job2 = builder.jobs.Job(unexpanded_id="job2")
+        job2 = builder.jobs.JobDefinition(unexpanded_id="job2")
 
         build_manager = builder.build.BuildManager([job1, job2], [])
         build = build_manager.make_build()
@@ -3996,7 +3941,7 @@ class GraphTest(unittest.TestCase):
 
     def test_get_creators(self):
         # Given
-        job1 = builder.jobs.Job(
+        job1 = builder.jobs.JobDefinition(
             unexpanded_id="job1",
             targets={
                 "produces": [
@@ -4009,7 +3954,7 @@ class GraphTest(unittest.TestCase):
                 ]
             }
         )
-        job2 = builder.jobs.Job(
+        job2 = builder.jobs.JobDefinition(
             unexpanded_id="job2",
             targets={
                 "alternates": [
@@ -4022,7 +3967,7 @@ class GraphTest(unittest.TestCase):
                 ]
             }
         )
-        job3 = builder.jobs.Job(
+        job3 = builder.jobs.JobDefinition(
             unexpanded_id="job3",
             targets={
                 "alternates": [
@@ -4035,7 +3980,7 @@ class GraphTest(unittest.TestCase):
                 ]
             }
         )
-        job4 = builder.jobs.Job(
+        job4 = builder.jobs.JobDefinition(
             unexpanded_id="job4",
             targets={
                 "produces": [
@@ -4087,22 +4032,22 @@ class GraphTest(unittest.TestCase):
 
     def test_get_dependents(self):
         # Given
-        job1 = SimpleTestJob(
+        job1 = SimpleTestJobDefinition(
             unexpanded_id="job1",
             depends=[{"type": "depends", "unexpanded_id": "target1"},
                      {"type": "depends_one_or_more", "unexpanded_id": "target2"}]
         )
-        job2 = SimpleTestJob(
+        job2 = SimpleTestJobDefinition(
             unexpanded_id="job2",
             depends=[{"type": "depends_one_or_more", "unexpanded_id": "target1"},
                      {"type": "depends", "unexpanded_id": "target2"}]
         )
-        job3 = SimpleTestJob(
+        job3 = SimpleTestJobDefinition(
             unexpanded_id="job3",
             depends=[{"type": "depends", "unexpanded_id": "target1"},
                      {"type": "depends_one_or_more", "unexpanded_id": "target2"}]
         )
-        job4 = SimpleTestJob(
+        job4 = SimpleTestJobDefinition(
             unexpanded_id="job4",
             targets=[{"type": "produces", "unexpanded_id": "target3"}]
         )
@@ -4162,12 +4107,12 @@ class RuleDependencyGraphTest(unittest.TestCase):
 
     def _get_rdg(self):
         jobs = [
-            SimpleTestJob("rule_dep_construction_job_top_01",
+            SimpleTestJobDefinition("rule_dep_construction_job_top_01",
                 expander_type=builder.expanders.TimestampExpander,
                 depends=[{"unexpanded_id": "rule_dep_construction_target_highest_01", "file_step": "5min"}],
                 targets=[{"unexpanded_id": "rule_dep_construction_top_01", "file_step": "5min"}]
             ),
-            SimpleTestJob("rule_dep_construction_job_top_02",
+            SimpleTestJobDefinition("rule_dep_construction_job_top_02",
                 expander_type=builder.expanders.TimestampExpander,
                 depends=[
                     {"unexpanded_id": "rule_dep_construction_target_highest_02", "file_step": "5min"},
@@ -4232,7 +4177,7 @@ class RuleDependencyGraphTest(unittest.TestCase):
         meta2 = builder.jobs.MetaTarget(
                 unexpanded_id="meta2",
                 job_collection=["job2", "job3"])
-        job1 = builder.jobs.Job(
+        job1 = builder.jobs.JobDefinition(
                 unexpanded_id="job1",
                 targets={
                     "produces": [
@@ -4242,7 +4187,7 @@ class RuleDependencyGraphTest(unittest.TestCase):
                         )
                     ]
                 })
-        job2 = builder.jobs.Job(
+        job2 = builder.jobs.JobDefinition(
                 unexpanded_id="job2",
                 targets={
                     "produces": [
@@ -4252,7 +4197,7 @@ class RuleDependencyGraphTest(unittest.TestCase):
                         )
                     ]
                 })
-        job3 = builder.jobs.Job(
+        job3 = builder.jobs.JobDefinition(
                 unexpanded_id="job3",
                 targets={
                     "produces": [

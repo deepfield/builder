@@ -211,7 +211,7 @@ class RuleDependencyGraph(BaseGraph):
         job = self.node[job_id]
         if "object" not in job:
             return False
-        if not isinstance(job["object"], builder.jobs.Job):
+        if not isinstance(job["object"], builder.jobs.JobDefinition):
             return False
         return True
 
@@ -833,8 +833,7 @@ class BuildGraph(BaseGraph):
             for unexpanded_next_node_id in unexpanded_next_node_ids:
                 unexpanded_next_node = self.rule_dependency_graph.get_job(
                         unexpanded_next_node_id)
-                next_nodes = next_nodes + unexpanded_next_node.expand(
-                        expanded_direction.build_context)
+                next_nodes = next_nodes + unexpanded_next_node.expand(self, expanded_direction.build_context)
             cache_set.add(expanded_direction.unique_id)
             expanded_direction.expanded_directions[direction] = True
 
@@ -931,7 +930,7 @@ class BuildGraph(BaseGraph):
         new_nodes = []
 
         start_job = self.rule_dependency_graph.get_job(new_job)
-        expanded_jobs = start_job.expand(build_context)
+        expanded_jobs = start_job.expand(self, build_context)
 
 
         current_depth = 0
@@ -1022,7 +1021,7 @@ class BuildGraph(BaseGraph):
             dependent_jobs = self.get_dependent_ids(target_id)
             for dependent_job in dependent_jobs:
                 job = self.get_job_state(dependent_job)
-                should_run = job.get_should_run_immediate(self, cached=False)
+                should_run = job.get_should_run_immediate(cached=False)
                 if should_run:
                     next_jobs_list.append(dependent_job)
 
@@ -1036,16 +1035,16 @@ class BuildGraph(BaseGraph):
         self.update_targets(target_ids)
 
         job_state = self.get_job_state(job_state_id)
-        job_state.get_stale(self, cached=False)
+        job_state.get_stale(cached=False)
 
         for target_id in target_ids:
             dependent_ids = self.get_dependent_ids(target_id)
             for dependent_id in dependent_ids:
                 dependent = self.get_job_state(dependent_id)
-                dependent.get_buildable(self, cached=False)
-                dependent.get_stale(self, cached=False)
+                dependent.get_buildable(cached=False)
+                dependent.get_stale(cached=False)
 
-        job_state.update_lower_nodes_should_run(self)
+        job_state.update_lower_nodes_should_run()
 
     def update_target_cache(self, target_id):
         """Updates the cache due to a target finishing"""
@@ -1055,9 +1054,9 @@ class BuildGraph(BaseGraph):
         dependent_ids = self.get_dependent_ids(target_id)
         for dependent_id in dependent_ids:
             dependent = self.get_job_state(dependent_id)
-            dependent.get_stale(self, cached=False)
-            dependent.get_buildable(self, cached=False)
-            dependent.update_lower_nodes_should_run(self)
+            dependent.get_stale(cached=False)
+            dependent.get_buildable(cached=False)
+            dependent.update_lower_nodes_should_run()
 
     def update_targets(self, target_ids):
         """Takes in a list of target ids and updates all of their needed
