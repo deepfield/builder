@@ -3801,6 +3801,252 @@ class GraphTest(unittest.TestCase):
         # Then
         self.assertEqual(mock_expander.call_count, 2)
 
+    def test_get_target_ids(self):
+        # Given
+        job1 = builder.jobs.Job(
+            unexpanded_id="job1",
+            targets={
+                "alternates": [
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target1"),
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target3")
+                ],
+                "produces": [
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target2"),
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target4")
+                ]
+            }
+        )
+
+        job2 = builder.jobs.Job(unexpanded_id="job2")
+
+        build_manager = builder.build.BuildManager([job1, job2], [])
+        build = build_manager.make_build()
+        build.add_job("job1", {})
+        build.add_job("job2", {})
+
+        # When
+        target_ids1 = build.get_target_ids("job1")
+        target_ids1_iter = build.get_target_ids_iter("job1")
+        target_or_ids1 = build.get_target_or_dependency_ids("job1", "down")
+        target_or_ids1_iter = build.get_target_or_dependency_ids_iter("job1", "down")
+        target_ids2 = build.get_target_ids("job2")
+        target_ids2_iter = build.get_target_ids_iter("job2")
+        target_or_ids2 = build.get_target_or_dependency_ids("job2", "down")
+        target_or_ids2_iter = build.get_target_or_dependency_ids_iter("job2", "down")
+
+        # Then
+        self.assertEqual(len(target_ids1), 4)
+        self.assertIn("target1", target_ids1)
+        self.assertIn("target2", target_ids1)
+        self.assertIn("target3", target_ids1)
+        self.assertIn("target4", target_ids1)
+
+        self.assertEqual(len(target_or_ids1), 4)
+        self.assertIn("target1", target_or_ids1)
+        self.assertIn("target2", target_or_ids1)
+        self.assertIn("target3", target_or_ids1)
+        self.assertIn("target4", target_or_ids1)
+
+        self.assertEqual(len(target_ids2), 0)
+
+        self.assertEqual(len(target_or_ids2), 0)
+
+        count = 0
+        previous_target_ids = []
+        previous_target_or_ids = []
+        for target_id, target_or_id in zip(target_ids1_iter, target_or_ids1_iter):
+            self.assertNotIn(target_id, previous_target_ids)
+            self.assertNotIn(target_id, previous_target_or_ids)
+            self.assertIn(target_id, ("target1", "target2", "target3", "target4"))
+            self.assertIn(target_or_id, ("target1", "target2", "target3", "target4"))
+            previous_target_ids.append(target_id)
+            previous_target_or_ids.append(target_or_id)
+            count = count + 1
+
+        self.assertEqual(count, 4)
+
+        for target_id in target_ids2_iter:
+            self.assertTrue(False)
+
+        for target_id in target_or_ids2_iter:
+            self.assertTrue(False)
+
+    def test_get_dependencies(self):
+        # Given
+        job1 = builder.jobs.Job(
+            unexpanded_id="job1",
+            dependencies={
+                "depends": [
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target1"),
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target3")
+                ],
+                "depends_one_or_more": [
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target2"),
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target4")
+                ]
+            }
+        )
+
+        job2 = builder.jobs.Job(unexpanded_id="job2")
+
+        build_manager = builder.build.BuildManager([job1, job2], [])
+        build = build_manager.make_build()
+        build.add_job("job1", {})
+        build.add_job("job2", {})
+
+        # When
+        depends_ids1 = build.get_dependency_ids("job1")
+        depends_ids1_iter = build.get_dependency_ids_iter("job1")
+        depends_or_ids1 = build.get_target_or_dependency_ids("job1", "up")
+        depends_or_ids1_iter = build.get_target_or_dependency_ids_iter("job1", "up")
+        depends_ids2 = build.get_dependency_ids("job2")
+        depends_ids2_iter = build.get_dependency_ids_iter("job2")
+        depends_or_ids2 = build.get_target_or_dependency_ids("job2", "up")
+        depends_or_ids2_iter = build.get_target_or_dependency_ids_iter("job2", "up")
+
+        # Then
+        self.assertEqual(len(depends_ids1), 4)
+        self.assertIn("target1", depends_ids1)
+        self.assertIn("target2", depends_ids1)
+        self.assertIn("target3", depends_ids1)
+        self.assertIn("target4", depends_ids1)
+
+        self.assertEqual(len(depends_or_ids1), 4)
+        self.assertIn("target1", depends_or_ids1)
+        self.assertIn("target2", depends_or_ids1)
+        self.assertIn("target3", depends_or_ids1)
+        self.assertIn("target4", depends_or_ids1)
+
+        self.assertEqual(len(depends_ids2), 0)
+
+        self.assertEqual(len(depends_or_ids2), 0)
+
+        count = 0
+        previous_depends_ids = []
+        previous_depends_or_ids = []
+        for target_id, depends_or_id in zip(depends_ids1_iter, depends_or_ids1_iter):
+            self.assertNotIn(target_id, previous_depends_ids)
+            self.assertNotIn(depends_or_id, previous_depends_or_ids)
+            self.assertIn(target_id, ("target1", "target2", "target3", "target4"))
+            self.assertIn(depends_or_id, ("target1", "target2", "target3", "target4"))
+            previous_depends_ids.append(target_id)
+            previous_depends_or_ids.append(depends_or_id)
+            count = count + 1
+
+        self.assertEqual(count, 4)
+
+        for target_id in depends_ids2_iter:
+            self.assertTrue(False)
+
+        for target_id in depends_or_ids2_iter:
+            self.assertTrue(False)
+
+    def test_get_creators(self):
+        # Given
+        job1 = builder.jobs.Job(
+            unexpanded_id="job1",
+            targets={
+                "produces": [
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target1"),
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target2"),
+                ]
+            }
+        )
+        job2 = builder.jobs.Job(
+            unexpanded_id="job2",
+            targets={
+                "alternates": [
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target1"),
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target3"),
+                ]
+            }
+        )
+        job3 = builder.jobs.Job(
+            unexpanded_id="job3",
+            targets={
+                "alternates": [
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target1"),
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target4"),
+                ]
+            }
+        )
+        job4 = builder.jobs.Job(
+            unexpanded_id="job4",
+            targets={
+                "produces": [
+                    builder.expanders.Expander(
+                        builder.targets.Target,
+                        "target4")
+                ]
+            }
+        )
+
+        build_manager = builder.build.BuildManager([job1, job2, job3, job4], [])
+        build = build_manager.make_build()
+        build.add_job("job1", {})
+        build.add_job("job2", {})
+        build.add_job("job3", {})
+        build.add_job("job4", {})
+
+        # When
+        creator_ids = build.get_creator_ids("target1")
+        creator_ids_iter = build.get_creator_ids_iter("target1")
+        creator_or_ids = build.get_dependent_or_creator_ids("target1", "up")
+        creator_or_ids_iter = build.get_dependent_or_creator_ids_iter("target1", "up")
+         
+
+        # Then
+        self.assertEqual(len(creator_ids), 3)
+        self.assertIn("job1", creator_ids)
+        self.assertIn("job2", creator_ids)
+        self.assertIn("job3", creator_ids)
+
+        self.assertEqual(len(creator_or_ids), 3)
+        self.assertIn("job1", creator_or_ids)
+        self.assertIn("job2", creator_or_ids)
+        self.assertIn("job3", creator_or_ids)
+
+        count = 0
+        previous_creator_ids = []
+        previous_creator_or_ids = []
+        for creator_id, creator_or_id in zip(creator_ids_iter, creator_or_ids_iter):
+            self.assertNotIn(creator_id, previous_creator_ids)
+            self.assertNotIn(creator_or_id, previous_creator_or_ids)
+            self.assertIn(creator_id, ("job1", "job2", "job3"))
+            self.assertIn(creator_or_id, ("job1", "job2", "job3"))
+            previous_creator_ids.append(creator_id)
+            previous_creator_or_ids.append(creator_or_id)
+            count = count + 1
+
+        self.assertEqual(count, 3)
 
 class RuleDependencyGraphTest(unittest.TestCase):
 

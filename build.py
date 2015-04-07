@@ -15,29 +15,41 @@ import builder.jobs
 import builder.targets
 
 class BuildManager(object):
+    dependency_registery = {
+        "depends": builder.dependencies.depends,
+        "depends_one_or_more": builder.dependencies.depends_one_or_more,
+    }
+
     """A build manager holds a rule dependency graph and is then creates a new
     build graph by recieving a list of start jobs and a build_context
 
     A build manager is usefull when looking to creating separate build graphs
     using the same rule dependency graph.
     """
-    def __init__(self, jobs, metas, config=None):
+    def __init__(self, jobs, metas, dependency_registery=None, config=None):
         super(BuildManager, self).__init__()
 
+        if dependency_registery is None:
+            dependency_registery = BuildManager.dependency_registery
         if config is None:
             config = {}
 
         self.jobs = jobs
         self.metas = metas
+        self.dependency_registery = dependency_registery
         self.config = config
 
-        self.rule_dependency_graph = RuleDependencyGraph(jobs, metas, config=config)
+        self.rule_dependency_graph = RuleDependencyGraph(jobs, metas,
+                                                         config=config)
 
     def make_build(self):
         """Constructs a new build graph by adding the jobs and following the
         build_context's rules
         """
-        build_graph = BuildGraph(self.rule_dependency_graph)
+        build_graph = BuildGraph(
+                self.rule_dependency_graph,
+                dependency_registery=self.dependency_registery,
+                config=self.config)
         return build_graph
 
     def get_rule_dependency_graph(self):
@@ -440,12 +452,15 @@ class RuleDependencyGraph(BaseGraph):
 class BuildGraph(BaseGraph):
     """The build object will control the rule dependency graph and the
     build graph"""
-    def __init__(self, rule_dependency_graph, config=None):
+    def __init__(self, rule_dependency_graph, dependency_registery=None, config=None):
         super(BuildGraph, self).__init__()
+        if dependency_registery is None:
+            dependency_registery = {}
         if config is None:
             config = {}
 
         self.rule_dependency_graph = rule_dependency_graph
+        self.dependency_registery = dependency_registery
         self.config = config
 
     def add_node(self, node, attr_dict=None, **kwargs):
@@ -582,7 +597,7 @@ class BuildGraph(BaseGraph):
     def get_creator_ids_iter(self, target_id):
         self.assert_target(target_id)
         for creator_id in self.predecessors_iter(target_id):
-            if self.is_target(creator_id):
+            if self.is_job_state(creator_id):
                 yield creator_id
 
     def get_creator_ids(self, target_id):
@@ -767,8 +782,7 @@ class BuildGraph(BaseGraph):
                 edge_data = target.edge_data
                 expanded_targets = target.expand(build_context)
                 if direction == "up":
-                    dependency_type = (builder.dependencies
-                                              .get_dependencies(target_type))
+                    dependency_type = self.dependency_registery[target_type]
                     self._connect_dependencies(job, dependency_type,
                                                expanded_targets, edge_data,
                                                new_nodes)
@@ -804,7 +818,7 @@ class BuildGraph(BaseGraph):
                 next_node_ids = self.get_dependent_or_creator_ids(
                         expanded_direction.unique_id, direction)
                 for next_node_id in next_node_ids:
-                    next_nodes.append(self.get_job(next_node_id))
+                    next_nodes.append(self.get_job_state(next_node_id))
                 continue
 
             # we have to use the unexpanded node to look in the rule dependency
@@ -1075,7 +1089,7 @@ class BuildGraph(BaseGraph):
         on a target
         """
         self.update_target_cache(target_id)
-        creator_ids = self.get_creators(target_id)
+        creator_ids = self.get_creator_ids(target_id)
         creators_exist = False
         for creator_id in creator_ids:
             creators_exist = True
@@ -1083,7 +1097,7 @@ class BuildGraph(BaseGraph):
             for next_job in next_jobs:
                 self.run(next_job)
         if creators_exist == False:
-            for dependent_id in self.get_dependents(target_id):
+            for dependent_id in self.get_dependent_ids(target_id):
                 next_jobs = self.get_next_jobs_to_run(dependent_id)
                 for next_job in next_jobs:
                     self.run(next_job)
