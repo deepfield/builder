@@ -70,8 +70,8 @@ class SimpleTestJob(SimpleJobTestMixin, Job):
     def __init__(self, unexpanded_id=None, targets=None, depends=None,
             config=None, should_run=False, parents_should_run=False,
             target_type=None, expander_type=None,
-            depends_dict=None, targets_dict=None):
-        super(SimpleTestJob, self).__init__(unexpanded_id, config=config)
+            depends_dict=None, targets_dict=None, **kwargs):
+        super(SimpleTestJob, self).__init__(unexpanded_id, config=config, **kwargs)
         self.targets = targets
 
         self.should_run = should_run
@@ -255,9 +255,9 @@ class ShouldRunRecurseJobState(builder.jobs.JobState):
         return self.should_run_immediate
 
 
-class ShouldRunRecurseJob(Job):
-    should_run_immediate = False
+class ShouldRunRecurseJob(SimpleTestJob):
     def expand(self, build_context):
+        print self.should_run_immediate, self.unexpanded_id
         counting_nodes = []
         expanded_nodes = super(ShouldRunRecurseJob, self).expand(
                 build_context)
