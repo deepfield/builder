@@ -1519,7 +1519,13 @@ class GraphTest(unittest.TestCase):
     def test_buildable(self):
         # Given
         jobs1 = [
-            BuildableJobTester(),
+            SimpleTimestampExpandedTestJob("buildable_job", file_step="15min",
+                depends=[{"unexpanded_id": "buildable_15_minute_target_01-%Y-%m-%d-%H-%M", "file_step": "15min"},
+                    {"unexpanded_id": "buildable_5_minute_target_01-%Y-%m-%d-%H-%M", "file_step": "5min"},
+                    {"unexpanded_id": "buildable_15_minute_target_02-%Y-%m-%d-%H-%M", "file_step": "15min",
+                        "type": "depends_one_or_more"},
+                    {"unexpanded_id": "buildable_5_minute_target_02-%Y-%m-%d-%H-%M", "file_step": "5min",
+                        "type": "depends_one_or_more"}])
         ]
 
         build_context1 = {

@@ -93,7 +93,7 @@ class SimpleTimestampExpandedTestJob(SimpleJobTestMixin, TimestampExpandedJobDef
         self.should_run = should_run
         self.parents_should_run = parents_should_run
         self.target_type = target_type or FakeTarget
-        self.expander_type = expander_type or builder.expanders.Expander
+        self.expander_type = expander_type or builder.expanders.TimestampExpander
 
         self.setup_dependencies_and_targets(depends_dict, targets_dict, depends, targets)
 
@@ -269,41 +269,6 @@ class ShouldRunRecurseJobDefinition(SimpleTestJobDefinition):
                     self.should_run_immediate)
             counting_nodes.append(counting_node)
         return counting_nodes
-
-
-class BuildableJobTester(TimestampExpandedJobDefinition):
-    """Has multiple kinds of dependencies that will be tested"""
-    def __init__(self, unexpanded_id="buildable_job", file_step="15min",
-                 config=None):
-        super(BuildableJobTester, self).__init__(
-                unexpanded_id=unexpanded_id, file_step=file_step)
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "buildable_15_minute_target_01-%Y-%m-%d-%H-%M",
-                    "15min"),
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "buildable_5_minute_target_01-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-            "depends_one_or_more": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "buildable_15_minute_target_02-%Y-%m-%d-%H-%M",
-                    "15min"),
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "buildable_5_minute_target_02-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-        }
-
-    def get_targets(self, build_context=None):
-        return {}
 
 
 class ExpandCounter(JobDefinition):

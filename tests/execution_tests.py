@@ -27,7 +27,7 @@ class ExecutionManagerTests(unittest.TestCase):
     @unit
     def test_submit(self):
         # Given
-        execution_manager = self._get_execution_manager([BuildableJobTester()])
+        execution_manager = self._get_execution_manager([self._get_buildable_job()])
         build_context = {
             'start_time': arrow.get('2015-01-01')
         }
@@ -68,11 +68,19 @@ class ExecutionManagerTests(unittest.TestCase):
         # Then
         self.assertEquals(set(map(lambda x: x.unique_id, next_jobs)), {'should_run_recurse_job_02'})
 
+    def _get_buildable_job(self):
+        return SimpleTimestampExpandedTestJob("buildable_job", file_step="15min",
+                depends=[{"unexpanded_id": "buildable_15_minute_target_01-%Y-%m-%d-%H-%M", "file_step": "15min"},
+                    {"unexpanded_id": "buildable_5_minute_target_01-%Y-%m-%d-%H-%M", "file_step": "5min"},
+                    {"unexpanded_id": "buildable_15_minute_target_02-%Y-%m-%d-%H-%M", "file_step": "15min",
+                        "type": "depends_one_or_more"},
+                    {"unexpanded_id": "buildable_5_minute_target_02-%Y-%m-%d-%H-%M", "file_step": "5min",
+                        "type": "depends_one_or_more"}])
 
     @unit
     def test_start_excution_run_to_completion(self):
         # Given
-        execution_manager = self._get_execution_manager([BuildableJobTester()])
+        execution_manager = self._get_execution_manager([self._get_buildable_job()])
         build_context = {
             'start_time': arrow.get('2015-01-01')
         }
