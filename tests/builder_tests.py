@@ -778,13 +778,25 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(stale6, expected_stale6)
         self.assertEqual(stale7, expected_stale7)
 
+
+    def _get_stale_alternate_jobs(self):
+        return [
+            SimpleTimestampExpandedTestJob("stale_alternate_bottom_job", file_step="15min",
+               expander_type=builder.expanders.TimestampExpander, target_type=builder.targets.LocalFileSystemTarget,
+               depends=[{'unexpanded_id': 'stale_alternate_top_target-%Y-%m-%d-%H-%M', 'file_step': '5min'},
+                        {'unexpanded_id': 'stale_alternate_secondary_target-%Y-%m-%d-%H-%M', 'file_step': '5min'}],
+               targets=[{'unexpanded_id': 'stale_alternate_bottom_target-%Y-%m-%d-%H-%M', 'file_step': '5min'}]),
+            SimpleTimestampExpandedTestJob("stale_alternate_top_job", file_step="15min",
+               expander_type=builder.expanders.TimestampExpander, target_type=builder.targets.LocalFileSystemTarget,
+               depends=[{'unexpanded_id': 'stale_alternate_highest_target-%Y-%m-%d-%H-%M', 'file_step': '5min'}],
+               targets=[{'unexpanded_id': 'stale_alternate_top_target-%Y-%m-%d-%H-%M', 'file_step': '5min'},
+                    {'unexpanded_id': 'stale_alternate_bottom_target-%Y-%m-%d-%H-%M',
+                     'file_step': '5min', 'type': 'alternates'}])
+        ]
     @testing.unit
     def test_stale_alternate(self):
         # Given
-        jobs1 = [
-            StaleAlternateTopJobTester(),
-            StaleAlternateBottomJobTester(),
-        ]
+        jobs1 = self._get_stale_alternate_jobs()
 
         build_context1 = {
             "start_time": arrow.get("2014-12-05T10:50"),
@@ -1130,10 +1142,7 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_stale_alternate_update(self):
         # Given
-        jobs1 = [
-            StaleAlternateUpdateTopJobTester(),
-            StaleAlternateUpdateBottomJobTester(),
-        ]
+        jobs1 = self._get_stale_alternate_jobs()
 
         build_context1 = {
             "start_time": arrow.get("2014-12-05T10:50"),
@@ -1146,86 +1155,86 @@ class GraphTest(unittest.TestCase):
         build3 = build_manager.make_build()
         build4 = build_manager.make_build()
 
-        build1.add_job("stale_alternate_update_bottom_job", build_context1)
-        build2.add_job("stale_alternate_update_bottom_job", build_context1)
-        build3.add_job("stale_alternate_update_bottom_job", build_context1)
-        build4.add_job("stale_alternate_update_bottom_job", build_context1)
+        build1.add_job("stale_alternate_bottom_job", build_context1)
+        build2.add_job("stale_alternate_bottom_job", build_context1)
+        build3.add_job("stale_alternate_bottom_job", build_context1)
+        build4.add_job("stale_alternate_bottom_job", build_context1)
 
         # All alternate_updates exist and are stale but the targets are not
         # All targets exist
         expected_original_stale1 = False
         expected_stale1 = False
         (build1.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-45"]
+                ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build1.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-45"]
+                ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build1.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-50"]
+                ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build1.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-50"]
+                ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build1.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-55"]
+                ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build1.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-55"]
+                ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build1.node
-                ["stale_alternate_update_top_target-2014-12-05-10-45"]
+                ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build1.node
-                ["stale_alternate_update_top_target-2014-12-05-10-45"]
+                ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build1.node
-                ["stale_alternate_update_top_target-2014-12-05-10-50"]
+                ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build1.node
-                ["stale_alternate_update_top_target-2014-12-05-10-50"]
+                ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build1.node
-                ["stale_alternate_update_top_target-2014-12-05-10-55"]
+                ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build1.node
-                ["stale_alternate_update_top_target-2014-12-05-10-55"]
+                ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build1.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-45"]
+                ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build1.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-45"]
+                ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build1.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-50"]
+                ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build1.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-50"]
+                ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build1.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-55"]
+                ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build1.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-55"]
+                ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build1.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-45"]
+                ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build1.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-45"]
+                ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].mtime) = 50
         (build1.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-50"]
+                ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build1.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-50"]
+                ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].mtime) = 50
         (build1.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-55"]
+                ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build1.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-55"]
+                ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].mtime) = 50
 
         # All alternate_updates exist and are stale but the targets are not
@@ -1233,76 +1242,76 @@ class GraphTest(unittest.TestCase):
         expected_original_stale2 = True
         expected_stale2 = True
         (build2.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-45"]
+                ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build2.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-45"]
+                ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build2.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-50"]
+                ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build2.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-50"]
+                ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build2.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-55"]
+                ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build2.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-55"]
+                ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build2.node
-                ["stale_alternate_update_top_target-2014-12-05-10-45"]
+                ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build2.node
-                ["stale_alternate_update_top_target-2014-12-05-10-45"]
+                ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build2.node
-                ["stale_alternate_update_top_target-2014-12-05-10-50"]
+                ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build2.node
-                ["stale_alternate_update_top_target-2014-12-05-10-50"]
+                ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build2.node
-                ["stale_alternate_update_top_target-2014-12-05-10-55"]
+                ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].exists) = False
         (build2.node
-                ["stale_alternate_update_top_target-2014-12-05-10-55"]
+                ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = None
         (build2.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-45"]
+                ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build2.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-45"]
+                ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build2.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-50"]
+                ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build2.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-50"]
+                ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build2.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-55"]
+                ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build2.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-55"]
+                ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build2.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-45"]
+                ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build2.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-45"]
+                ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].mtime) = 50
         (build2.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-50"]
+                ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build2.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-50"]
+                ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].mtime) = 50
         (build2.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-55"]
+                ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build2.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-55"]
+                ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].mtime) = 50
 
         # All alternate_updates exist and are stale but the targets are not
@@ -1310,76 +1319,76 @@ class GraphTest(unittest.TestCase):
         expected_original_stale3 = False
         expected_stale3 = False
         (build3.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-45"]
+                ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build3.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-45"]
+                ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build3.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-50"]
+                ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build3.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-50"]
+                ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build3.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-55"]
+                ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build3.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-55"]
+                ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build3.node
-                ["stale_alternate_update_top_target-2014-12-05-10-45"]
+                ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build3.node
-                ["stale_alternate_update_top_target-2014-12-05-10-45"]
+                ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build3.node
-                ["stale_alternate_update_top_target-2014-12-05-10-50"]
+                ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build3.node
-                ["stale_alternate_update_top_target-2014-12-05-10-50"]
+                ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build3.node
-                ["stale_alternate_update_top_target-2014-12-05-10-55"]
+                ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build3.node
-                ["stale_alternate_update_top_target-2014-12-05-10-55"]
+                ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build3.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-45"]
+                ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build3.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-45"]
+                ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build3.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-50"]
+                ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].exists) = False
         (build3.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-50"]
+                ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build3.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-55"]
+                ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build3.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-55"]
+                ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build3.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-45"]
+                ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build3.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-45"]
+                ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].mtime) = 50
         (build3.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-50"]
+                ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build3.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-50"]
+                ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].mtime) = 50
         (build3.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-55"]
+                ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build3.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-55"]
+                ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].mtime) = 50
 
         # The job is not stale, missing a target, all alternate_updates exist
@@ -1387,114 +1396,114 @@ class GraphTest(unittest.TestCase):
         expected_original_stale4 = False
         expected_stale4 = False
         (build4.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-45"]
+                ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build4.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-45"]
+                ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build4.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-50"]
+                ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build4.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-50"]
+                ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build4.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-55"]
+                ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build4.node
-                ["stale_alternate_update_highest_target-2014-12-05-10-55"]
+                ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build4.node
-                ["stale_alternate_update_top_target-2014-12-05-10-45"]
+                ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build4.node
-                ["stale_alternate_update_top_target-2014-12-05-10-45"]
+                ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build4.node
-                ["stale_alternate_update_top_target-2014-12-05-10-50"]
+                ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build4.node
-                ["stale_alternate_update_top_target-2014-12-05-10-50"]
+                ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build4.node
-                ["stale_alternate_update_top_target-2014-12-05-10-55"]
+                ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].exists) = False
         (build4.node
-                ["stale_alternate_update_top_target-2014-12-05-10-55"]
+                ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = None
         (build4.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-45"]
+                ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build4.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-45"]
+                ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build4.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-50"]
+                ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build4.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-50"]
+                ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build4.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-55"]
+                ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build4.node
-                ["stale_alternate_update_secondary_target-2014-12-05-10-55"]
+                ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build4.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-45"]
+                ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].exists) = True
         (build4.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-45"]
+                ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].mtime) = 200
         (build4.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-50"]
+                ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].exists) = True
         (build4.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-50"]
+                ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].mtime) = 200
         (build4.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-55"]
+                ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].exists) = True
         (build4.node
-                ["stale_alternate_update_bottom_target-2014-12-05-10-55"]
+                ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].mtime) = 200
 
         # When
         original_stale1 = (build1.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
+                ["stale_alternate_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build1))
         (build1.node
-                ["stale_alternate_update_bottom_job_2014-12-05-10-45-00"]
+                ["stale_alternate_bottom_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build1))
         stale1 = (build1.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
+                ["stale_alternate_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build1))
         original_stale2 = (build2.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
+                ["stale_alternate_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build2))
         (build2.node
-                ["stale_alternate_update_bottom_job_2014-12-05-10-45-00"]
+                ["stale_alternate_bottom_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build2))
         stale2 = (build2.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
+                ["stale_alternate_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build2))
         original_stale3 = (build3.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
+                ["stale_alternate_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build3))
         (build3.node
-                ["stale_alternate_update_bottom_job_2014-12-05-10-45-00"]
+                ["stale_alternate_bottom_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build3))
         stale3 = (build3.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
+                ["stale_alternate_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build3))
         original_stale4 = (build4.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
+                ["stale_alternate_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build4))
         (build4.node
-                ["stale_alternate_update_bottom_job_2014-12-05-10-45-00"]
+                ["stale_alternate_bottom_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build4))
         stale4 = (build4.node
-                ["stale_alternate_update_top_job_2014-12-05-10-45-00"]
+                ["stale_alternate_top_job_2014-12-05-10-45-00"]
                 ["object"].get_stale(build4))
 
         # Then
