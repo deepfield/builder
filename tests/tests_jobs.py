@@ -244,11 +244,10 @@ class GetNextJobsToRunTop(GetNextJobsCounter):
 class ShouldRunRecurseJobState(builder.jobs.JobState):
     """Used to count how many times the should run is returned"""
 
-    def __init__(self, job, unique_id, build_context, cache_time,
-            should_run_immediate, config=None):
+    def __init__(self, job, unique_id, build_context,
+            should_run_immediate):
         super(ShouldRunRecurseJobState, self).__init__(job,
-                unique_id, build_context, cache_time,
-                config=config)
+                unique_id, build_context)
         self.should_run_immediate = should_run_immediate
 
     def get_should_run_immediate(self, build_graph, cached=True, cache_set=None):
@@ -266,9 +265,7 @@ class ShouldRunRecurseJob(SimpleTestJob):
                     expanded_node,
                     expanded_node.unique_id,
                     expanded_node.build_context,
-                    expanded_node.cache_time,
-                    self.should_run_immediate,
-                    expanded_node.config,)
+                    self.should_run_immediate)
             counting_nodes.append(counting_node)
         return counting_nodes
 
