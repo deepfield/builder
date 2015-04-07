@@ -3862,7 +3862,7 @@ class GraphTest(unittest.TestCase):
 
     def test_get_dependencies(self):
         # Given
-        job1 = SimpleTestJob(
+        job1 = SimpleTestJobDefinition(
             unexpanded_id="job1",
             depends=[
                 {
@@ -3886,7 +3886,7 @@ class GraphTest(unittest.TestCase):
             ]
         )
 
-        job2 = SimpleTestJob(unexpanded_id="job2")
+        job2 = SimpleTestJobDefinition(unexpanded_id="job2")
 
         build_manager = builder.build.BuildManager([job1, job2], [])
         build = build_manager.make_build()
@@ -3981,23 +3981,28 @@ class GraphTest(unittest.TestCase):
 
     def test_get_creators(self):
         # Given
-        job1 = SimpleTestJob(
+        job1 = SimpleTestJobDefinition(
             unexpanded_id="job1",
             targets=[
                 {
                     "type": "produces",
                     "unexpanded_id": "target1",
                     "ignore_mtime": False,
-                }
-                "produces": [
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target1"),
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target2"),
-                ]
-            }
+                },
+                {
+                    "type": "produces",
+                    "unexpanded_id": "target3",
+                },
+                {
+                    "type": "alternates",
+                    "unexpanded_id": "target2",
+                    "edge_data": {"fake": "fake"},
+                },
+                {
+                    "type": "alternates",
+                    "unexpanded_id": "target4",
+                },
+            ],
         )
         job2 = builder.jobs.JobDefinition(
             unexpanded_id="job2",
