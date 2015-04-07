@@ -82,7 +82,7 @@ class Job(object):
                 if not dependency.get_exists():
                     creator_ids = self.build_graph.get_creator_ids(dependency_id)
                     for creator_id in creator_ids:
-                        creator = self.build_graph.get_job_state(creator_id)
+                        creator = self.build_graph.get_job(creator_id)
                         creator.update_stale(True)
         self.stale = new_value
 

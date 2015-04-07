@@ -94,7 +94,7 @@ class ExecutionManager(object):
         Submit the provided job to be built
         """
         def update_build_graph():
-            self.build.add_job(job, build_context, **kwargs)
+            self.build.add_job_definition(job, build_context, **kwargs)
         self._update_build(update_build_graph)
 
     def start_execution(self, inline=True):
@@ -131,7 +131,7 @@ class ExecutionManager(object):
 
             # Get next jobs to execute
             next_job_ids = self.build.get_next_jobs_to_run(job.get_id())
-            next_jobs = map(lambda x: self.build.get_job_state(x), next_job_ids)
+            next_jobs = map(lambda x: self.build.get_job(x), next_job_ids)
             map(work_queue.put, next_jobs)
 
     def _execute_daemon(self):

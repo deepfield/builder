@@ -101,7 +101,7 @@ class ExecutionManagerTests(unittest.TestCase):
                 target.exists = True
                 target.mtime = arrow.get()
                 for dependent_id in build.get_dependent_ids(target_id):
-                    dependent = build.get_job_state(dependent_id)
+                    dependent = build.get_job(dependent_id)
                     dependent.should_run = True
             return True, ''
 
