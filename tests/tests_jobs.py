@@ -273,20 +273,6 @@ class ShouldRunRecurseJob(SimpleTestJob):
         return counting_nodes
 
 
-class PastCurfewTimestampJobTester(TimestampExpandedJob):
-    """Timestamp job, returns True if curfew + endtime is past"""
-    def __init__(self, unexpanded_id="past_curfew_timestamp_job", config=None):
-        super(PastCurfewTimestampJobTester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-
-class PastCurfewJobTester(Job):
-    """Standard job, returns True"""
-    def __init__(self, unexpanded_id="past_curfew_job", config=None):
-        super(PastCurfewJobTester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-
 class AllDependenciesJobTester(TimestampExpandedJob):
     """Only job"""
     def __init__(self, unexpanded_id="all_dependencies_job", file_step="15min",

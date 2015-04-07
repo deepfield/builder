@@ -2442,6 +2442,8 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_past_curfew(self):
         # Given
+        PastCurfewTimestampJobTester = lambda: SimpleTimestampExpandedTestJob("past_curfew_timestamp_job")
+        PastCurfewJobTester = lambda: SimpleTestJob("past_curfew_job")
         job1 = PastCurfewJobTester().expand({})[0]
         job2 = PastCurfewTimestampJobTester().expand(
                 {
