@@ -755,7 +755,6 @@ class GraphTest(unittest.TestCase):
             stale3 = (build3.node
                     ["stale_standard_job_2014-12-05-10-45-00"]
                     ["object"].get_stale(build3))
-            build4.write_dot("graph.dot")
             stale4 = (build4.node
                     ["stale_standard_job_2014-12-05-10-45-00"]
                     ["object"].get_stale(build4))
@@ -3918,29 +3917,31 @@ class GraphTest(unittest.TestCase):
 
     def test_get_dependencies(self):
         # Given
-        job1 = builder.jobs.Job(
+        job1 = SimpleTestJob(
             unexpanded_id="job1",
-            dependencies={
-                "depends": [
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target1"),
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target3")
-                ],
-                "depends_one_or_more": [
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target2"),
-                    builder.expanders.Expander(
-                        builder.targets.Target,
-                        "target4")
-                ]
-            }
+            depends=[
+                {
+                    "type": "depends",
+                    "unexpanded_id": "target1",
+                    "ignore_mtime": True,
+                },
+                {
+                    "type": "depends_one_or_more",
+                    "unexpanded_id": "target2",
+                    "edge_data": {"fake": "fake"},
+                },
+                {
+                    "type": "depends",
+                    "unexpanded_id": "target3",
+                },
+                {
+                    "type": "depends_one_or_more",
+                    "unexpanded_id": "target4",
+                },
+            ]
         )
 
-        job2 = builder.jobs.Job(unexpanded_id="job2")
+        job2 = SimpleTestJob(unexpanded_id="job2")
 
         build_manager = builder.build.BuildManager([job1, job2], [])
         build = build_manager.make_build()
@@ -3956,6 +3957,8 @@ class GraphTest(unittest.TestCase):
         depends_ids2_iter = build.get_dependency_ids_iter("job2")
         depends_or_ids2 = build.get_target_or_dependency_ids("job2", "up")
         depends_or_ids2_iter = build.get_target_or_dependency_ids_iter("job2", "up")
+        depends_relationship1 = build.get_dependency_relationships("job1")
+        depends_relationship2 = build.get_dependency_relationships("job2")
 
         # Then
         self.assertEqual(len(depends_ids1), 4)
@@ -3994,11 +3997,53 @@ class GraphTest(unittest.TestCase):
         for target_id in depends_or_ids2_iter:
             self.assertTrue(False)
 
+        self.assertEqual(len(depends_relationship1), 2)
+        self.assertEqual(len(depends_relationship2), 0)
+        self.assertIn("depends", depends_relationship1)
+        self.assertIn("depends_one_or_more", depends_relationship1)
+        self.assertEqual(len(depends_relationship1["depends"]), 2)
+        self.assertEqual(len(depends_relationship1["depends_one_or_more"]), 2)
+
+        target1_in = False
+        target3_in = False
+        for depends in depends_relationship1["depends"]:
+            self.assertEqual(len(depends["targets"]), 1)
+            if "target1" in depends["targets"]:
+                target1_in = True
+                self.assertEqual(depends["data"]["ignore_mtime"], True)
+            if "target3" in depends["targets"]:
+                target3_in = True
+                self.assertEqual(
+                    depends["data"].get("ignore_mtime", False), False)
+
+        self.assertTrue(target1_in)
+        self.assertTrue(target3_in)
+
+        target2_in = False
+        target4_in = False
+        for depends in depends_relationship1["depends_one_or_more"]:
+            self.assertEqual(len(depends["targets"]), 1)
+            if "target2" in depends["targets"]:
+                target2_in = True
+                self.assertEqual(depends["data"]["fake"], "fake")
+            if "target4" in depends["targets"]:
+                target4_in = True
+                self.assertEqual(
+                    depends["data"].get("fake"), None)
+
+        self.assertTrue(target2_in)
+        self.assertTrue(target4_in)
+
     def test_get_creators(self):
         # Given
-        job1 = builder.jobs.Job(
+        job1 = SimpleTestJob(
             unexpanded_id="job1",
-            targets={
+            targets=[
+                {
+                    "type": "produces",
+                    "unexpanded_id": "target1",
+                    "ignore_mtime": False,
+                }
                 "produces": [
                     builder.expanders.Expander(
                         builder.targets.Target,
