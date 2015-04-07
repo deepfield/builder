@@ -15,23 +15,32 @@ import builder.jobs
 import builder.targets
 
 class BuildManager(object):
+    dependency_registery = {
+        "depends": builder.dependencies.depends,
+        "depends_one_or_more": builder.dependencies.depends_one_or_more,
+    }
+
     """A build manager holds a rule dependency graph and is then creates a new
     build graph by recieving a list of start jobs and a build_context
 
     A build manager is usefull when looking to creating separate build graphs
     using the same rule dependency graph.
     """
-    def __init__(self, jobs, metas, config=None):
+    def __init__(self, jobs, metas, dependency_registery=None, config=None):
         super(BuildManager, self).__init__()
 
+        if dependency_registery is None:
+            dependency_registery = BuildManager.dependency_registery
         if config is None:
             config = {}
 
         self.jobs = jobs
         self.metas = metas
+        self.dependency_registery = dependency_registery
         self.config = config
 
-        self.rule_dependency_graph = RuleDependencyGraph(jobs, metas, config=config)
+        self.rule_dependency_graph = RuleDependencyGraph(jobs, metas,
+                                                         config=config)
 
     def make_build(self):
         """Constructs a new build graph by adding the jobs and following the
