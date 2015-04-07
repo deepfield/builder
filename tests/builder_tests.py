@@ -3610,7 +3610,7 @@ class GraphTest(unittest.TestCase):
         target14 = builder.expanders.Expander(builder.targets.Target,
                                               "target14")
 
-        job1 = ExpandCounter(
+        job1 = JobDefinition(
             "job1",
             targets={
                 "produces": [target2]
@@ -3618,7 +3618,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target1]
             }
         )
-        job2 = ExpandCounter(
+        job2 = JobDefinition(
             "job2",
             targets={
                 "produces": [target3, target4]
@@ -3626,7 +3626,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target2]
             }
         )
-        job3 = ExpandCounter(
+        job3 = JobDefinition(
             "job3",
             targets={
                 "produces": [target5]
@@ -3634,7 +3634,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target3, target11]
             }
         )
-        job4 = ExpandCounter(
+        job4 = JobDefinition(
             "job4",
             targets={
                 "produces": [target6]
@@ -3642,7 +3642,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target4, target9]
             }
         )
-        job5 = ExpandCounter(
+        job5 = JobDefinition(
             "job5",
             targets={
                 "produces": [target7]
@@ -3650,7 +3650,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target5]
             }
         )
-        job6 = ExpandCounter(
+        job6 = JobDefinition(
             "job6",
             targets={
                 "produces": [target8]
@@ -3658,7 +3658,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target6]
             }
         )
-        job7 = ExpandCounter(
+        job7 = JobDefinition(
             "job7",
             targets={
                 "produces": [target9]
@@ -3666,7 +3666,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target10]
             }
         )
-        job8 = ExpandCounter(
+        job8 = JobDefinition(
             "job8",
             targets={
                 "produces": [target11]
@@ -3674,7 +3674,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target12]
             }
         )
-        job9 = ExpandCounter(
+        job9 = JobDefinition(
             "job9",
             targets={
                 "produces": [target13]
@@ -3682,7 +3682,7 @@ class GraphTest(unittest.TestCase):
                 "depends": [target12]
             }
         )
-        job10 = ExpandCounter(
+        job10 = JobDefinition(
             "job10",
             targets={
                 "produces": [target14]
@@ -3693,6 +3693,11 @@ class GraphTest(unittest.TestCase):
 
         jobs_list = [job1, job2, job3, job4, job5, job6, job7, job8, job9,
                      job10]
+        mock_jobs = []
+        for job in jobs_list:
+            job.expand = mock.Mock(wraps=job.expand)
+            mock_jobs.append(job)
+        jobs_list = mock_jobs
 
         build_manager = builder.build.BuildManager(jobs_list, [])
         build = build_manager.make_build()
@@ -3701,16 +3706,16 @@ class GraphTest(unittest.TestCase):
         build.add_job_definition("job2", {}, direction=set(["up", "down"]))
 
         # Then
-        self.assertEqual(job1.count, 1)
-        self.assertEqual(job2.count, 1)
-        self.assertEqual(job3.count, 1)
-        self.assertEqual(job4.count, 1)
-        self.assertEqual(job5.count, 1)
-        self.assertEqual(job6.count, 1)
-        self.assertEqual(job7.count, 1)
-        self.assertEqual(job8.count, 1)
-        self.assertEqual(job9.count, 0)
-        self.assertEqual(job10.count, 0)
+        self.assertEqual(job1.expand.call_count, 1)
+        self.assertEqual(job2.expand.call_count, 1)
+        self.assertEqual(job3.expand.call_count, 1)
+        self.assertEqual(job4.expand.call_count, 1)
+        self.assertEqual(job5.expand.call_count, 1)
+        self.assertEqual(job6.expand.call_count, 1)
+        self.assertEqual(job7.expand.call_count, 1)
+        self.assertEqual(job8.expand.call_count, 1)
+        self.assertEqual(job9.expand.call_count, 0)
+        self.assertEqual(job10.expand.call_count, 0)
 
     @testing.unit
     def test_job_state_iter(self):

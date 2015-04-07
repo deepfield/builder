@@ -127,17 +127,3 @@ class ShouldRunRecurseJobDefinition(SimpleTestJobDefinition):
             counting_nodes.append(counting_node)
         return counting_nodes
 
-
-class ExpandCounter(JobDefinition):
-    def __init__(self, unexpanded_id=None, cache_time=None, targets=None,
-                 dependencies=None, config=None):
-        self.count = 0
-        super(ExpandCounter, self).__init__(unexpanded_id=unexpanded_id,
-                                            cache_time=cache_time,
-                                            targets=targets,
-                                            dependencies=dependencies,
-                                            config=config)
-
-    def expand(self, *args, **kwargs):
-        self.count = self.count + 1
-        return super(ExpandCounter, self).expand(*args, **kwargs)
