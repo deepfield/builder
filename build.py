@@ -1051,22 +1051,6 @@ class BuildGraph(BaseGraph):
 
         return next_jobs_list
 
-    def update_job_cache(self, job_id):
-        """Updates the cache due to a job finishing"""
-        target_ids = self.get_target_ids(job_id)
-        self.update_targets(target_ids)
-
-        job = self.get_job(job_id)
-        job.get_stale(cached=False)
-
-        for target_id in target_ids:
-            dependent_ids = self.get_dependent_ids(target_id)
-            for dependent_id in dependent_ids:
-                dependent = self.get_job(dependent_id)
-                dependent.get_buildable(cached=False)
-                dependent.get_stale(cached=False)
-
-        job.update_lower_nodes_should_run()
 
     def update_target_cache(self, target_id):
         """Updates the cache due to a target finishing"""
@@ -1080,30 +1064,6 @@ class BuildGraph(BaseGraph):
             dependent.get_buildable(cached=False)
             dependent.update_lower_nodes_should_run()
 
-    def update_targets(self, target_ids):
-        """Takes in a list of target ids and updates all of their needed
-        values
-        """
-        update_function_list = collections.defaultdict(list)
-        for target_id in target_ids:
-            target = self.get_target(target_id)
-            func = target.get_bulk_exists_mtime
-            update_function_list[func].append(target)
-
-        for update_function, targets in update_function_list.iteritems():
-            exists_mtime_dict = update_function(targets)
-            for target in targets:
-                target.exists = exists_mtime_dict[target.unique_id]["exists"]
-                target.mtime = exists_mtime_dict[target.unique_id]["mtime"]
-
-    def finish_job(self, job, success, log, update_job_cache=True):
-        job.last_run = arrow.now()
-        job.retries += 1
-        if success:
-            job.should_run = False
-            job.force = False
-            if update_job_cache:
-                self.update_job_cache(job.get_id())
 
     def update(self, target_id):
         """Checks what should happen now that there is new information

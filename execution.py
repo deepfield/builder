@@ -6,6 +6,7 @@ import subprocess
 import deepy.log
 import Queue
 import arrow
+import collections
 
 class ExecutionThread(threading.Thread):
 
@@ -22,18 +23,18 @@ class Executor(object):
     # Should be False if this executor will handle updating the job state
     should_update_build_graph = True
 
-    def execute(self, job, build_graph):
+    def execute(self, job):
         if job.is_running:
             raise SystemError("Job {} is already running".format(job))
         job = self.prepare_job_for_execution(job)
 
         status = False
         try:
-            status, log = self.do_execute(job, build_graph)
+            status, log = self.do_execute(job)
         except Exception as e:
             log = unicode(e)
         finally:
-            self.finish_job(job, status, log, build_graph)
+            self.finish_job(job, status, log)
 
         return status, log
 
@@ -51,8 +52,8 @@ class Executor(object):
 
 class LocalExecutor(Executor):
 
-    def do_execute(self, job, build_graph):
-        command = job.get_command(build_graph)
+    def do_execute(self, job):
+        command = job.get_command()
         proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = proc.communicate()
         deepy.log.info("{} STDOUT: {}".format(command, stdout))
@@ -127,7 +128,7 @@ class ExecutionManager(object):
 
             # Update job state
             if self.executor.should_update_build_graph:
-                self._update_build(lambda: self.build.finish_job(job, success=success, log=log))
+                self._update_build(lambda: self.finish_job(job, success=success, log=log))
 
             # Get next jobs to execute
             next_job_ids = self.build.get_next_jobs_to_run(job.get_id())
@@ -141,6 +142,48 @@ class ExecutionManager(object):
         def get_next_jobs():
             return self.build.get_starting_jobs()
         return self._update_build(get_next_jobs)
+
+    def finish_job(self, job, success, log, update_job_cache=True):
+        job.last_run = arrow.now()
+        job.retries += 1
+        if success:
+            job.should_run = False
+            job.force = False
+            if update_job_cache:
+                self.update_job_cache(job.get_id())
+
+    def update_job_cache(self, job_id):
+        """Updates the cache due to a job finishing"""
+        target_ids = self.build.get_target_ids(job_id)
+        self.update_targets(target_ids)
+
+        job = self.build.get_job(job_id)
+        job.get_stale(cached=False)
+
+        for target_id in target_ids:
+            dependent_ids = self.build.get_dependent_ids(target_id)
+            for dependent_id in dependent_ids:
+                dependent = self.build.get_job(dependent_id)
+                dependent.get_buildable(cached=False)
+                dependent.get_stale(cached=False)
+
+        job.update_lower_nodes_should_run()
+
+    def update_targets(self, target_ids):
+        """Takes in a list of target ids and updates all of their needed
+        values
+        """
+        update_function_list = collections.defaultdict(list)
+        for target_id in target_ids:
+            target = self.build.get_target(target_id)
+            func = target.get_bulk_exists_mtime
+            update_function_list[func].append(target)
+
+        for update_function, targets in update_function_list.iteritems():
+            exists_mtime_dict = update_function(targets)
+            for target in targets:
+                target.exists = exists_mtime_dict[target.unique_id]["exists"]
+                target.mtime = exists_mtime_dict[target.unique_id]["mtime"]
 
     def get_build_graph(self):
         return self.build
