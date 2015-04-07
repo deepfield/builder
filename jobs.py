@@ -12,18 +12,16 @@ class JobState(object):
     """A job state is basically a job in the build graph. It is used to keep
     state on the specific job
     """
-    def __init__(self, job, unique_id, build_context, cache_time, config=None,
+    def __init__(self, job, unique_id, build_context,
                  meta=None, force=False):
-        if config is None:
-            config = {}
         if meta is None:
             meta = {}
 
         self.unexpanded_id = job.unexpanded_id
         self.unique_id = unique_id
         self.build_context = build_context
-        self.cache_time = cache_time
-        self.config = config
+        self.cache_time = job.cache_time
+        self.config = job.config
         self.meta = meta
         self.job = job
         self.retries = 0
@@ -372,11 +370,10 @@ class JobState(object):
         return self.unique_id
 
 class TimestampExpandedJobState(JobState):
-    def __init__(self, job, unique_id, build_context,
-                 cache_time, curfew, config=None):
+    def __init__(self, job, unique_id, build_context):
         super(TimestampExpandedJobState, self).__init__(job,
-                unique_id, build_context, cache_time)
-        self.curfew = curfew
+                unique_id, build_context)
+        self.curfew = job.curfew
 
     def past_curfew(self):
         time_delta = convert_to_timedelta(self.curfew)
@@ -450,7 +447,7 @@ class Job(object):
         """
         state_type = self.get_state_type()
         return [state_type(self, self.get_expandable_id(),
-                           build_context, self.cache_time)]
+                           build_context)]
 
     def get_enable(self):
         """Used to determine if the node should end up in the build graph
@@ -523,8 +520,7 @@ class TimestampExpandedJob(Job):
         expanded_nodes = []
         for expanded_id, build_context in expanded_contexts.iteritems():
             expanded_node = job_type(self, expanded_id,
-                                     build_context, self.cache_time,
-                                     self.curfew, config=self.config)
+                                     build_context)
             expanded_nodes.append(expanded_node)
 
         return expanded_nodes

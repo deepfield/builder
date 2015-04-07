@@ -244,11 +244,10 @@ class GetNextJobsToRunTop(GetNextJobsCounter):
 class ShouldRunRecurseJobState(builder.jobs.JobState):
     """Used to count how many times the should run is returned"""
 
-    def __init__(self, job, unique_id, build_context, cache_time,
-            should_run_immediate, config=None):
+    def __init__(self, job, unique_id, build_context,
+            should_run_immediate):
         super(ShouldRunRecurseJobState, self).__init__(job,
-                unique_id, build_context, cache_time,
-                config=config)
+                unique_id, build_context)
         self.should_run_immediate = should_run_immediate
 
     def get_should_run_immediate(self, build_graph, cached=True, cache_set=None):
@@ -266,68 +265,9 @@ class ShouldRunRecurseJob(SimpleTestJob):
                     expanded_node,
                     expanded_node.unique_id,
                     expanded_node.build_context,
-                    expanded_node.cache_time,
-                    self.should_run_immediate,
-                    expanded_node.config,)
+                    self.should_run_immediate)
             counting_nodes.append(counting_node)
         return counting_nodes
-
-
-class ShouldRunCacheLogicJobTester(Job):
-    """Cached job"""
-    def __init__(self, unexpanded_id="should_run_cache_logic",
-                 cache_time="5min", targets=None, dependencies=None,
-                 config=None):
-        super(ShouldRunCacheLogicJobTester, self).__init__(
-                unexpanded_id=unexpanded_id, cache_time=cache_time)
-
-
-class ShouldRunLogicJobTester(Job):
-    """Non cache Job"""
-    def __init__(self, unexpanded_id="should_run_logic", config=None):
-        super(ShouldRunLogicJobTester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-
-class PastCurfewTimestampJobTester(TimestampExpandedJob):
-    """Timestamp job, returns True if curfew + endtime is past"""
-    def __init__(self, unexpanded_id="past_curfew_timestamp_job", config=None):
-        super(PastCurfewTimestampJobTester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-
-class PastCurfewJobTester(Job):
-    """Standard job, returns True"""
-    def __init__(self, unexpanded_id="past_curfew_job", config=None):
-        super(PastCurfewJobTester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-
-class AllDependenciesJobTester(TimestampExpandedJob):
-    """Only job"""
-    def __init__(self, unexpanded_id="all_dependencies_job", file_step="15min",
-                 config=None):
-        super(AllDependenciesJobTester, self).__init__(
-                unexpanded_id=unexpanded_id, file_step=file_step)
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "all_dependencies_target_01-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-            "depends_one_or_more": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "all_dependencies_target_02-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ]
-        }
-
-    def get_targets(self, build_context=None):
-        return {}
 
 
 class PastCacheTimeJobTester(TimestampExpandedJob):
@@ -385,142 +325,6 @@ class BuildableJobTester(TimestampExpandedJob):
 
     def get_targets(self, build_context=None):
         return {}
-
-
-class StaleAlternateUpdateBottomJobTester(TimestampExpandedJob):
-    """Outputs a target and that target has an alternate_update"""
-    def __init__(self, unexpanded_id="stale_alternate_update_bottom_job",
-                 file_step="15min", config=None):
-        super(StaleAlternateUpdateBottomJobTester, self).__init__(
-                unexpanded_id=unexpanded_id, file_step=file_step)
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_alternate_update_top_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_alternate_update_secondary_target"
-                    "-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-        }
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_alternate_update_bottom_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-        }
-
-
-class StaleAlternateUpdateTopJobTester(TimestampExpandedJob):
-    """Outputs a target and that target has an alternate_update"""
-    def __init__(self, unexpanded_id="stale_alternate_update_top_job",
-                 file_step="15min", config=None):
-        super(StaleAlternateUpdateTopJobTester, self).__init__(
-                unexpanded_id=unexpanded_id, file_step=file_step)
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_alternate_update_highest_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-        }
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_alternate_update_top_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-            "alternates": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_alternate_update_bottom_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ]
-        }
-
-
-class StaleAlternateBottomJobTester(
-    TimestampExpandedJob):
-    """Outputs a target and that target has an alternate"""
-    file_step = "15min"
-    unexpanded_id = "stale_alternate_bottom_job"
-    def __init__(self, unexpanded_id="stale_alternate_bottom_job",
-                 file_step="15min", config=None):
-        super(StaleAlternateBottomJobTester, self).__init__(
-                unexpanded_id=unexpanded_id, file_step=file_step)
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_alternate_top_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_alternate_secondary_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-        }
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_alternate_bottom_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-        }
-
-
-class StaleAlternateTopJobTester(TimestampExpandedJob):
-    """Outputs a target and that target has an alternate"""
-    def __init__(self, unexpanded_id="stale_alternate_top_job",
-                 file_step="15min", config=None):
-        super(StaleAlternateTopJobTester, self).__init__(
-                unexpanded_id=unexpanded_id, file_step=file_step)
-
-    def get_dependencies(self, build_context=None):
-        return {
-            "depends": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_alternate_highest_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-        }
-
-    def get_targets(self, build_context=None):
-        return {
-            "produces": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_alternate_top_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ],
-            "alternates": [
-                builder.expanders.TimestampExpander(
-                    builder.targets.LocalFileSystemTarget,
-                    "stale_alternate_bottom_target-%Y-%m-%d-%H-%M",
-                    "5min"),
-            ]
-        }
 
 
 class ExpandCounter(Job):
