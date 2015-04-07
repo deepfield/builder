@@ -408,3 +408,215 @@ class ExecutionManagerTests(unittest.TestCase):
         self.assertEqual(should_run_new1, expected_should_run_new1)
         self.assertEqual(should_run_new2, expected_should_run_new2)
         self.assertEqual(should_run_new3, expected_should_run_new3)
+
+    @unit
+    def test_update_target_cache(self):
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("update_target_cache_middle_01",
+                targets=["update_target_cache_middle_01_target"],
+                depends=["update_target_cache_top_01_target"]),
+
+            SimpleTestJobDefinition("update_target_cache_middle_02",
+                targets=["update_target_cache_middle_02_target"],
+                depends=["update_target_cache_top_02_target"]),
+
+            SimpleTestJobDefinition("update_target_cache_middle_03",
+                targets=["update_target_cache_middle_03_target"],
+                depends=["update_target_cache_top_03_target"]),
+
+            SimpleTestJobDefinition("update_target_cache_bottom",
+                targets=["update_target_cache_bottom_target"],
+                depends=["update_target_cache_middle_01_target",
+                    "update_target_cache_middle_02_target",
+                    "update_target_cache_middle_03_target"]),
+
+            SimpleTestJobDefinition("update_target_cache_top",
+                depends=["update_target_cache_highest_target"],
+                targets=["update_target_cache_top_01_target",
+                    "update_target_cache_top_02_target",
+                    "update_target_cache_top_03_target"],
+                target_type=builder.targets.LocalFileSystemTarget)
+        ]
+
+        build_manager = builder.build.BuildManager(jobs, [])
+        execution_manager = builder.execution.ExecutionManager(build_manager, mock.Mock())
+        build = execution_manager.build
+
+        build_context = {
+        }
+
+        build.add_job_definition("update_target_cache_bottom", build_context)
+
+        mtime_dict = {
+                "update_target_cache_top_01_target": None,
+                "update_target_cache_top_02_target": 100,
+                "update_target_cache_top_03_target": 100,
+        }
+
+        (build.node
+                ["update_target_cache_top_01_target"]
+                ["object"].mtime) = None
+        (build.node
+                ["update_target_cache_top_01_target"]
+                ["object"].exists) = False
+        (build.node
+                ["update_target_cache_top_02_target"]
+                ["object"].mtime) = None
+        (build.node
+                ["update_target_cache_top_02_target"]
+                ["object"].exists) = False
+        (build.node
+                ["update_target_cache_top_03_target"]
+                ["object"].mtime) = 100
+        (build.node
+                ["update_target_cache_top_03_target"]
+                ["object"].exists) = True
+        (build.node
+                ["update_target_cache_middle_02_target"]
+                ["object"].mtime) = 50
+        (build.node
+                ["update_target_cache_middle_02_target"]
+                ["object"].exists) = True
+        (build.node
+                ["update_target_cache_middle_03_target"]
+                ["object"].mtime) = 150
+        (build.node
+                ["update_target_cache_middle_03_target"]
+                ["object"].exists) = True
+
+        mock_mtime = mock_mtime_generator(mtime_dict)
+
+        expected_mtime_old1 = None
+        expected_mtime_old2 = None
+        expected_mtime_old3 = 100
+        expected_mtime_new1 = None
+        expected_mtime_new2 = 100
+        expected_mtime_new3 = 100
+
+        expected_stale_old1 = True
+        expected_stale_old2 = False
+        expected_stale_old3 = False
+        expected_stale_new1 = True
+        expected_stale_new2 = True
+        expected_stale_new3 = False
+
+        expected_buildable_old1 = False
+        expected_buildable_old2 = False
+        expected_buildable_old3 = True
+        expected_buildable_new1 = False
+        expected_buildable_new2 = True
+        expected_buildable_new3 = True
+
+        expected_should_run_old1 = False
+        expected_should_run_old2 = False
+        expected_should_run_old3 = False
+        expected_should_run_new1 = False
+        expected_should_run_new2 = True
+        expected_should_run_new3 = False
+
+        # When
+        mtime_old1 = (build.node
+                ["update_target_cache_top_01_target"]
+                ["object"].get_mtime())
+        mtime_old2 = (build.node
+                ["update_target_cache_top_02_target"]
+                ["object"].get_mtime())
+        mtime_old3 = (build.node
+                ["update_target_cache_top_03_target"]
+                ["object"].get_mtime())
+        stale_old1 = (build.node
+                ["update_target_cache_middle_01"]
+                ["object"].get_stale(build))
+        stale_old2 = (build.node
+                ["update_target_cache_middle_02"]
+                ["object"].get_stale(build))
+        stale_old3 = (build.node
+                ["update_target_cache_middle_03"]
+                ["object"].get_stale(build))
+        buildable_old1 = (build.node
+                ["update_target_cache_middle_01"]
+                ["object"].get_buildable(build))
+        buildable_old2 = (build.node
+                ["update_target_cache_middle_02"]
+                ["object"].get_buildable(build))
+        buildable_old3 = (build.node
+                ["update_target_cache_middle_03"]
+                ["object"].get_buildable(build))
+        should_run_old1 = (build.node
+                ["update_target_cache_middle_01"]
+                ["object"].get_should_run(build))
+        should_run_old2 = (build.node
+                ["update_target_cache_middle_02"]
+                ["object"].get_should_run(build))
+        should_run_old3 = (build.node
+                ["update_target_cache_middle_03"]
+                ["object"].get_should_run(build))
+
+        with mock.patch("os.stat", mock_mtime):
+            execution_manager.update_target_cache("update_target_cache_top_01_target")
+            execution_manager.update_target_cache("update_target_cache_top_02_target")
+            execution_manager.update_target_cache("update_target_cache_top_03_target")
+
+        mtime_new1 = (build.node
+                ["update_target_cache_top_01_target"]
+                ["object"].get_mtime())
+        mtime_new2 = (build.node
+                ["update_target_cache_top_02_target"]
+                ["object"].get_mtime())
+        mtime_new3 = (build.node
+                ["update_target_cache_top_03_target"]
+                ["object"].get_mtime())
+        stale_new1 = (build.node
+                ["update_target_cache_middle_01"]
+                ["object"].get_stale(build))
+        stale_new2 = (build.node
+                ["update_target_cache_middle_02"]
+                ["object"].get_stale(build))
+        stale_new3 = (build.node
+                ["update_target_cache_middle_03"]
+                ["object"].get_stale(build))
+        buildable_new1 = (build.node
+                ["update_target_cache_middle_01"]
+                ["object"].get_buildable(build))
+        buildable_new2 = (build.node
+                ["update_target_cache_middle_02"]
+                ["object"].get_buildable(build))
+        buildable_new3 = (build.node
+                ["update_target_cache_middle_03"]
+                ["object"].get_buildable(build))
+        should_run_new1 = (build.node
+                ["update_target_cache_middle_01"]
+                ["object"].get_should_run(build))
+        should_run_new2 = (build.node
+                ["update_target_cache_middle_02"]
+                ["object"].get_should_run(build))
+        should_run_new3 = (build.node
+                ["update_target_cache_middle_03"]
+                ["object"].get_should_run(build))
+
+        # Then
+        self.assertEqual(mtime_old1, expected_mtime_old1)
+        self.assertEqual(mtime_old2, expected_mtime_old2)
+        self.assertEqual(mtime_old3, expected_mtime_old3)
+        self.assertEqual(stale_old1, expected_stale_old1)
+        self.assertEqual(stale_old2, expected_stale_old2)
+        self.assertEqual(stale_old3, expected_stale_old3)
+        self.assertEqual(buildable_old1, expected_buildable_old1)
+        self.assertEqual(buildable_old2, expected_buildable_old2)
+        self.assertEqual(buildable_old3, expected_buildable_old3)
+        self.assertEqual(should_run_old1, expected_should_run_old1)
+        self.assertEqual(should_run_old2, expected_should_run_old2)
+        self.assertEqual(should_run_old3, expected_should_run_old3)
+        self.assertEqual(mtime_new1, expected_mtime_new1)
+        self.assertEqual(mtime_new2, expected_mtime_new2)
+        self.assertEqual(mtime_new3, expected_mtime_new3)
+        self.assertEqual(stale_new1, expected_stale_new1)
+        self.assertEqual(stale_new2, expected_stale_new2)
+        self.assertEqual(stale_new3, expected_stale_new3)
+        self.assertEqual(buildable_new1, expected_buildable_new1)
+        self.assertEqual(buildable_new2, expected_buildable_new2)
+        self.assertEqual(buildable_new3, expected_buildable_new3)
+        self.assertEqual(should_run_new1, expected_should_run_new1)
+        self.assertEqual(should_run_new2, expected_should_run_new2)
+        self.assertEqual(should_run_new3, expected_should_run_new3)

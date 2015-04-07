@@ -185,6 +185,39 @@ class ExecutionManager(object):
                 target.exists = exists_mtime_dict[target.unique_id]["exists"]
                 target.mtime = exists_mtime_dict[target.unique_id]["mtime"]
 
+
+    def update_target_cache(self, target_id):
+        """Updates the cache due to a target finishing"""
+        target = self.build.get_target(target_id)
+        target.get_mtime(cached=False)
+
+        dependent_ids = self.build.get_dependent_ids(target_id)
+        for dependent_id in dependent_ids:
+            dependent = self.build.get_job(dependent_id)
+            dependent.get_stale(cached=False)
+            dependent.get_buildable(cached=False)
+            dependent.update_lower_nodes_should_run()
+
+
+    def update(self, target_id):
+        """Checks what should happen now that there is new information
+        on a target
+        """
+        self.update_target_cache(target_id)
+        creator_ids = self.build.get_creator_ids(target_id)
+        creators_exist = False
+        for creator_id in creator_ids:
+            creators_exist = True
+            next_jobs = self.build.get_next_jobs_to_run(creator_id)
+            for next_job in next_jobs:
+                self.run(next_job)
+        if creators_exist == False:
+            for dependent_id in self.build.get_dependent_ids(target_id):
+                next_jobs = self.build.get_next_jobs_to_run(dependent_id)
+                for next_job in next_jobs:
+                    self.run(next_job)
+
+
     def get_build_graph(self):
         return self.build
 
