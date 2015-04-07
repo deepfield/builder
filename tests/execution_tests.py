@@ -42,29 +42,31 @@ class ExecutionManagerTests(unittest.TestCase):
     def test_get_jobs_to_run(self):
         # Given
         jobs = [
-            ShouldRunRecurseJob01Tester(),
-            ShouldRunRecurseJob02Tester(),
-            ShouldRunRecurseJob03Tester(),
-            ShouldRunRecurseJob04Tester(),
-            ShouldRunRecurseJob05Tester(),
-            ShouldRunRecurseJob06Tester(),
-            ShouldRunRecurseJob07Tester(),
-            ShouldRunRecurseJob08Tester(),
-            ShouldRunRecurseJob09Tester(),
-            ShouldRunRecurseJob10Tester(),
+            ShouldRunRecurseJob('should_run_recurse_job_01',
+                depends=['should_run_recurse_target_00'],
+                targets=['should_run_recurse_target_01']),
+            ShouldRunRecurseJob('should_run_recurse_job_02',
+                depends=['should_run_recurse_target_01'],
+                targets=['should_run_recurse_target_02']),
+            ShouldRunRecurseJob('should_run_recurse_job_03',
+                depends=['should_run_recurse_target_02'],
+                targets=['should_run_recurse_target_03'])
         ]
+        jobs[0].should_run_immediate = False
+        jobs[1].should_run_immediate = True
+        jobs[2].should_run_immediate = False
+
         execution_manager = self._get_execution_manager(jobs)
         build_context = {
             'start_time': arrow.get('2015-01-01')
         }
 
         # When
-        execution_manager.submit('should_run_recurse_job_10', build_context)
+        execution_manager.submit('should_run_recurse_job_03', build_context)
         next_jobs = execution_manager.get_jobs_to_run()
 
         # Then
-        self.assertEquals(set(map(lambda x: x.unique_id, next_jobs)), {'should_run_recurse_job_02',
-            'should_run_recurse_job_06', 'should_run_recurse_job_10', 'should_run_recurse_job_08'})
+        self.assertEquals(set(map(lambda x: x.unique_id, next_jobs)), {'should_run_recurse_job_02'})
 
 
     @unit
