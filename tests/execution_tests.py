@@ -42,13 +42,13 @@ class ExecutionManagerTests(unittest.TestCase):
     def test_get_jobs_to_run(self):
         # Given
         jobs = [
-            ShouldRunRecurseJob('should_run_recurse_job_01',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_01',
                 depends=['should_run_recurse_target_00'],
                 targets=['should_run_recurse_target_01']),
-            ShouldRunRecurseJob('should_run_recurse_job_02',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_02',
                 depends=['should_run_recurse_target_01'],
                 targets=['should_run_recurse_target_02']),
-            ShouldRunRecurseJob('should_run_recurse_job_03',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_03',
                 depends=['should_run_recurse_target_02'],
                 targets=['should_run_recurse_target_03'])
         ]

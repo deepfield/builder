@@ -510,7 +510,7 @@ class BuildGraph(BaseGraph):
         job = self.node[job_id]
         if "object" not in job:
             return False
-        if not isinstance(job["object"], builder.jobs.JobState):
+        if not isinstance(job["object"], builder.jobs.Job):
             return False
         return True
 
@@ -968,7 +968,7 @@ class BuildGraph(BaseGraph):
         job_state_container = self.node[job_state_id]
         if "object" not in job_state_container:
             return False
-        if not isinstance(job_state_container["object"], builder.jobs.JobState):
+        if not isinstance(job_state_container["object"], builder.jobs.Job):
             return False
         return True
 

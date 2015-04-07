@@ -2437,43 +2437,43 @@ class GraphTest(unittest.TestCase):
         target_type = builder.targets.LocalFileSystemTarget
         common_args = {'expander_type': expander_type, 'target_type': target_type}
         jobs1 = [
-            ShouldRunRecurseJob('should_run_recurse_job_01',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_01',
                 depends=[{'unexpanded_id': 'should_run_recurse_target_00', 'file_step': '5min'}],
                 targets=[{'unexpanded_id': 'should_run_recurse_target_01', 'file_step': '5min'}],
                 **common_args),
-            ShouldRunRecurseJob('should_run_recurse_job_02',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_02',
                 depends=[{'unexpanded_id': 'should_run_recurse_target_01', 'file_step': '5min'}],
                 targets=[{'unexpanded_id': 'should_run_recurse_target_02', 'file_step': '5min'}],
                 **common_args),
-            ShouldRunRecurseJob('should_run_recurse_job_03',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_03',
                 depends=[{'unexpanded_id': 'should_run_recurse_target_02', 'file_step': '5min'}],
                 targets=[{'unexpanded_id': 'should_run_recurse_target_03', 'file_step': '5min'}],
                 **common_args),
-            ShouldRunRecurseJob('should_run_recurse_job_04',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_04',
                 depends=[{'unexpanded_id': 'should_run_recurse_target_03', 'file_step': '5min'}],
                 targets=[{'unexpanded_id': 'should_run_recurse_target_04', 'file_step': '5min'}],
                 **common_args),
-            ShouldRunRecurseJob('should_run_recurse_job_05',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_05',
                 depends=[{'unexpanded_id': 'should_run_recurse_target_04', 'file_step': '5min'}],
                 targets=[{'unexpanded_id': 'should_run_recurse_target_05', 'file_step': '5min'}],
                 **common_args),
-            ShouldRunRecurseJob('should_run_recurse_job_06',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_06',
                 depends=[{'unexpanded_id': 'should_run_recurse_target_05', 'file_step': '5min'}],
                 targets=[{'unexpanded_id': 'should_run_recurse_target_06', 'file_step': '5min'}],
                 **common_args),
-            ShouldRunRecurseJob('should_run_recurse_job_07',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_07',
                 depends=[{'unexpanded_id': 'should_run_recurse_target_06', 'file_step': '5min'}],
                 targets=[{'unexpanded_id': 'should_run_recurse_target_07', 'file_step': '5min'}],
                 **common_args),
-            ShouldRunRecurseJob('should_run_recurse_job_08',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_08',
                 depends=[{'unexpanded_id': 'should_run_recurse_target_07', 'file_step': '5min'}],
                 targets=[{'unexpanded_id': 'should_run_recurse_target_08', 'file_step': '5min'}],
                 **common_args),
-            ShouldRunRecurseJob('should_run_recurse_job_09',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_09',
                 depends=[{'unexpanded_id': 'should_run_recurse_target_08', 'file_step': '5min'}],
                 targets=[{'unexpanded_id': 'should_run_recurse_target_09', 'file_step': '5min'}],
                 **common_args),
-            ShouldRunRecurseJob('should_run_recurse_job_10',
+            ShouldRunRecurseJobDefinition('should_run_recurse_job_10',
                 depends=[{'unexpanded_id': 'should_run_recurse_target_09', 'file_step': '5min'}],
                 targets=[{'unexpanded_id': 'should_run_recurse_target_10', 'file_step': '5min'}],
                 **common_args)
@@ -3002,7 +3002,7 @@ class GraphTest(unittest.TestCase):
         for node_id, node in build.node.iteritems():
             if node.get("object") is None:
                 continue
-            if not isinstance(node["object"], builder.jobs.JobState):
+            if not isinstance(node["object"], builder.jobs.Job):
                 continue
             if "force_build_bottom" in node_id:
                 count = count + 1
@@ -3514,7 +3514,7 @@ class GraphTest(unittest.TestCase):
 
         build.add_node(builder.targets.Target("", "target1", {}))
         build.add_node(builder.targets.Target("", "target2", {}))
-        build.add_node(builder.jobs.JobState(builder.jobs.JobDefinition(), "target3", {}, None))
+        build.add_node(builder.jobs.Job(builder.jobs.JobDefinition(), "target3", {}, None))
 
         id_list = ["target1", "target2", "target3"]
 

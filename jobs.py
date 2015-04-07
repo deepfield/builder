@@ -8,9 +8,8 @@ import builder.expanders
 import builder.targets
 from builder.util import convert_to_timedelta
 
-class JobState(object):
-    """A job state is basically a job in the build graph. It is used to keep
-    state on the specific job
+class Job(object):
+    """A Job is a particular run of a JobDefinition.
     """
     def __init__(self, job, unique_id, build_graph, build_context,
                  meta=None):
@@ -363,9 +362,9 @@ class JobState(object):
         """
         return self.unique_id
 
-class TimestampExpandedJobState(JobState):
+class TimestampExpandedJob(Job):
     def __init__(self, job, unique_id, build_graph, build_context):
-        super(TimestampExpandedJobState, self).__init__(job,
+        super(TimestampExpandedJob, self).__init__(job,
                 unique_id, build_graph, build_context)
         self.curfew = job.curfew
 
@@ -381,9 +380,9 @@ class TimestampExpandedJobState(JobState):
         if arrow.get() < start_time:
             return False
         else:
-            return super(TimestampExpandedJobState, self).get_should_run(cached=cached, cache_set=cache_set)
+            return super(TimestampExpandedJob, self).get_should_run(cached=cached, cache_set=cache_set)
 
-class MetaJobState(TimestampExpandedJobState):
+class MetaJobState(TimestampExpandedJob):
 
     def get_should_run_immediate(self, cached=True):
         return False
@@ -424,7 +423,7 @@ class JobDefinition(object):
 
     def get_state_type(self):
         """Returns the type of state to use for expansions"""
-        return JobState
+        return Job
 
     def expand(self, build_graph, build_context):
         """Used to expand the node using a build context returns a list of
@@ -491,7 +490,7 @@ class TimestampExpandedJobDefinition(JobDefinition):
         return self.unexpanded_id + "_%Y-%m-%d-%H-%M-%S"
 
     def get_state_type(self):
-        return TimestampExpandedJobState
+        return TimestampExpandedJob
 
     def expand(self, build_graph, build_context):
         """Expands the node based off of the file step and the start and
