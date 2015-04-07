@@ -273,22 +273,6 @@ class ShouldRunRecurseJob(SimpleTestJob):
         return counting_nodes
 
 
-class ShouldRunCacheLogicJobTester(Job):
-    """Cached job"""
-    def __init__(self, unexpanded_id="should_run_cache_logic",
-                 cache_time="5min", targets=None, dependencies=None,
-                 config=None):
-        super(ShouldRunCacheLogicJobTester, self).__init__(
-                unexpanded_id=unexpanded_id, cache_time=cache_time)
-
-
-class ShouldRunLogicJobTester(Job):
-    """Non cache Job"""
-    def __init__(self, unexpanded_id="should_run_logic", config=None):
-        super(ShouldRunLogicJobTester, self).__init__(
-                unexpanded_id=unexpanded_id)
-
-
 class PastCurfewTimestampJobTester(TimestampExpandedJob):
     """Timestamp job, returns True if curfew + endtime is past"""
     def __init__(self, unexpanded_id="past_curfew_timestamp_job", config=None):

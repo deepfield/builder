@@ -2194,6 +2194,8 @@ class GraphTest(unittest.TestCase):
     @testing.unit
     def test_should_run_logic(self):
         # Given
+        ShouldRunLogicJobTester = lambda: SimpleTestJob('should_run_logic')
+        ShouldRunCacheLogicJobTester = lambda: SimpleTestJob('should_run_cache_logic', cache_time='5min')
         job1 = ShouldRunLogicJobTester().expand({})[0]
         job2 = ShouldRunLogicJobTester().expand({})[0]
         job3 = ShouldRunLogicJobTester().expand({})[0]
