@@ -1998,7 +1998,10 @@ class GraphTest(unittest.TestCase):
     def test_all_dependencies(self):
         # Given
         jobs1 = [
-            AllDependenciesJobTester(),
+            SimpleTimestampExpandedTestJob("all_dependencies_job", file_step="15min",
+            expander_type=builder.expanders.TimestampExpander,
+            depends=[{'unexpanded_id': 'all_dependencies_target_02-%Y-%m-%d-%H-%M', 'file_step': '5min', 'type': 'depends_one_or_more'},
+                {'unexpanded_id': 'all_dependencies_target_01-%Y-%m-%d-%H-%M', 'file_step': '5min'}]),
         ]
 
         build_context1 = {
