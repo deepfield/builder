@@ -2,9 +2,7 @@
 and the build graph
 """
 
-import arrow
 import collections
-import copy
 import os
 import networkx
 import tempfile
@@ -598,7 +596,7 @@ class BuildGraph(BaseGraph):
 
     def get_creator_ids_iter(self, target_id):
         """Returns an iter of job ids that are creators of the target.
-        
+
         Note:
             A creator is different than a producer. Creators include alternates,
             etc.
@@ -610,7 +608,7 @@ class BuildGraph(BaseGraph):
 
     def get_creator_ids(self, target_id):
         """Returns a list of job ids that are creators of the target
-        
+
         Note:
             A creator is different than a producer. Creators include alternates,
             etc.
@@ -801,9 +799,9 @@ class BuildGraph(BaseGraph):
                 dependent_edges = self.out_edges_iter(depends_id, data=True)
                 for _, dependent_id, data in dependent_edges:
                     if self.is_job(dependent_id):
-                        dependent_dict[data["kind"]][dependent_id] = data 
+                        dependent_dict[data["kind"]][dependent_id] = data
         return dependent_dict
-            
+
 
     def get_dependents_or_creators_iter(self, target_id, direction):
         """Takes in a target id and returns an iterator for either the dependent

@@ -3389,7 +3389,7 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(
             target_relationships1["produces"]["target4"].get("ignore_mtime", False),
             False)
-            
+
 
     def test_get_dependencies(self):
         # Given
@@ -3585,7 +3585,7 @@ class GraphTest(unittest.TestCase):
         creator_or_ids = build.get_dependent_or_creator_ids("target1", "up")
         creator_or_ids_iter = build.get_dependent_or_creator_ids_iter("target1", "up")
         creator_relationships = build.get_creator_relationships("target1")
-         
+
 
         # Then
         self.assertEqual(len(creator_ids), 3)
