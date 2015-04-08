@@ -258,8 +258,7 @@ class Job(object):
                                self.build_graph.predecessors(dependency_id))
         return parent_jobs
 
-    def update_lower_nodes_should_run(self, cache_set=None,
-                                      update_set=None):
+    def update_lower_nodes_should_run(self, cache_set=None, update_set=None):
         """Updates whether or not the job should run based off the new
         information on the referrer
         """
@@ -278,8 +277,7 @@ class Job(object):
 
         update_set.add(self.unique_id)
 
-    def get_parents_should_run(self,
-                                   cached=True, cache_set=None):
+    def get_parents_should_run(self, cached=True, cache_set=None):
         """Returns whether or not any contiguous ancestor job with the
         same cache_time bool value should run
 
