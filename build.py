@@ -190,8 +190,6 @@ class RuleDependencyGraph(BaseGraph):
                 continue
             self.add_meta(meta)
 
-
-
     def is_meta(self, meta_id):
         """Returns if the id passed in relates to a meta node"""
         meta = self.node[meta_id]
@@ -575,15 +573,18 @@ class BuildGraph(BaseGraph):
             raise RuntimeError("{} is not a target node".format(target_id))
 
     def get_target_ids_iter(self, job_id):
+        """Returns an iter of all the target ids of the job"""
         self.assert_job(job_id)
         for target_id in self.neighbors_iter(job_id):
             if self.is_target(target_id):
                 yield target_id
 
     def get_target_ids(self, job_id):
+        """Returns a list of all the target ids of the job"""
         return list(self.get_target_ids_iter(job_id))
 
     def get_dependency_ids_iter(self, job_id):
+        """Returns an iter of target ids that the job is dependent on"""
         self.assert_job(job_id)
         for depends_id in self.predecessors_iter(job_id):
             if self.is_dependency_type(depends_id):
@@ -592,18 +593,32 @@ class BuildGraph(BaseGraph):
                         yield dependency_id
 
     def get_dependency_ids(self, job_id):
+        """Returns a list of target ids that the job is dependent on"""
         return list(self.get_dependency_ids_iter(job_id))
 
     def get_creator_ids_iter(self, target_id):
+        """Returns an iter of job ids that are creators of the target.
+        
+        Note:
+            A creator is different than a producer. Creators include alternates,
+            etc.
+        """
         self.assert_target(target_id)
         for creator_id in self.predecessors_iter(target_id):
             if self.is_job(creator_id):
                 yield creator_id
 
     def get_creator_ids(self, target_id):
+        """Returns a list of job ids that are creators of the target
+        
+        Note:
+            A creator is different than a producer. Creators include alternates,
+            etc.
+        """
         return list(self.get_creator_ids_iter(target_id))
 
     def get_dependent_ids_iter(self, target_id):
+        """Returns an iter of job ids that are dependent on the target"""
         self.assert_target(target_id)
         for depends_id in self.neighbors_iter(target_id):
             if self.is_dependency_type(depends_id):
@@ -612,29 +627,83 @@ class BuildGraph(BaseGraph):
                         yield dependent_id
 
     def get_dependent_ids(self, target_id):
+        """Returns a list of job ids that are dependent on the target"""
         return list(self.get_dependent_ids_iter(target_id))
 
     def get_target_or_dependency_ids_iter(self, job_id, direction):
+        """Returns an iter of all the dependency or target ids depending on
+        direction
+
+        Args:
+            target_id: The id of the target to get the dependency or target ids
+               for
+            direction: "up" or "down", "up" returns dependencies and "down" returns
+                targets
+        """
         if direction == "up":
             return self.get_dependency_ids_iter(job_id)
         else:
             return self.get_target_ids_iter(job_id)
 
     def get_target_or_dependency_ids(self, job_id, direction):
+        """Returns a list of all the dependency or target ids depending on
+        direction
+
+        Args:
+            target_id: The id of the target to get the dependency or target ids
+               for
+            direction: "up" or "down", "up" returns dependencies and "down" returns
+                targets
+        """
         return list(self.get_target_or_dependency_ids_iter(job_id,
                                                            direction))
 
     def get_dependent_or_creator_ids_iter(self, target_id, direction):
+        """Returns an iter of all the dependent or creator ids depending on
+        direction
+
+        Args:
+            target_id: The id of the target to get the dependent or creator ids
+               for
+            direction: "up" or "down", "up" returns creators and "down" returns
+                dependents
+        """
         if direction == "up":
             return self.get_creator_ids_iter(target_id)
         else:
             return self.get_dependent_ids_iter(target_id)
 
     def get_dependent_or_creator_ids(self, target_id, direction):
+        """Returns a list of all the dependent or creator ids depending on
+        direction
+
+        Args:
+            target_id: The id of the target to get the dependent or creator ids
+               for
+            direction: "up" or "down", "up" returns creators and "down" returns
+                dependents
+        """
         return list(self.get_dependent_or_creator_ids_iter(target_id,
                                                            direction))
 
     def get_target_relationships(self, job_id):
+        """Returns the target relationship dict for the job
+
+        Returns:
+            The target relationship dict of the form
+            {
+                "produces": {
+                    "target_id1": {
+                        "ignore_mtime": True,
+                        ...
+                    },
+                    "target_id2": { ... },
+                    ...
+                },
+                "alternates": { ... },
+                ...
+            }
+        """
         self.assert_job(job_id)
         out_edges_iter = self.out_edges_iter(job_id, data=True)
         target_dict = collections.defaultdict(dict)
@@ -644,6 +713,29 @@ class BuildGraph(BaseGraph):
         return target_dict
 
     def get_dependency_relationships(self, job_id):
+        """Returns the dependency relationship dict for the job
+
+        Returns:
+            The dependency relationship dict of the form
+            {
+                "depends": [
+                    {
+                        "targets": [
+                            "dependency_target_id1",
+                            "dependency_target_id2",
+                            ...
+                        ]
+                        "data": {
+                            "ignore_mtime": True,
+                            ...
+                        }
+                    },
+                    ...
+                ],
+                "depends_one_or_more": [ ... ],
+                ...
+            }
+        """
         self.assert_job(job_id)
         in_edges_iter = self.in_edges_iter(job_id, data=True)
         dependency_dict = collections.defaultdict(list)
@@ -658,6 +750,23 @@ class BuildGraph(BaseGraph):
         return dependency_dict
 
     def get_creator_relationships(self, target_id):
+        """Returns the creator relationship dict of the target
+
+        Returns:
+            The creator relationship dict of the form
+            {
+                "produces": {
+                    "producing_job_id1": {
+                        "ignore_mtime": True,
+                        ...
+                    },
+                    "producing_job_id2": { ... },
+                    ...
+                },
+                "alternates": { ... },
+                ...
+            }
+        """
         self.assert_target(target_id)
         in_edges_iter = self.in_edges_iter(target_id, data=True)
         creator_dict = collections.defaultdict(dict)
@@ -667,6 +776,23 @@ class BuildGraph(BaseGraph):
         return creator_dict
 
     def get_dependent_relationships(self, target_id):
+        """Returns the dependent relationship dict for the target
+
+        Returns:
+            The dependent relationship dict of form
+            {
+                "depends": {
+                    "dependent_job_id1": {
+                        "ignore_mtime": True,
+                        ...
+                    },
+                    "dependent_job_id2": { ... },
+                    ...
+                },
+                "depends_one_or_more": { ... },
+                ...
+            }
+        """
         self.assert_target(target_id)
         out_edges = self.out_edges_iter(target_id)
         dependent_dict = collections.defaultdict(dict)
@@ -816,8 +942,8 @@ class BuildGraph(BaseGraph):
         return expanded_targets_list
 
     def _self_expand_next_direction(self, expanded_directions, depth,
-                                    current_depth, new_nodes,
-                                    cache_set, direction, directions_to_recurse):
+                                    current_depth, new_nodes, cache_set,
+                                    direction, directions_to_recurse):
         """Expands out the next job nodes
 
         Args:
@@ -995,6 +1121,9 @@ class BuildGraph(BaseGraph):
         return True
 
     def filter_target_ids(self, target_ids):
+        """Takes in a list of target ids and returns a list containing the ids
+        that correspond to a target
+        """
         return [x for x in target_ids if self.is_target(x)]
 
     def assert_job(self, job_id):
