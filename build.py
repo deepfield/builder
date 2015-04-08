@@ -916,11 +916,9 @@ class BuildGraph(BaseGraph):
         target_depends = {}
         unexpanded_job = self.rule_dependency_graph.get_job_definition(job.unexpanded_id)
         if direction == "up":
-            target_depends = unexpanded_job.get_dependencies(
-                    build_context=job.build_context)
+            target_depends = unexpanded_job.get_dependencies()
         else:
-            target_depends = unexpanded_job.get_targets(
-                    build_context=job.build_context)
+            target_depends = unexpanded_job.get_targets()
 
         expanded_targets_list = []
         # expanded for each type of target or dependency

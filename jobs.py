@@ -467,7 +467,7 @@ class JobDefinition(object):
         """Used to get the command related to the command"""
         raise NotImplementedError()
 
-    def get_dependencies(self, build_context=None):
+    def get_dependencies(self):
         """most jobs will depend on the existance of a file, this is what is
         returned here. It is in the form
         {
@@ -478,7 +478,7 @@ class JobDefinition(object):
         """
         return self.dependencies
 
-    def get_targets(self, build_context=None):
+    def get_targets(self):
         """most jobs will output a target, specify them here
         form:
             {
