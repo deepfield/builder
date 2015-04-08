@@ -434,7 +434,7 @@ class RuleDependencyGraph(BaseGraph):
 
         return targets
 
-    def get_jobs_from_meta(self, meta_id):
+    def get_job_ids_from_meta(self, meta_id):
         """Returns job ids for the meta, different from job collection as metas
         can point to other metas"""
         job_ids = []
@@ -442,7 +442,7 @@ class RuleDependencyGraph(BaseGraph):
         job_collection = meta.get_job_collection()
         for job_id in job_collection:
             if self.is_meta(job_id):
-                job_ids = job_ids + self.get_jobs_from_meta(job_id)
+                job_ids = job_ids + self.get_job_ids_from_meta(job_id)
             else:
                 self.assert_job(job_id)
                 job_ids.append(job_id)
@@ -921,7 +921,7 @@ class BuildGraph(BaseGraph):
             A list of ids of nodes that are new to the graph during the adding
             of this new meta
         """
-        jobs = self.rule_dependency_graph.get_jobs_from_meta(new_meta)
+        jobs = self.rule_dependency_graph.get_job_ids_from_meta(new_meta)
         new_nodes = []
         for job in jobs:
             new_nodes = new_nodes + self.add_job(job, build_context,
