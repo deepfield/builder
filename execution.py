@@ -90,12 +90,12 @@ class ExecutionManager(object):
         self.max_retries = max_retries
         self._build_lock = threading.RLock()
 
-    def submit(self, job, build_context, **kwargs):
+    def submit(self, job_definition_id, build_context, **kwargs):
         """
         Submit the provided job to be built
         """
         def update_build_graph():
-            self.build.add_job_definition(job, build_context, **kwargs)
+            self.build.add_job(job_definition_id, build_context, **kwargs)
         self._update_build(update_build_graph)
 
     def start_execution(self, inline=True):
@@ -124,7 +124,7 @@ class ExecutionManager(object):
                 continue
 
             # Execute job
-            success, log = self.executor.execute(job, self.build)
+            success, log = self._execute(job, self.build)
 
             # Update job state
             if self.executor.should_update_build_graph:
@@ -137,6 +137,12 @@ class ExecutionManager(object):
 
     def _execute_daemon(self):
         raise NotImplementedError()
+
+    def _execute(self, job, build_graph):
+        if callable(self.executor):
+            return self.executor(job, build_graph)
+        else:
+            return self.executor.execute(job, build_graph)
 
     def get_jobs_to_run(self):
         def get_next_jobs():
@@ -218,7 +224,7 @@ class ExecutionManager(object):
                     self.run(next_job)
 
 
-    def get_build_graph(self):
+    def get_build(self):
         return self.build
 
     def get_build_manager(self):

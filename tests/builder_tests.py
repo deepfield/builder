@@ -29,7 +29,7 @@ class GraphTest(unittest.TestCase):
         build = build_manager.make_build()
 
         # When
-        build.add_job_definition("test_second_job", {'start_time': arrow.get("2015-01-01T00:00:00+00:00"),
+        build.add_job("test_second_job", {'start_time': arrow.get("2015-01-01T00:00:00+00:00"),
                                      'end_time': arrow.get("2015-01-01T00:01:00+00:00")})
 
         # Then
@@ -194,8 +194,8 @@ class GraphTest(unittest.TestCase):
         build_manager = builder.build.BuildManager(jobs, [])
         build = build_manager.make_build()
 
-        build.add_job_definition(start_job1, build_context1)
-        build.add_job_definition(start_job2, build_context2)
+        build.add_job(start_job1, build_context1)
+        build.add_job(start_job2, build_context2)
 
         build_graph = build
 
@@ -341,7 +341,7 @@ class GraphTest(unittest.TestCase):
         expected_call_count5 = 1
 
         # When
-        build.add_job_definition("diamond_redundant_bottom_job", build_context)
+        build.add_job("diamond_redundant_bottom_job", build_context)
         call_count1 = mock_jobs[3].expand.call_count
         call_count2 = mock_jobs[4].expand.call_count
         call_count3 = (build.rule_dependency_graph.node
@@ -403,13 +403,13 @@ class GraphTest(unittest.TestCase):
         build6 = build_manager2.make_build()
         build7 = build_manager2.make_build()
 
-        build1.add_job_definition("stale_standard_job", build_context1)
-        build2.add_job_definition("stale_standard_job", build_context1)
-        build3.add_job_definition("stale_standard_job", build_context1)
-        build4.add_job_definition("stale_standard_job", build_context1)
-        build5.add_job_definition("stale_standard_job", build_context1)
-        build6.add_job_definition("stale_ignore_mtime_job", build_context2)
-        build7.add_job_definition("stale_ignore_mtime_job", build_context2)
+        build1.add_job("stale_standard_job", build_context1)
+        build2.add_job("stale_standard_job", build_context1)
+        build3.add_job("stale_standard_job", build_context1)
+        build4.add_job("stale_standard_job", build_context1)
+        build5.add_job("stale_standard_job", build_context1)
+        build6.add_job("stale_ignore_mtime_job", build_context2)
+        build7.add_job("stale_ignore_mtime_job", build_context2)
 
         # all deps, all targets, all deps are older than targets
         expected_stale1 = False
@@ -791,10 +791,10 @@ class GraphTest(unittest.TestCase):
         build3 = build_manager.make_build()
         build4 = build_manager.make_build()
 
-        build1.add_job_definition("stale_alternate_bottom_job", build_context1)
-        build2.add_job_definition("stale_alternate_bottom_job", build_context1)
-        build3.add_job_definition("stale_alternate_bottom_job", build_context1)
-        build4.add_job_definition("stale_alternate_bottom_job", build_context1)
+        build1.add_job("stale_alternate_bottom_job", build_context1)
+        build2.add_job("stale_alternate_bottom_job", build_context1)
+        build3.add_job("stale_alternate_bottom_job", build_context1)
+        build4.add_job("stale_alternate_bottom_job", build_context1)
 
         # All alternates exist and are stale but the targets are not
         expected_stale1 = False
@@ -1136,10 +1136,10 @@ class GraphTest(unittest.TestCase):
         build3 = build_manager.make_build()
         build4 = build_manager.make_build()
 
-        build1.add_job_definition("stale_alternate_bottom_job", build_context1)
-        build2.add_job_definition("stale_alternate_bottom_job", build_context1)
-        build3.add_job_definition("stale_alternate_bottom_job", build_context1)
-        build4.add_job_definition("stale_alternate_bottom_job", build_context1)
+        build1.add_job("stale_alternate_bottom_job", build_context1)
+        build2.add_job("stale_alternate_bottom_job", build_context1)
+        build3.add_job("stale_alternate_bottom_job", build_context1)
+        build4.add_job("stale_alternate_bottom_job", build_context1)
 
         # All alternate_updates exist and are stale but the targets are not
         # All targets exist
@@ -1525,12 +1525,12 @@ class GraphTest(unittest.TestCase):
         build5 = build_manager.make_build()
         build6 = build_manager.make_build()
 
-        build1.add_job_definition("buildable_job", build_context1)
-        build2.add_job_definition("buildable_job", build_context1)
-        build3.add_job_definition("buildable_job", build_context1)
-        build4.add_job_definition("buildable_job", build_context1)
-        build5.add_job_definition("buildable_job", build_context1)
-        build6.add_job_definition("buildable_job", build_context1)
+        build1.add_job("buildable_job", build_context1)
+        build2.add_job("buildable_job", build_context1)
+        build3.add_job("buildable_job", build_context1)
+        build4.add_job("buildable_job", build_context1)
+        build5.add_job("buildable_job", build_context1)
+        build6.add_job("buildable_job", build_context1)
 
         # depends 15 minute not met
         expected_buildable1 = False
@@ -1886,9 +1886,9 @@ class GraphTest(unittest.TestCase):
         build2 = build_manager.make_build()
         build3 = build_manager.make_build()
 
-        build1.add_job_definition("past_cache_time_job", build_context1)
-        build2.add_job_definition("past_cache_time_job", build_context1)
-        build3.add_job_definition("past_cache_time_job", build_context1)
+        build1.add_job("past_cache_time_job", build_context1)
+        build2.add_job("past_cache_time_job", build_context1)
+        build3.add_job("past_cache_time_job", build_context1)
 
         # a target doesn't exist
         expected_past_cache_time1 = True
@@ -2005,10 +2005,10 @@ class GraphTest(unittest.TestCase):
         build3 = build_manager.make_build()
         build4 = build_manager.make_build()
 
-        build1.add_job_definition("all_dependencies_job", build_context1)
-        build2.add_job_definition("all_dependencies_job", build_context1)
-        build3.add_job_definition("all_dependencies_job", build_context1)
-        build4.add_job_definition("all_dependencies_job", build_context1)
+        build1.add_job("all_dependencies_job", build_context1)
+        build2.add_job("all_dependencies_job", build_context1)
+        build3.add_job("all_dependencies_job", build_context1)
+        build4.add_job("all_dependencies_job", build_context1)
 
         # all dependencies
         expected_all_dependencies1 = True
@@ -2479,7 +2479,7 @@ class GraphTest(unittest.TestCase):
         build_manager = builder.build.BuildManager(jobs1, [])
         build1 = build_manager.make_build()
 
-        build1.add_job_definition("should_run_recurse_job_10", build_context1)
+        build1.add_job("should_run_recurse_job_10", build_context1)
 
         expected_parents_should_run1 = False
         expected_parents_should_run2 = False
@@ -2569,7 +2569,7 @@ class GraphTest(unittest.TestCase):
 
         build_context = {}
         for job in jobs:
-            build1.add_job_definition(job.unexpanded_id, copy.deepcopy(build_context))
+            build1.add_job(job.unexpanded_id, copy.deepcopy(build_context))
 
         expected_starting_jobs = [
                 (build1.node
@@ -2634,7 +2634,7 @@ class GraphTest(unittest.TestCase):
         build_manager = builder.build.BuildManager(jobs, [])
         build = build_manager.make_build()
 
-        build.add_job_definition("get_next_jobs_to_run_lowest", {})
+        build.add_job("get_next_jobs_to_run_lowest", {})
 
         top_job = (build.node
                 ["get_next_jobs_to_run_top"]
@@ -2739,7 +2739,7 @@ class GraphTest(unittest.TestCase):
         build = build_manager.make_build()
 
         # When
-        build.add_job_definition("test_expand_exact_middle", build_context, depth=1)
+        build.add_job("test_expand_exact_middle", build_context, depth=1)
 
         # Then
         self.assertEqual(len(build.node), 4)
@@ -2785,7 +2785,7 @@ class GraphTest(unittest.TestCase):
         build = build_manager.make_build()
 
         # When
-        build.add_job_definition("force_build_bottom", build_context, force=True, depth=2)
+        build.add_job("force_build_bottom", build_context, force=True, depth=2)
 
         # Then
         count = 0
@@ -2827,10 +2827,10 @@ class GraphTest(unittest.TestCase):
         build_context4 = "ignore_produce_job"
 
 
-        build1.add_job_definition(build_context1, {})
-        build2.add_job_definition(build_context2, {})
-        build3.add_job_definition(build_context3, {})
-        build4.add_job_definition(build_context4, {})
+        build1.add_job(build_context1, {})
+        build2.add_job(build_context2, {})
+        build3.add_job(build_context3, {})
+        build4.add_job(build_context4, {})
 
         expected_stale1 = True
         build1.node["ignore_produce_ignore_target"]["object"].exists = False
@@ -2904,9 +2904,9 @@ class GraphTest(unittest.TestCase):
         build2 = build_manager2.make_build()
         build3 = build_manager3.make_build()
 
-        build1.add_job_definition("job_with_no_targets", {})
-        build2.add_job_definition("job_with_no_targets", {})
-        build3.add_job_definition("job_with_no_targets", {})
+        build1.add_job("job_with_no_targets", {})
+        build2.add_job("job_with_no_targets", {})
+        build3.add_job("job_with_no_targets", {})
 
         job_state1 = build1.node["job_with_no_targets"]["object"]
         job_state2 = build2.node["job_with_no_targets"]["object"]
@@ -3030,8 +3030,8 @@ class GraphTest(unittest.TestCase):
         build_manager = builder.build.BuildManager(jobs, [])
         build = build_manager.make_build()
 
-        new_nodes1 = build.add_job_definition(start_job1, build_context1)
-        new_nodes2 = build.add_job_definition(start_job2, build_context2)
+        new_nodes1 = build.add_job(start_job1, build_context1)
+        new_nodes2 = build.add_job(start_job2, build_context2)
 
         # Then
         self.assertEqual(len(new_nodes1), 6)
@@ -3059,8 +3059,8 @@ class GraphTest(unittest.TestCase):
         expected_should_run1 = False
         expected_should_run2 = True
 
-        build1.add_job_definition("should_run_future", build_context1)
-        build2.add_job_definition("should_run_future", build_context2)
+        build1.add_job("should_run_future", build_context1)
+        build2.add_job("should_run_future", build_context2)
 
 
         node1 = build1.node["should_run_future_1970-01-01-00-05-00"]["object"]
@@ -3221,7 +3221,7 @@ class GraphTest(unittest.TestCase):
         build = build_manager.make_build()
 
         # When
-        build.add_job_definition("job2", {}, direction=set(["up", "down"]))
+        build.add_job("job2", {}, direction=set(["up", "down"]))
 
         # Then
         self.assertEqual(job1.expand.call_count, 1)
@@ -3255,7 +3255,7 @@ class GraphTest(unittest.TestCase):
 
         build_manager = builder.build.BuildManager(jobs, [])
         build = build_manager.make_build()
-        build.add_job_definition("job3", {})
+        build.add_job("job3", {})
 
         # When
         job_state_iter = build.job_iter()
@@ -3286,8 +3286,8 @@ class GraphTest(unittest.TestCase):
         # When
         with mock.patch.object(builder.expanders.Expander, "expand") as \
                 mock_expander:
-            build.add_job_definition("job1", {})
-            build.add_job_definition("job1", {})
+            build.add_job("job1", {})
+            build.add_job("job1", {})
 
         # Then
         self.assertEqual(mock_expander.call_count, 2)
@@ -3322,8 +3322,8 @@ class GraphTest(unittest.TestCase):
 
         build_manager = builder.build.BuildManager([job1, job2], [])
         build = build_manager.make_build()
-        build.add_job_definition("job1", {})
-        build.add_job_definition("job2", {})
+        build.add_job("job1", {})
+        build.add_job("job2", {})
 
         # When
         target_ids1 = build.get_target_ids("job1")
@@ -3430,8 +3430,8 @@ class GraphTest(unittest.TestCase):
 
         build_manager = builder.build.BuildManager([job1, job2], [])
         build = build_manager.make_build()
-        build.add_job_definition("job1", {})
-        build.add_job_definition("job2", {})
+        build.add_job("job1", {})
+        build.add_job("job2", {})
 
         # When
         depends_ids1 = build.get_dependency_ids("job1")
@@ -3583,10 +3583,10 @@ class GraphTest(unittest.TestCase):
 
         build_manager = builder.build.BuildManager([job1, job2, job3, job4], [])
         build = build_manager.make_build()
-        build.add_job_definition("job1", {})
-        build.add_job_definition("job2", {})
-        build.add_job_definition("job3", {})
-        build.add_job_definition("job4", {})
+        build.add_job("job1", {})
+        build.add_job("job2", {})
+        build.add_job("job3", {})
+        build.add_job("job4", {})
 
         # When
         creator_ids = build.get_creator_ids("target1")
@@ -3657,10 +3657,10 @@ class GraphTest(unittest.TestCase):
 
         build_manager = builder.build.BuildManager([job1, job2, job3, job4], [])
         build = build_manager.make_build()
-        build.add_job_definition("job1", {})
-        build.add_job_definition("job2", {})
-        build.add_job_definition("job3", {})
-        build.add_job_definition("job4", {})
+        build.add_job("job1", {})
+        build.add_job("job2", {})
+        build.add_job("job3", {})
+        build.add_job("job4", {})
 
         # When
         dependent_ids1 = build.get_dependent_ids("target1")

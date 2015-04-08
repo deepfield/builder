@@ -36,7 +36,7 @@ class ExecutionManagerTests(unittest.TestCase):
         execution_manager.submit('buildable_job', build_context)
 
         # Then
-        self.assertIn('buildable_job_2015-01-01-00-00-00', execution_manager.get_build_graph())
+        self.assertIn('buildable_job_2015-01-01-00-00-00', execution_manager.get_build())
 
     @unit
     def test_get_jobs_to_run(self):
@@ -230,7 +230,7 @@ class ExecutionManagerTests(unittest.TestCase):
         build_context = {
         }
 
-        build.add_job_definition("update_job_cache_bottom", build_context)
+        build.add_job("update_job_cache_bottom", build_context)
 
         mtime_dict = {
                 "update_job_cache_top_01_target": None,
@@ -446,7 +446,7 @@ class ExecutionManagerTests(unittest.TestCase):
         build_context = {
         }
 
-        build.add_job_definition("update_target_cache_bottom", build_context)
+        build.add_job("update_target_cache_bottom", build_context)
 
         mtime_dict = {
                 "update_target_cache_top_01_target": None,

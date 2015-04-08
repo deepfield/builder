@@ -148,8 +148,8 @@ class RuleDependencyGraph(BaseGraph):
         for job in jobs:
             self.add_edge(job, meta.unexpanded_id, label="meta")
 
-    def add_job(self, job):
-        """Adds a job and it's targets and dependencies to the rule dependency
+    def add_job_definition(self, job):
+        """Adds a job definition and it's targets and dependencies to the rule dependency
         graph
 
         Using the job class passed in, a job node, and nodes for each of the
@@ -183,7 +183,7 @@ class RuleDependencyGraph(BaseGraph):
         for job in self.jobs:
             if not job.get_enable():
                 continue
-            self.add_job(job)
+            self.add_job_definition(job)
 
         for meta in self.metas:
             if not meta.get_enable():
@@ -924,18 +924,18 @@ class BuildGraph(BaseGraph):
         jobs = self.rule_dependency_graph.get_jobs_from_meta(new_meta)
         new_nodes = []
         for job in jobs:
-            new_nodes = new_nodes + self.add_job_definition(job, build_context,
+            new_nodes = new_nodes + self.add_job(job, build_context,
                                                  direction=direction,
                                                  depth=depth, force=force)
         return new_nodes
 
 
-    def add_job_definition(self, new_job, build_context, direction=None, depth=None,
+    def add_job(self, job_definition_id, build_context, direction=None, depth=None,
                 force=False):
         """Adds in a specific job and expands it using the expansion strategy
 
         Args:
-            new_job: the job to add to the graph
+            job_definition_id: the id of the job_definition to add to the build graph
             build_context: the context to expand this job out for
             direction: the direction to expand the graph
             depth: the number of job nodes deep to expand
@@ -951,7 +951,7 @@ class BuildGraph(BaseGraph):
         # take care of meta targets
         new_nodes = []
 
-        start_job = self.rule_dependency_graph.get_job_definition(new_job)
+        start_job = self.rule_dependency_graph.get_job_definition(job_definition_id)
         expanded_jobs = start_job.expand(self, build_context)
 
 
