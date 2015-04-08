@@ -3826,7 +3826,7 @@ class RuleDependencyGraphTest(unittest.TestCase):
                 [job1, job2, job3], [meta1, meta2])
 
         # when
-        jobs = rule_dependency_graph.get_jobs_from_meta("meta1")
+        jobs = rule_dependency_graph.get_job_ids_from_meta("meta1")
 
         # Then
         self.assertEqual(len(jobs), 3)
