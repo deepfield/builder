@@ -36,12 +36,22 @@ class Target(object):
         self.build_context = build_context
         self.config = config
 
-        self.exists = None
+        self.cached_mtime = False
         self.mtime = None
 
         self.expanded_directions = {"up": False, "down": False}
 
-    def get_exists(self, cached=True):
+    def invalidate(self):
+        """Sets the mtime value to not cached"""
+        self.cached_mtime = False
+
+    @abc.abstractmethod
+    def do_get_mtime(self):
+        """Returns the current value of mtime. Must return None if the target
+        does not exist.
+        """
+
+    def get_exists(self):
         """returns whether or not the target has been built before
         on a local file system it is simply the exists, in impala it might
         be whether or not something is found in a where statement
@@ -49,9 +59,9 @@ class Target(object):
         args:
             cached: True if the cached value is wanted
         """
-        return self.exists
+        return self.get_mtime() is not None
 
-    def get_mtime(self, cached=True):
+    def get_mtime(self):
         """returns whether or not the target has been built before
         on a local file system it is simply the mtime, in impala it might
         be a value stored elsewhere by a command
@@ -59,8 +69,12 @@ class Target(object):
         args:
             cached: True if the cached value is wanted
         """
-        return self.mtime
-
+        if self.cached_mtime:
+            return self.mtime
+        else:
+            self.mtime = self.do_get_mtime()
+            self.cached_mtime = True
+            return self.mtime
 
     def get_id(self):
         """ Returns a unique ID for this target
@@ -117,27 +131,20 @@ class LocalFileSystemTarget(Target):
         """Gets all the exists and mtimes for the local paths and returns them
         in a dict. Just as efficient as normal mtime and exists
         """
-        local_paths = [x.unique_id for x in targets]
         exists_mtime_dict = {}
-        for local_path in local_paths:
+        for target in targets:
+            local_path = target.unique_id
             mtime = LocalFileSystemTarget.non_cached_mtime(local_path)
             exists = mtime is not None
             exists_mtime_dict[local_path] = {
                     "exists": exists,
                     "mtime": mtime,
             }
+            target.mtime = mtime
+            target.cached_mtime = True
         return exists_mtime_dict
 
-    def get_exists(self, cached=True):
-        """Returns whether or not the target is on the local file system
-
-        also gets value of the mtime. The existance value is based on whether
-        or not mtime is none
-        """
-        self.get_mtime(cached=cached)
-        return self.exists
-
-    def get_mtime(self, cached=True):
+    def do_get_mtime(self):
         """Returns the value of the mtime of the file as reported
         by the local filesystem
 
@@ -146,15 +153,9 @@ class LocalFileSystemTarget(Target):
         Returns:
             The value of the mtime if the file exists, otherwise None
         """
-        if cached and self.exists is not None:
-            return self.mtime
-
         mtime = LocalFileSystemTarget.non_cached_mtime(self.unique_id)
 
-        self.mtime = mtime
-        self.exists = mtime is not None
-
-        return self.mtime
+        return mtime
 
 
 
@@ -195,10 +196,11 @@ class S3BackedLocalFileSystemTarget(LocalFileSystemTarget):
                 },
             }
         """
-        local_paths = [x.unique_id for x in targets]
         exists_mtime_dict = {}
+        local_paths = [x.unique_id for x in targets]
         mtime_dict = deepy.store.list_files_remote(local_paths)
-        for local_path in local_paths:
+        for target in targets:
+            local_path = target.unique_id
             if local_path not in mtime_dict:
                 mtime = super(
                     S3BackedLocalFileSystemTarget,
@@ -211,18 +213,11 @@ class S3BackedLocalFileSystemTarget(LocalFileSystemTarget):
                     "exists": exists,
                     "mtime": mtime,
             }
+            target.mtime = mtime
+            target.cached_mtime = True
         return exists_mtime_dict
 
-    def get_exists(self, cached=True):
-        """Returns whether or not the target is on the local file system
-
-        also gets value of the mtime. The existance value is based on whether
-        or not mtime is none
-        """
-        self.get_mtime(cached=cached)
-        return self.exists
-
-    def get_mtime(self, cached=True):
+    def do_get_mtime(self):
         """Returns the value of the mtime of the file as reported
         by the local filesystem
 
@@ -231,23 +226,13 @@ class S3BackedLocalFileSystemTarget(LocalFileSystemTarget):
         Returns:
             The value of the mtime if the file exists, otherwise None
         """
-        if cached and self.exists is not None:
-            return self.mtime
-
         mtime = S3BackedLocalFileSystemTarget.non_cached_mtime(self.unique_id)
 
-        self.mtime = mtime
-        self.exists = mtime is not None
-
-        return self.mtime
+        return mtime
 
 
 class GlobLocalFileSystemTarget(Target):
     """Used to get information about glob targets."""
-    def get_exists(self, cached=True):
-        self.get_mtime(cached=cached)
-        return self.exists
-
     @staticmethod
     def non_cached_mtime(pattern):
         """Gets the maximum mtime of the files that match the glob pattern
@@ -267,19 +252,13 @@ class GlobLocalFileSystemTarget(Target):
 
         return max_mtime
 
-    def get_mtime(self, cached=True):
+    def do_get_mtime(self):
         """The mtime retrieved corresponds to the largest mtime matching the
         pattern
         """
-        if cached and self.exists is not None:
-            return self.mtime
-
         mtime = GlobLocalFileSystemTarget.non_cached_mtime(self.unique_id)
 
-        self.mtime = mtime
-        self.exists = mtime is not None
-
-        return self.mtime
+        return mtime
 
     @staticmethod
     def get_bulk_exists_mtime(targets):
@@ -301,10 +280,6 @@ class GlobLocalFileSystemTarget(Target):
 class S3BackedGlobLocalFileSystemTarget(GlobLocalFileSystemTarget):
     """Used to get information about glob targets."""
     unexpanded_id = "s3_backed_glob_local_file_system_target"
-
-    def get_exists(self, cached=True):
-        self.get_mtime(cached=cached)
-        return self.exists
 
     @staticmethod
     def s3_prefix_from_glob(pattern):
@@ -352,19 +327,13 @@ class S3BackedGlobLocalFileSystemTarget(GlobLocalFileSystemTarget):
 
         return max_mtime
 
-    def get_mtime(self, cached=True):
+    def get_mtime(self):
         """The mtime retrieved corresponds to the largest mtime matching the
         pattern
         """
-        if cached and self.exists is not None:
-            return self.mtime
-
         mtime = self.non_cached_mtime(self.unique_id)
 
-        self.mtime = mtime
-        self.exists = mtime is not None
-
-        return self.mtime
+        return mtime
 
     @staticmethod
     def get_bulk_exists_mtime(targets):

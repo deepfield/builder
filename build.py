@@ -1095,7 +1095,7 @@ class BuildGraph(BaseGraph):
         """Used to return a list of jobs to run"""
         should_run_list = []
         for _, job in self.job_iter():
-            if job.get_should_run(self):
+            if job.get_should_run():
                 should_run_list.append(job)
         return should_run_list
 
@@ -1162,7 +1162,7 @@ class BuildGraph(BaseGraph):
         next_jobs_list = []
 
         job = self.get_job(job_id)
-        if job.get_should_run(self):
+        if job.get_should_run():
             next_jobs_list.append(job_id)
             update_set.add(job_id)
             return next_jobs_list
@@ -1172,7 +1172,8 @@ class BuildGraph(BaseGraph):
             dependent_jobs = self.get_dependent_ids(target_id)
             for dependent_job in dependent_jobs:
                 job = self.get_job(dependent_job)
-                should_run = job.get_should_run_immediate(cached=False)
+                job.invalidate()
+                should_run = job.get_should_run_immediate()
                 if should_run:
                     next_jobs_list.append(dependent_job)
 

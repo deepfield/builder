@@ -415,37 +415,37 @@ class GraphTest(unittest.TestCase):
         expected_stale1 = False
         (build1.node
                 ["stale_top_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build1.node
                 ["stale_top_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build1.node
                 ["stale_top_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build1.node
                 ["stale_standard_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_standard_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_standard_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_standard_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_standard_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_standard_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
@@ -453,37 +453,37 @@ class GraphTest(unittest.TestCase):
         expected_stale2 = False
         (build2.node
                 ["stale_top_target-2014-12-05-10-45"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build2.node
                 ["stale_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = None
         (build2.node
                 ["stale_top_target-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build2.node
                 ["stale_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build2.node
                 ["stale_top_target-2014-12-05-10-55"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build2.node
                 ["stale_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = None
         (build2.node
                 ["stale_standard_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_standard_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build2.node
                 ["stale_standard_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_standard_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build2.node
                 ["stale_standard_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_standard_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
@@ -491,37 +491,37 @@ class GraphTest(unittest.TestCase):
         expected_stale3 = True
         (build3.node
                 ["stale_top_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build3.node
                 ["stale_top_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build3.node
                 ["stale_top_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = 120
         (build3.node
                 ["stale_standard_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_standard_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_standard_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_standard_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_standard_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_standard_target-2014-12-05-10-55"]
                 ["object"].mtime) = 110
@@ -529,37 +529,37 @@ class GraphTest(unittest.TestCase):
         expected_stale4 = True
         (build4.node
                 ["stale_top_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build4.node
                 ["stale_top_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build4.node
                 ["stale_top_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build4.node
                 ["stale_standard_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_standard_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build4.node
                 ["stale_standard_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_standard_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build4.node
                 ["stale_standard_target-2014-12-05-10-55"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["stale_standard_target-2014-12-05-10-55"]
                 ["object"].mtime) = None
@@ -567,37 +567,37 @@ class GraphTest(unittest.TestCase):
         expected_stale5 = False
         (build5.node
                 ["stale_top_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build5.node
                 ["stale_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 600
         (build5.node
                 ["stale_top_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build5.node
                 ["stale_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 600
         (build5.node
                 ["stale_top_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build5.node
                 ["stale_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = 600
         (build5.node
                 ["stale_standard_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build5.node
                 ["stale_standard_target-2014-12-05-10-45"]
                 ["object"].mtime) = 500
         (build5.node
                 ["stale_standard_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build5.node
                 ["stale_standard_target-2014-12-05-10-50"]
                 ["object"].mtime) = 500
         (build5.node
                 ["stale_standard_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build5.node
                 ["stale_standard_target-2014-12-05-10-55"]
                 ["object"].mtime) = 500
@@ -605,55 +605,55 @@ class GraphTest(unittest.TestCase):
         expected_stale6 = False
         (build6.node
                 ["stale_ignore_mtime_input_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["stale_ignore_mtime_input_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build6.node
                 ["stale_ignore_mtime_input_target_01-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["stale_ignore_mtime_input_target_01-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build6.node
                 ["stale_ignore_mtime_input_target_01-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["stale_ignore_mtime_input_target_01-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build6.node
                 ["stale_ignore_mtime_input_target_02-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["stale_ignore_mtime_input_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build6.node
                 ["stale_ignore_mtime_input_target_02-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["stale_ignore_mtime_input_target_02-2014-12-05-10-50"]
                 ["object"].mtime) = 120
         (build6.node
                 ["stale_ignore_mtime_input_target_02-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["stale_ignore_mtime_input_target_02-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build6.node
                 ["stale_ignore_mtime_output_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["stale_ignore_mtime_output_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build6.node
                 ["stale_ignore_mtime_output_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["stale_ignore_mtime_output_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build6.node
                 ["stale_ignore_mtime_output_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["stale_ignore_mtime_output_target-2014-12-05-10-55"]
                 ["object"].mtime) = 110
@@ -661,55 +661,55 @@ class GraphTest(unittest.TestCase):
         expected_stale7 = True
         (build7.node
                 ["stale_ignore_mtime_input_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build7.node
                 ["stale_ignore_mtime_input_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build7.node
                 ["stale_ignore_mtime_input_target_01-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build7.node
                 ["stale_ignore_mtime_input_target_01-2014-12-05-10-50"]
                 ["object"].mtime) = 120
         (build7.node
                 ["stale_ignore_mtime_input_target_01-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build7.node
                 ["stale_ignore_mtime_input_target_01-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build7.node
                 ["stale_ignore_mtime_input_target_02-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build7.node
                 ["stale_ignore_mtime_input_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build7.node
                 ["stale_ignore_mtime_input_target_02-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build7.node
                 ["stale_ignore_mtime_input_target_02-2014-12-05-10-50"]
                 ["object"].mtime) = 120
         (build7.node
                 ["stale_ignore_mtime_input_target_02-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build7.node
                 ["stale_ignore_mtime_input_target_02-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build7.node
                 ["stale_ignore_mtime_output_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build7.node
                 ["stale_ignore_mtime_output_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build7.node
                 ["stale_ignore_mtime_output_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build7.node
                 ["stale_ignore_mtime_output_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build7.node
                 ["stale_ignore_mtime_output_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build7.node
                 ["stale_ignore_mtime_output_target-2014-12-05-10-55"]
                 ["object"].mtime) = 110
@@ -730,25 +730,25 @@ class GraphTest(unittest.TestCase):
         with mock.patch("arrow.get", new_arrow_get):
             stale1 = (build1.node
                     ["stale_standard_job_2014-12-05-10-45-00"]
-                    ["object"].get_stale(build1))
+                    ["object"].get_stale())
             stale2 = (build2.node
                     ["stale_standard_job_2014-12-05-10-45-00"]
-                    ["object"].get_stale(build2))
+                    ["object"].get_stale())
             stale3 = (build3.node
                     ["stale_standard_job_2014-12-05-10-45-00"]
-                    ["object"].get_stale(build3))
+                    ["object"].get_stale())
             stale4 = (build4.node
                     ["stale_standard_job_2014-12-05-10-45-00"]
-                    ["object"].get_stale(build4))
+                    ["object"].get_stale())
             stale5 = (build5.node
                     ["stale_standard_job_2014-12-05-10-45-00"]
-                    ["object"].get_stale(build5))
+                    ["object"].get_stale())
             stale6 = (build6.node
                     ["stale_ignore_mtime_job_2014-12-05-10-45-00"]
-                    ["object"].get_stale(build6))
+                    ["object"].get_stale())
             stale7 = (build7.node
                     ["stale_ignore_mtime_job_2014-12-05-10-45-00"]
-                    ["object"].get_stale(build7))
+                    ["object"].get_stale())
 
         # Then
         self.assertEqual(stale1, expected_stale1)
@@ -800,73 +800,73 @@ class GraphTest(unittest.TestCase):
         expected_stale1 = False
         (build1.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build1.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build1.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build1.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].mtime) = 50
         (build1.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].mtime) = 50
         (build1.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].mtime) = 50
@@ -876,73 +876,73 @@ class GraphTest(unittest.TestCase):
         expected_stale2 = True
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build2.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build2.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build2.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build2.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = None
         (build2.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build2.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build2.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build2.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].mtime) = 50
         (build2.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].mtime) = 50
         (build2.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].mtime) = 50
@@ -952,73 +952,73 @@ class GraphTest(unittest.TestCase):
         expected_stale3 = False
         (build3.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build3.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build3.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build3.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].mtime) = 50
         (build3.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build3.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build3.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].mtime) = 50
@@ -1029,73 +1029,73 @@ class GraphTest(unittest.TestCase):
         expected_stale4 = True
         (build4.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build4.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build4.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build4.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build4.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build4.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = None
         (build4.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build4.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build4.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build4.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].mtime) = 50
         (build4.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build4.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].mtime) = 50
@@ -1103,16 +1103,16 @@ class GraphTest(unittest.TestCase):
         # When
         stale1 = (build1.node
                 ["stale_alternate_top_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build1))
+                ["object"].get_stale())
         stale2 = (build2.node
                 ["stale_alternate_top_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build2))
+                ["object"].get_stale())
         stale3 = (build3.node
                 ["stale_alternate_top_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build3))
+                ["object"].get_stale())
         stale4 = (build4.node
                 ["stale_alternate_top_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build4))
+                ["object"].get_stale())
 
         # Then
         self.assertEqual(stale1, expected_stale1)
@@ -1147,73 +1147,73 @@ class GraphTest(unittest.TestCase):
         expected_stale1 = False
         (build1.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build1.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build1.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build1.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build1.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].mtime) = 50
         (build1.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].mtime) = 50
         (build1.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].mtime) = 50
@@ -1224,73 +1224,73 @@ class GraphTest(unittest.TestCase):
         expected_stale2 = True
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build2.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build2.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build2.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build2.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = None
         (build2.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build2.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build2.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build2.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].mtime) = 50
         (build2.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].mtime) = 50
         (build2.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].mtime) = 50
@@ -1301,73 +1301,73 @@ class GraphTest(unittest.TestCase):
         expected_stale3 = False
         (build3.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build3.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build3.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build3.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build3.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build3.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build3.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].mtime) = 50
         (build3.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].mtime) = 50
         (build3.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].mtime) = 50
@@ -1378,73 +1378,73 @@ class GraphTest(unittest.TestCase):
         expected_stale4 = False
         (build4.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_highest_target-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build4.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_highest_target-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build4.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_highest_target-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build4.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_top_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build4.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_top_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build4.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["stale_alternate_top_target-2014-12-05-10-55"]
                 ["object"].mtime) = None
         (build4.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_secondary_target-2014-12-05-10-45"]
                 ["object"].mtime) = 150
         (build4.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_secondary_target-2014-12-05-10-50"]
                 ["object"].mtime) = 150
         (build4.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_secondary_target-2014-12-05-10-55"]
                 ["object"].mtime) = 150
         (build4.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_bottom_target-2014-12-05-10-45"]
                 ["object"].mtime) = 200
         (build4.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_bottom_target-2014-12-05-10-50"]
                 ["object"].mtime) = 200
         (build4.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["stale_alternate_bottom_target-2014-12-05-10-55"]
                 ["object"].mtime) = 200
@@ -1452,40 +1452,40 @@ class GraphTest(unittest.TestCase):
         # When
         original_stale1 = (build1.node
                 ["stale_alternate_top_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build1))
+                ["object"].get_stale())
         (build1.node
                 ["stale_alternate_bottom_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build1))
+                ["object"].get_stale())
         stale1 = (build1.node
                 ["stale_alternate_top_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build1))
+                ["object"].get_stale())
         original_stale2 = (build2.node
                 ["stale_alternate_top_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build2))
+                ["object"].get_stale())
         (build2.node
                 ["stale_alternate_bottom_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build2))
+                ["object"].get_stale())
         stale2 = (build2.node
                 ["stale_alternate_top_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build2))
+                ["object"].get_stale())
         original_stale3 = (build3.node
                 ["stale_alternate_top_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build3))
+                ["object"].get_stale())
         (build3.node
                 ["stale_alternate_bottom_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build3))
+                ["object"].get_stale())
         stale3 = (build3.node
                 ["stale_alternate_top_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build3))
+                ["object"].get_stale())
         original_stale4 = (build4.node
                 ["stale_alternate_top_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build4))
+                ["object"].get_stale())
         (build4.node
                 ["stale_alternate_bottom_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build4))
+                ["object"].get_stale())
         stale4 = (build4.node
                 ["stale_alternate_top_job_2014-12-05-10-45-00"]
-                ["object"].get_stale(build4))
+                ["object"].get_stale())
 
         # Then
         self.assertEqual(original_stale1, expected_original_stale1)
@@ -1536,49 +1536,49 @@ class GraphTest(unittest.TestCase):
         expected_buildable1 = False
         (build1.node
                 ["buildable_15_minute_target_01-2014-12-05-10-45"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build1.node
                 ["buildable_15_minute_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = None
         (build1.node
                 ["buildable_5_minute_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["buildable_5_minute_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build1.node
                 ["buildable_5_minute_target_01-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["buildable_5_minute_target_01-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build1.node
                 ["buildable_5_minute_target_01-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["buildable_5_minute_target_01-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build1.node
                 ["buildable_15_minute_target_02-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["buildable_15_minute_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build1.node
                 ["buildable_5_minute_target_02-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["buildable_5_minute_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build1.node
                 ["buildable_5_minute_target_02-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["buildable_5_minute_target_02-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build1.node
                 ["buildable_5_minute_target_02-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["buildable_5_minute_target_02-2014-12-05-10-55"]
                 ["object"].mtime) = 100
@@ -1587,49 +1587,49 @@ class GraphTest(unittest.TestCase):
         expected_buildable2 = False
         (build2.node
                 ["buildable_15_minute_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["buildable_15_minute_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build2.node
                 ["buildable_5_minute_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["buildable_5_minute_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build2.node
                 ["buildable_5_minute_target_01-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build2.node
                 ["buildable_5_minute_target_01-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build2.node
                 ["buildable_5_minute_target_01-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["buildable_5_minute_target_01-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build2.node
                 ["buildable_15_minute_target_02-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["buildable_15_minute_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build2.node
                 ["buildable_5_minute_target_02-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["buildable_5_minute_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build2.node
                 ["buildable_5_minute_target_02-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["buildable_5_minute_target_02-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build2.node
                 ["buildable_5_minute_target_02-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["buildable_5_minute_target_02-2014-12-05-10-55"]
                 ["object"].mtime) = 100
@@ -1638,49 +1638,49 @@ class GraphTest(unittest.TestCase):
         expected_buildable3 = False
         (build3.node
                 ["buildable_15_minute_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["buildable_15_minute_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build3.node
                 ["buildable_5_minute_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["buildable_5_minute_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build3.node
                 ["buildable_5_minute_target_01-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["buildable_5_minute_target_01-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build3.node
                 ["buildable_5_minute_target_01-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["buildable_5_minute_target_01-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build3.node
                 ["buildable_15_minute_target_02-2014-12-05-10-45"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build3.node
                 ["buildable_15_minute_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = None
         (build3.node
                 ["buildable_5_minute_target_02-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["buildable_5_minute_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build3.node
                 ["buildable_5_minute_target_02-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["buildable_5_minute_target_02-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build3.node
                 ["buildable_5_minute_target_02-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["buildable_5_minute_target_02-2014-12-05-10-55"]
                 ["object"].mtime) = 100
@@ -1689,49 +1689,49 @@ class GraphTest(unittest.TestCase):
         expected_buildable4 = False
         (build4.node
                 ["buildable_15_minute_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["buildable_15_minute_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = False
         (build4.node
                 ["buildable_5_minute_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["buildable_5_minute_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build4.node
                 ["buildable_5_minute_target_01-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["buildable_5_minute_target_01-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build4.node
                 ["buildable_5_minute_target_01-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["buildable_5_minute_target_01-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build4.node
                 ["buildable_15_minute_target_02-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build4.node
                 ["buildable_15_minute_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build4.node
                 ["buildable_5_minute_target_02-2014-12-05-10-45"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["buildable_5_minute_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = None
         (build4.node
                 ["buildable_5_minute_target_02-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["buildable_5_minute_target_02-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build4.node
                 ["buildable_5_minute_target_02-2014-12-05-10-55"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["buildable_5_minute_target_02-2014-12-05-10-55"]
                 ["object"].mtime) = None
@@ -1740,49 +1740,49 @@ class GraphTest(unittest.TestCase):
         expected_buildable5 = False
         (build5.node
                 ["buildable_15_minute_target_01-2014-12-05-10-45"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build5.node
                 ["buildable_15_minute_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = None
         (build5.node
                 ["buildable_5_minute_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build5.node
                 ["buildable_5_minute_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build5.node
                 ["buildable_5_minute_target_01-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build5.node
                 ["buildable_5_minute_target_01-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build5.node
                 ["buildable_5_minute_target_01-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build5.node
                 ["buildable_5_minute_target_01-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build5.node
                 ["buildable_15_minute_target_02-2014-12-05-10-45"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build5.node
                 ["buildable_15_minute_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = None
         (build5.node
                 ["buildable_5_minute_target_02-2014-12-05-10-45"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build5.node
                 ["buildable_5_minute_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = None
         (build5.node
                 ["buildable_5_minute_target_02-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build5.node
                 ["buildable_5_minute_target_02-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build5.node
                 ["buildable_5_minute_target_02-2014-12-05-10-55"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build5.node
                 ["buildable_5_minute_target_02-2014-12-05-10-55"]
                 ["object"].mtime) = None
@@ -1791,49 +1791,49 @@ class GraphTest(unittest.TestCase):
         expected_buildable6 = True
         (build6.node
                 ["buildable_15_minute_target_01-2014-12-05-10-45"]
-                ["object"].exists) = 100
+                ["object"].cached_mtime) = 100
         (build6.node
                 ["buildable_15_minute_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = True
         (build6.node
                 ["buildable_5_minute_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["buildable_5_minute_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build6.node
                 ["buildable_5_minute_target_01-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["buildable_5_minute_target_01-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build6.node
                 ["buildable_5_minute_target_01-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["buildable_5_minute_target_01-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build6.node
                 ["buildable_15_minute_target_02-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["buildable_15_minute_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build6.node
                 ["buildable_5_minute_target_02-2014-12-05-10-45"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build6.node
                 ["buildable_5_minute_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = None
         (build6.node
                 ["buildable_5_minute_target_02-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build6.node
                 ["buildable_5_minute_target_02-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build6.node
                 ["buildable_5_minute_target_02-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build6.node
                 ["buildable_5_minute_target_02-2014-12-05-10-55"]
                 ["object"].mtime) = 100
@@ -1841,22 +1841,22 @@ class GraphTest(unittest.TestCase):
         # When
         buildable1 = (build1.node
                 ["buildable_job_2014-12-05-10-45-00"]
-                ["object"].get_buildable(build1))
+                ["object"].get_buildable())
         buildable2 = (build2.node
                 ["buildable_job_2014-12-05-10-45-00"]
-                ["object"].get_buildable(build2))
+                ["object"].get_buildable())
         buildable3 = (build3.node
                 ["buildable_job_2014-12-05-10-45-00"]
-                ["object"].get_buildable(build3))
+                ["object"].get_buildable())
         buildable4 = (build4.node
                 ["buildable_job_2014-12-05-10-45-00"]
-                ["object"].get_buildable(build4))
+                ["object"].get_buildable())
         buildable5 = (build5.node
                 ["buildable_job_2014-12-05-10-45-00"]
-                ["object"].get_buildable(build5))
+                ["object"].get_buildable())
         buildable6 = (build6.node
                 ["buildable_job_2014-12-05-10-45-00"]
-                ["object"].get_buildable(build6))
+                ["object"].get_buildable())
 
         # Then
         self.assertEqual(buildable1, expected_buildable1)
@@ -1894,19 +1894,19 @@ class GraphTest(unittest.TestCase):
         expected_past_cache_time1 = True
         (build1.node
                 ["past_cache_time_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["past_cache_time_target-2014-12-05-10-45"]
                 ["object"].mtime) = 400
         (build1.node
                 ["past_cache_time_target-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = True
         (build1.node
                 ["past_cache_time_target-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build1.node
                 ["past_cache_time_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["past_cache_time_target-2014-12-05-10-55"]
                 ["object"].mtime) = 400
@@ -1915,19 +1915,19 @@ class GraphTest(unittest.TestCase):
         expected_past_cache_time2 = False
         (build2.node
                 ["past_cache_time_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["past_cache_time_target-2014-12-05-10-45"]
                 ["object"].mtime) = 400
         (build2.node
                 ["past_cache_time_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["past_cache_time_target-2014-12-05-10-50"]
                 ["object"].mtime) = 400
         (build2.node
                 ["past_cache_time_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["past_cache_time_target-2014-12-05-10-55"]
                 ["object"].mtime) = 400
@@ -1936,19 +1936,19 @@ class GraphTest(unittest.TestCase):
         expected_past_cache_time3 = True
         (build3.node
                 ["past_cache_time_target-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["past_cache_time_target-2014-12-05-10-45"]
                 ["object"].mtime) = 50
         (build3.node
                 ["past_cache_time_target-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["past_cache_time_target-2014-12-05-10-50"]
                 ["object"].mtime) = 50
         (build3.node
                 ["past_cache_time_target-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["past_cache_time_target-2014-12-05-10-55"]
                 ["object"].mtime) = 50
@@ -2014,37 +2014,37 @@ class GraphTest(unittest.TestCase):
         expected_all_dependencies1 = True
         (build1.node
                 ["all_dependencies_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["all_dependencies_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build1.node
                 ["all_dependencies_target_01-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["all_dependencies_target_01-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build1.node
                 ["all_dependencies_target_01-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["all_dependencies_target_01-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build1.node
                 ["all_dependencies_target_02-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["all_dependencies_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build1.node
                 ["all_dependencies_target_02-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["all_dependencies_target_02-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build1.node
                 ["all_dependencies_target_02-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build1.node
                 ["all_dependencies_target_02-2014-12-05-10-55"]
                 ["object"].mtime) = 100
@@ -2052,37 +2052,37 @@ class GraphTest(unittest.TestCase):
         expected_all_dependencies2 = False
         (build2.node
                 ["all_dependencies_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["all_dependencies_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build2.node
                 ["all_dependencies_target_01-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build2.node
                 ["all_dependencies_target_01-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build2.node
                 ["all_dependencies_target_01-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["all_dependencies_target_01-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build2.node
                 ["all_dependencies_target_02-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["all_dependencies_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build2.node
                 ["all_dependencies_target_02-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["all_dependencies_target_02-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build2.node
                 ["all_dependencies_target_02-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build2.node
                 ["all_dependencies_target_02-2014-12-05-10-55"]
                 ["object"].mtime) = 100
@@ -2090,37 +2090,37 @@ class GraphTest(unittest.TestCase):
         expected_all_dependencies3 = True
         (build3.node
                 ["all_dependencies_target_01-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["all_dependencies_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build3.node
                 ["all_dependencies_target_01-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["all_dependencies_target_01-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build3.node
                 ["all_dependencies_target_01-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["all_dependencies_target_01-2014-12-05-10-55"]
                 ["object"].mtime) = 100
         (build3.node
                 ["all_dependencies_target_02-2014-12-05-10-45"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["all_dependencies_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = 100
         (build3.node
                 ["all_dependencies_target_02-2014-12-05-10-50"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["all_dependencies_target_02-2014-12-05-10-50"]
                 ["object"].mtime) = 100
         (build3.node
                 ["all_dependencies_target_02-2014-12-05-10-55"]
-                ["object"].exists) = True
+                ["object"].cached_mtime) = True
         (build3.node
                 ["all_dependencies_target_02-2014-12-05-10-55"]
                 ["object"].mtime) = 100
@@ -2128,37 +2128,37 @@ class GraphTest(unittest.TestCase):
         expected_all_dependencies4 = False
         (build4.node
                 ["all_dependencies_target_01-2014-12-05-10-45"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["all_dependencies_target_01-2014-12-05-10-45"]
                 ["object"].mtime) = None
         (build4.node
                 ["all_dependencies_target_01-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["all_dependencies_target_01-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build4.node
                 ["all_dependencies_target_01-2014-12-05-10-55"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["all_dependencies_target_01-2014-12-05-10-55"]
                 ["object"].mtime) = None
         (build4.node
                 ["all_dependencies_target_02-2014-12-05-10-45"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["all_dependencies_target_02-2014-12-05-10-45"]
                 ["object"].mtime) = None
         (build4.node
                 ["all_dependencies_target_02-2014-12-05-10-50"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["all_dependencies_target_02-2014-12-05-10-50"]
                 ["object"].mtime) = None
         (build4.node
                 ["all_dependencies_target_02-2014-12-05-10-55"]
-                ["object"].exists) = False
+                ["object"].cached_mtime) = False
         (build4.node
                 ["all_dependencies_target_02-2014-12-05-10-55"]
                 ["object"].mtime) = None
@@ -2342,20 +2342,20 @@ class GraphTest(unittest.TestCase):
         graph14.node["unique_id14"]["object"].get_parents_should_run = mock.Mock(return_value=False)
 
         # When
-        should_run1 = graph1.node["unique_id1"]["object"].get_should_run(graph1)
-        should_run2 = graph2.node["unique_id2"]["object"].get_should_run(graph2)
-        should_run3 = graph3.node["unique_id3"]["object"].get_should_run(graph3)
-        should_run4 = graph4.node["unique_id4"]["object"].get_should_run(graph4)
-        should_run5 = graph5.node["unique_id5"]["object"].get_should_run(graph5)
-        should_run6 = graph6.node["unique_id6"]["object"].get_should_run(graph6)
-        should_run7 = graph7.node["unique_id7"]["object"].get_should_run(graph7)
-        should_run8 = graph8.node["unique_id8"]["object"].get_should_run(graph8)
-        should_run9 = graph9.node["unique_id9"]["object"].get_should_run(graph9)
-        should_run10 = graph10.node["unique_id10"]["object"].get_should_run(graph10)
-        should_run11 = graph11.node["unique_id11"]["object"].get_should_run(graph11)
-        should_run12 = graph12.node["unique_id12"]["object"].get_should_run(graph12)
-        should_run13 = graph13.node["unique_id13"]["object"].get_should_run(graph13)
-        should_run14 = graph14.node["unique_id14"]["object"].get_should_run(graph14)
+        should_run1 = graph1.node["unique_id1"]["object"].get_should_run()
+        should_run2 = graph2.node["unique_id2"]["object"].get_should_run()
+        should_run3 = graph3.node["unique_id3"]["object"].get_should_run()
+        should_run4 = graph4.node["unique_id4"]["object"].get_should_run()
+        should_run5 = graph5.node["unique_id5"]["object"].get_should_run()
+        should_run6 = graph6.node["unique_id6"]["object"].get_should_run()
+        should_run7 = graph7.node["unique_id7"]["object"].get_should_run()
+        should_run8 = graph8.node["unique_id8"]["object"].get_should_run()
+        should_run9 = graph9.node["unique_id9"]["object"].get_should_run()
+        should_run10 = graph10.node["unique_id10"]["object"].get_should_run()
+        should_run11 = graph11.node["unique_id11"]["object"].get_should_run()
+        should_run12 = graph12.node["unique_id12"]["object"].get_should_run()
+        should_run13 = graph13.node["unique_id13"]["object"].get_should_run()
+        should_run14 = graph14.node["unique_id14"]["object"].get_should_run()
 
         # Then
         self.assertEqual(should_run1, expected_should_run1)
@@ -2495,44 +2495,34 @@ class GraphTest(unittest.TestCase):
         # When
         parents_should_run1 = (build1.node
                 ["should_run_recurse_job_01"]
-                ["object"].get_parents_should_run(
-                        build1))
+                ["object"].get_parents_should_run())
         parents_should_run2 = (build1.node
                 ["should_run_recurse_job_02"]
-                ["object"].get_parents_should_run(
-                        build1))
+                ["object"].get_parents_should_run())
         parents_should_run3 = (build1.node
                 ["should_run_recurse_job_03"]
-                ["object"].get_parents_should_run(
-                        build1))
+                ["object"].get_parents_should_run())
         parents_should_run4 = (build1.node
                 ["should_run_recurse_job_04"]
-                ["object"].get_parents_should_run(
-                        build1))
+                ["object"].get_parents_should_run())
         parents_should_run5 = (build1.node
                 ["should_run_recurse_job_05"]
-                ["object"].get_parents_should_run(
-                        build1))
+                ["object"].get_parents_should_run())
         parents_should_run6 = (build1.node
                 ["should_run_recurse_job_06"]
-                ["object"].get_parents_should_run(
-                        build1))
+                ["object"].get_parents_should_run())
         parents_should_run7 = (build1.node
                 ["should_run_recurse_job_07"]
-                ["object"].get_parents_should_run(
-                        build1))
+                ["object"].get_parents_should_run())
         parents_should_run8 = (build1.node
                 ["should_run_recurse_job_08"]
-                ["object"].get_parents_should_run(
-                        build1))
+                ["object"].get_parents_should_run())
         parents_should_run9 = (build1.node
                 ["should_run_recurse_job_09"]
-                ["object"].get_parents_should_run(
-                        build1))
+                ["object"].get_parents_should_run())
         parents_should_run10 = (build1.node
                 ["should_run_recurse_job_10"]
-                ["object"].get_parents_should_run(
-                        build1))
+                ["object"].get_parents_should_run())
 
         # Then
         self.assertEqual(parents_should_run1,
@@ -2833,34 +2823,34 @@ class GraphTest(unittest.TestCase):
         build4.add_job(build_context4, {})
 
         expected_stale1 = True
-        build1.node["ignore_produce_ignore_target"]["object"].exists = False
+        build1.node["ignore_produce_ignore_target"]["object"].cached_mtime = True
         build1.node["ignore_produce_ignore_target"]["object"].mtime = None
-        build1.node["ignore_produce_marker_target"]["object"].exists = False
+        build1.node["ignore_produce_marker_target"]["object"].cached_mtime = True
         build1.node["ignore_produce_marker_target"]["object"].mtime = None
 
         expected_stale2 = True
-        build2.node["ignore_produce_ignore_target"]["object"].exists = True
+        build2.node["ignore_produce_ignore_target"]["object"].cached_mtime = True
         build2.node["ignore_produce_ignore_target"]["object"].mtime = 100
-        build2.node["ignore_produce_marker_target"]["object"].exists = False
+        build2.node["ignore_produce_marker_target"]["object"].cached_mtime = True
         build2.node["ignore_produce_marker_target"]["object"].mtime = None
 
         expected_stale3 = False
-        build3.node["ignore_produce_ignore_target"]["object"].exists = True
+        build3.node["ignore_produce_ignore_target"]["object"].cached_mtime = True
         build3.node["ignore_produce_ignore_target"]["object"].mtime = 100
-        build3.node["ignore_produce_marker_target"]["object"].exists = True
+        build3.node["ignore_produce_marker_target"]["object"].cached_mtime = True
         build3.node["ignore_produce_marker_target"]["object"].mtime = 100
 
         expected_stale4 = False
-        build4.node["ignore_produce_ignore_target"]["object"].exists = False
+        build4.node["ignore_produce_ignore_target"]["object"].cached_mtime = True
         build4.node["ignore_produce_ignore_target"]["object"].mtime = None
-        build4.node["ignore_produce_marker_target"]["object"].exists = True
+        build4.node["ignore_produce_marker_target"]["object"].cached_mtime = True
         build4.node["ignore_produce_marker_target"]["object"].mtime = 100
 
         # When
-        actual_stale1 = build1.node["ignore_produce_job"]["object"].get_stale(build1)
-        actual_stale2 = build2.node["ignore_produce_job"]["object"].get_stale(build2)
-        actual_stale3 = build3.node["ignore_produce_job"]["object"].get_stale(build3)
-        actual_stale4 = build4.node["ignore_produce_job"]["object"].get_stale(build4)
+        actual_stale1 = build1.node["ignore_produce_job"]["object"].get_stale()
+        actual_stale2 = build2.node["ignore_produce_job"]["object"].get_stale()
+        actual_stale3 = build3.node["ignore_produce_job"]["object"].get_stale()
+        actual_stale4 = build4.node["ignore_produce_job"]["object"].get_stale()
 
         # Then
         self.assertEqual(actual_stale1, expected_stale1)
@@ -2915,13 +2905,14 @@ class GraphTest(unittest.TestCase):
         target2 = build2.node["target"]["object"]
         target3 = build3.node["target"]["object"]
 
-        target2.exists = True
-        target3.exists = False
+        target2.cached_mtime = True
+        target2.mtime = 100
+        target3.cached_mtime = True
 
         # When
-        stale1 = job_state1.get_stale(build1)
-        stale2 = job_state2.get_stale(build2)
-        stale3 = job_state3.get_stale(build3)
+        stale1 = job_state1.get_stale()
+        stale2 = job_state2.get_stale()
+        stale3 = job_state3.get_stale()
 
         # Then
         self.assertTrue(stale1)
@@ -3081,8 +3072,8 @@ class GraphTest(unittest.TestCase):
         # When
         with mock.patch("arrow.get", mock_get):
 
-            should_run1 = node1.get_should_run(build1)
-            should_run2 = node2.get_should_run(build2)
+            should_run1 = node1.get_should_run()
+            should_run2 = node2.get_should_run()
 
         self.assertEqual(should_run1, expected_should_run1)
         self.assertEqual(should_run2, expected_should_run2)
