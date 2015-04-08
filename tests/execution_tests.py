@@ -158,9 +158,9 @@ class ExecutionManagerTests(unittest.TestCase):
 
         target1 = builder.targets.LocalFileSystemTarget("", "target1", {})
         target2 = builder.targets.LocalFileSystemTarget("", "target2", {})
-        target3 = builder.targets.S3BackedLocalFileSystemTarget("", "target3", {})
-        target4 = builder.targets.S3BackedLocalFileSystemTarget("", "target4", {})
-        target5 = builder.targets.S3BackedLocalFileSystemTarget("", "target5", {})
+        target3 = builder.targets.LocalFileSystemTarget("", "target3", {})
+        target4 = builder.targets.LocalFileSystemTarget("", "target4", {})
+        target5 = builder.targets.LocalFileSystemTarget("", "target5", {})
         build.add_node(target1)
         build.add_node(target2)
         build.add_node(target3)
@@ -172,17 +172,11 @@ class ExecutionManagerTests(unittest.TestCase):
         mock_mtime = mock_mtime_generator({
             "target1": 100,
             "target3": 500,
+            "target4": 600,
+
         })
 
-        s3_mtimes = {
-            "target4": 600,
-        }
-
-        def mock_s3_list(targets):
-            return s3_mtimes
-
-        with mock.patch("deepy.store.list_files_remote", mock_s3_list), \
-             mock.patch("os.stat", mock_mtime):
+        with mock.patch("os.stat", mock_mtime):
             execution_manager.update_targets(id_list)
 
         self.assertTrue(build.node["target1"]["object"].get_exists())
