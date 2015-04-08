@@ -18,8 +18,7 @@ class ExecutionManagerTests(unittest.TestCase):
         build_manager = builder.build.BuildManager(jobs=jobs, metas=[])
 
         if executor is None:
-            executor = mock.Mock()
-            executor.execute = mock.Mock(return_value=(True, ''))
+            executor = mock.Mock(return_value=(True, ''))
         execution_manager = builder.execution.ExecutionManager(build_manager, executor)
 
         return execution_manager
@@ -90,7 +89,7 @@ class ExecutionManagerTests(unittest.TestCase):
         execution_manager.start_execution(inline=True)
 
         # Then
-        self.assertTrue(execution_manager.executor.execute.called)
+        self.assertTrue(execution_manager.executor.called)
 
     @unit
     def test_inline_execution_simple_plan(self):
@@ -113,7 +112,7 @@ class ExecutionManagerTests(unittest.TestCase):
                     dependent.should_run = True
             return True, ''
 
-        executor.execute = mock.Mock(side_effect=update_job)
+        executor = mock.Mock(side_effect=update_job)
         execution_manager.executor = executor
         build_context = {
             'start_time': arrow.get('2015-01-01')
@@ -124,7 +123,7 @@ class ExecutionManagerTests(unittest.TestCase):
         execution_manager.start_execution(inline=True)
 
         # Then
-        self.assertEquals(executor.execute.call_count, 2)
+        self.assertEquals(executor.call_count, 2)
 
     @unit
     def test_inline_execution_retries(self):
@@ -132,7 +131,7 @@ class ExecutionManagerTests(unittest.TestCase):
         jobs = [
             SimpleTestJobDefinition('A', targets=['target-A']),
         ]
-        executor = mock.Mock()
+        executor = mock.Mock(return_value=(True, ""))
         execution_manager = self._get_execution_manager(jobs)
         def update_job(job, build):
             job.should_run = True
@@ -149,12 +148,12 @@ class ExecutionManagerTests(unittest.TestCase):
         execution_manager.start_execution(inline=True)
 
         # Then
-        self.assertEquals(executor.execute.call_count, 5)
+        self.assertEquals(executor.call_count, 5)
 
     @unit
     def test_update_targets(self):
         build_manager = builder.build.BuildManager([], [])
-        execution_manager = builder.execution.ExecutionManager(build_manager, mock.Mock())
+        execution_manager = builder.execution.ExecutionManager(build_manager, mock.Mock(return_value=(True, '')))
         build = execution_manager.build
 
         target1 = builder.targets.LocalFileSystemTarget("", "target1", {})
