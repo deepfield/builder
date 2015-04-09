@@ -635,11 +635,9 @@ class ExecutionManagerTests(unittest.TestCase):
     @unit
     def test_simple_get_next_jobs_failed(self):
         """test_simple_get_next_jobs_failed
-        TODO: decide what should happen
         test a situation where a job depends on a target of another job. When
         the depended on job finishes, but fails and does not reach it's max
-        fail count, either the failed job should be the next job to run or
-        nothing should be the next job to run.
+        fail count, the faile djob should be next job to run
         """
 
     @unit
