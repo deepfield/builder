@@ -618,6 +618,13 @@ class ExecutionManagerTests(unittest.TestCase):
         self.assertEqual(should_run_new3, expected_should_run_new3)
 
     @unit
+    def test_no_depends_next_jobs(self):
+        """tests_no_depends_next_jobs
+        tests a situation where nothing depends on the job. When the job
+        finishes, nothing should be returned as the next job to run
+        """
+
+    @unit
     def test_simple_get_next_jobs(self):
         """test_simple_get_next_jobs
         test a situation where a job depends on a target of another job. When
@@ -685,17 +692,6 @@ class ExecutionManagerTests(unittest.TestCase):
         """
 
     @unit
-    def test_depends_one_or_more_next_jobs_failed_max(self):
-        """test_depends_one_or_more_next_jobs_failed
-        test a situation where a job hads a depends one or more dependency. It
-        is not past it's curfew so it needs all of the dependencies to run.
-        Complete the last job but have it fail and reach it's max fail count.
-        The next job should be the one with the depends one or more as all of
-        it's buildable dependencies exist and all of the non buildable
-        dependencies are due to a failure.
-        """
-
-    @unit
     def test_depends_one_or_more_next_jobs_failed_max_lower(self):
         """test_depends_one_or_more_next_jobs_failed
         test a situation where a job hads a depends one or more dependency. It
@@ -709,11 +705,9 @@ class ExecutionManagerTests(unittest.TestCase):
         """
 
     @unit
-    def test_depends_one_or_more_past_curfew(self):
-        """test_depends_one_or_more_past_curfew
-        test a situation where a job has a depends one or more dependency and is
-        past its curfew. A couple but no more than two less of it's dependencies
-        should be complete. Complete one of it's dependencies. The next job to
-        run is the job with the depends one or more as it is past it's curfew
-        and all of it's buildable dependencies are made.
+    def test_upper_update(self):
+        """tests situations where a job starts running and while it is running a
+        job above it should run again, possibly due to a target being deleted
+        or a force. When the running job finishes, none of it's lower jobs
+        should run.
         """
