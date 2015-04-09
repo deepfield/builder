@@ -27,10 +27,9 @@ class Executor(object):
         job = self.prepare_job_for_execution(job)
 
         status = False
+        log = ''
         try:
             status, log = self.do_execute(job)
-        except Exception as e:
-            log = unicode(e)
         finally:
             self.finish_job(job, status, log)
 
@@ -43,7 +42,7 @@ class Executor(object):
         job.is_running = True
         return job
 
-    def finish_job(self, job, status, log, build_graph):
+    def finish_job(self, job, status, log):
         job.is_running = False
         deepy.log.info("Job {} complete. Status: {}".format(job.get_id(), status))
         deepy.log.debug(log)
@@ -64,7 +63,8 @@ class PrintExecutor(Executor):
 
     should_update_build_graph = False
 
-    def do_execute(self, job, build_graph):
+    def do_execute(self, job):
+        build_graph = job.build_graph
         command = job.get_command(build_graph)
         print command
         target_ids = build_graph.get_targets(job.get_id())
@@ -114,6 +114,7 @@ class ExecutionManager(object):
         if job_id in update_set:
             return []
 
+        import ipdb; ipdb.set_trace()
         next_jobs_list = []
 
         job = self.build.get_job(job_id)
@@ -143,33 +144,38 @@ class ExecutionManager(object):
         while not work_queue.empty():
             job = work_queue.get()
 
-            # Don't run a job more than the configured max number of retries
-            if job.retries >= self.max_retries:
-                job.should_run = False
-                job.force = False
-                deepy.log.error("Maximum number of retries reached for {}".format(job))
-                continue
-
-            # Execute job
-            success, log = self._execute(job, self.build)
-
-            # Update job state
-            if self.executor.should_update_build_graph:
-                self._update_build(lambda: self.finish_job(job, success=success, log=log))
+            self.execute(job)
 
             # Get next jobs to execute
             next_job_ids = self.get_next_jobs_to_run(job.get_id())
             next_jobs = map(lambda x: self.build.get_job(x), next_job_ids)
             map(work_queue.put, next_jobs)
 
+    def execute(self, job_id):
+        job = self.build.get_job(job_id)
+        # Don't run a job more than the configured max number of retries
+        if job.retries >= self.max_retries:
+            job.set_failed(True)
+            deepy.log.error("Maximum number of retries reached for {}".format(job))
+            return
+
+        # Execute job
+        success, log = self._execute(job, self.build)
+
+        # Update job state
+        if self.executor.should_update_build_graph:
+            self._update_build(lambda: self.finish_job(job, success=success, log=log))
+
+        return success, log
+
     def _execute_daemon(self):
         raise NotImplementedError()
 
     def _execute(self, job, build_graph):
         if callable(self.executor):
-            return self.executor(job, build_graph)
+            return self.executor(job)
         else:
-            return self.executor.execute(job, build_graph)
+            return self.executor.execute(job)
 
     def get_jobs_to_run(self):
         def get_next_jobs():
