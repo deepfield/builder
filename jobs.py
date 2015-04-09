@@ -278,8 +278,7 @@ class Job(object):
 
         update_set.add(self.unique_id)
 
-    def get_parents_should_run(self,
-                                   cached=True, cache_set=None):
+    def get_parents_should_run(self, cached=True, cache_set=None):
         """Returns whether or not any contiguous ancestor job with the
         same cache_time bool value should run
 

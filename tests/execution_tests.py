@@ -619,3 +619,104 @@ class ExecutionManagerTests(unittest.TestCase):
         self.assertEqual(should_run_new1, expected_should_run_new1)
         self.assertEqual(should_run_new2, expected_should_run_new2)
         self.assertEqual(should_run_new3, expected_should_run_new3)
+
+    @unit
+    def test_simple_get_next_jobs(self):
+        """test_simple_get_next_jobs
+        test a situation where a job depends on a target of another job. When
+        the depended on job finishes, the other job should be the next job to
+        run
+        """
+
+    @unit
+    def test_simple_get_next_jobs_failed(self):
+        """test_simple_get_next_jobs_failed
+        TODO: decide what should happen
+        test a situation where a job depends on a target of another job. When
+        the depended on job finishes, but fails and does not reach it's max
+        fail count, either the failed job should be the next job to run or
+        nothing should be the next job to run.
+        """
+
+    @unit
+    def test_simple_get_next_jobs_failed_max(self):
+        """test_simple_get_next_jobs_failed_max
+        test a situation where a job depends on a target of another job.
+        When the dpended on job finishes, but fails and reaches it's max fail
+        count, return nothing as the next job to run.
+        """
+
+    @unit
+    def test_multiple_get_next_jobs(self):
+        """test_multiple_get_next_jobs
+        test a situation where a job creates multiple targets where individual
+        jobs depend on individual targets. When the depended on job finishes, all
+        of the lower jobs should be the next job to run.
+        """
+
+    @unit
+    def test_multiple_get_next_jobs_failed(self):
+        """test_multiple_get_next_jobs_failed
+        test a situation where a job creates multiple targets where individual
+        jobs depend on individual targets. When the depended on job finishes,
+        but fails and does not reach it's max fail count, either the failed job
+        should be the next job to run or nothing should be the next job to run.
+        When the depended on job finishes it should make some of it's targets.
+        This tests to make sure that when the job fails, the job's that now have
+        their dependencies don't run. This is not covered by should run as there
+        is a possibility that the lower nodes are check for should run before
+        the parent job is invalidated.
+        """
+
+    @unit
+    def test_multiple_get_next_jobs_failed_max(self):
+        """test_multiple_get_next_jobs_failed_max
+        test a situation where a job creates multiple targets where individual
+        jobs depend on individual targets. When the depended on job finishes,
+        but fails, reaches it's max fail count, and some targets are created,
+        all the jobs below with dependencies that exist should be the next jobs
+        to run.
+        """
+
+    @unit
+    def test_depends_one_or_more_next_jobs(self):
+        """test_depends_one_or_more_next_jobs
+        test a situation where a job has a depends one or more dependency. It is
+        not past it's curfew so it needs all of the dependencies to run.
+        Complete each of it's dependencies individually. Each one should return
+        nothing until the last one.
+        """
+
+    @unit
+    def test_depends_one_or_more_next_jobs_failed_max(self):
+        """test_depends_one_or_more_next_jobs_failed
+        test a situation where a job hads a depends one or more dependency. It
+        is not past it's curfew so it needs all of the dependencies to run.
+        Complete the last job but have it fail and reach it's max fail count.
+        The next job should be the one with the depends one or more as all of
+        it's buildable dependencies exist and all of the non buildable
+        dependencies are due to a failure.
+        """
+
+    @unit
+    def test_depends_one_or_more_next_jobs_failed_max_lower(self):
+        """test_depends_one_or_more_next_jobs_failed
+        test a situation where a job hads a depends one or more dependency. It
+        is not past it's curfew so it needs all of the dependencies to run.
+        Each of the dependencies should also depend on a single job so there are
+        a total of three layers of jobs. Complete each of the jobs in the first
+        two rows except the last job. The last job in the first row should fail
+        and reach it's max fail count. It's next job should be the job in the
+        bottom row as all of it's buildable dependencies are built and all of
+        the non buildable dependencies are due to a failure.
+        """
+
+    @unit
+    def test_depends_one_or_more_past_curfew(self):
+        """test_depends_one_or_more_past_curfew
+        test a situation where a job has a depends one or more dependency and is
+        past its curfew. A couple but no more than two less of it's dependencies
+        should be complete. Complete one of it's dependencies. The next job to
+        run is the job with the depends one or more as it is past it's curfew
+        and all of it's buildable dependencies are made.
+        """
