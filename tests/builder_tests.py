@@ -3627,6 +3627,22 @@ class GraphTest(unittest.TestCase):
         job_A.should_run = None
         self.assertTrue(job_A.get_should_run())
 
+    def test_set_failed(self):
+        jobs = [
+            SimpleTestJobDefinition("A")
+        ]
+
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
+        build.add_job("A", {})
+
+        job_A = build.get_job("A")
+        job_A.set_failed(True)
+
+        self.assertTrue(job_A.failed)
+        self.assertFalse(job_A.should_run)
+        self.assertFalse(job_A.force)
+
 class RuleDependencyGraphTest(unittest.TestCase):
 
     def _get_rdg(self):
