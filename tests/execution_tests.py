@@ -694,12 +694,57 @@ class ExecutionManagerTests(unittest.TestCase):
         self.assertEquals(["B"], execution_manager.get_next_jobs_to_run("A"))
 
     @unit
-    def test_simple_get_next_jobs_failed(self):
+    def test_simple_get_next_jobs_failed_but_creates_targets(self):
+        """test_simple_get_next_jobs_failed
+        test a situation where a job depends on a target of another job. When
+        the depended on job finishes, but fails, does not reach it's max
+        fail count, and creates targets, the dependent should be next job to run
+        """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A",
+                depends=None,targets=["A-target"]),
+            SimpleTestJobDefinition("B",
+                depends=['A-target'], targets=["B-target"])
+        ]
+        execution_manager = self._get_execution_manager(jobs)
+        do_execute = execution_manager.executor.do_execute
+        def mock_do_execute(job):
+            do_execute(job)
+            return False, ''
+
+        execution_manager.executor.execute = mock.Mock(side_effect=mock_do_execute)
+
+        # When
+        execution_manager.submit("B", {})
+        execution_manager.execute("A")
+
+        # The
+        self.assertEquals(["B"], execution_manager.get_next_jobs_to_run("A"))
+
+    @unit
+    def test_simple_get_next_jobs_failed_but_no_targets(self):
         """test_simple_get_next_jobs_failed
         test a situation where a job depends on a target of another job. When
         the depended on job finishes, but fails and does not reach it's max
-        fail count, the faile djob should be next job to run
+        fail count, and does not create targets, the job should run again
         """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A",
+                depends=None,targets=["A-target"]),
+            SimpleTestJobDefinition("B",
+                depends=['A-target'], targets=["B-target"])
+        ]
+        execution_manager = self._get_execution_manager(jobs)
+        execution_manager.executor.execute = mock.Mock(return_value=(True, ''))
+
+        # When
+        execution_manager.submit("B", {})
+        execution_manager.execute("A")
+
+        # The
+        self.assertEquals(["A"], execution_manager.get_next_jobs_to_run("A"))
 
     @unit
     def test_simple_get_next_jobs_failed_max(self):
