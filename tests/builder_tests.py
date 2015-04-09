@@ -3602,6 +3602,31 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(dependent_relationships1["depends_one_or_more"]["job2"].get("ignore_mtime", False), False)
         self.assertEqual(dependent_relationships1["depends"]["job3"]["fake"], "fake")
 
+    def test_should_run_failed(self):
+        jobs = [
+            SimpleTestJobDefinition("A", targets=["A-target1"],
+                                    depends=["A-depends"])
+        ]
+
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
+        build.add_job("A", {})
+
+        job_A = build.get_job("A")
+        job_A.stale = True
+        job_A.buildable = True
+        job_A.parents_should_run = False
+        job_A.force = False
+        job_A.past_curfew = mock.Mock(return_value=True)
+        job_A.all_dependencies = mock.Mock(return_value=True)
+        job_A.failed = True
+
+        self.assertFalse(job_A.get_should_run())
+
+        job_A.failed = False
+        job_A.should_run = None
+        self.assertTrue(job_A.get_should_run())
+
 class RuleDependencyGraphTest(unittest.TestCase):
 
     def _get_rdg(self):

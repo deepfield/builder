@@ -27,6 +27,7 @@ class Job(object):
 
         # State
         self.retries = 0
+        self.failed = False
         self.last_run = None
         self.stale = None
         self.buildable = None
@@ -53,6 +54,7 @@ class Job(object):
         self.last_run = None
         self.is_running = False
         self.force = False
+        self.failed = False
 
     def get_stale_alternates(self):
         """Returns True if the job does not have an alternate or if any
@@ -332,6 +334,8 @@ class Job(object):
         """
         if self.force:
             return True
+        if self.failed:
+            return False
         if self.should_run is not None:
             return self.should_run
 
