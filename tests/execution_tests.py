@@ -709,3 +709,17 @@ class ExecutionManagerTests(unittest.TestCase):
         or a force. When the running job finishes, none of it's lower jobs
         should run.
         """
+
+    @unit
+    def test_multiple_targets_one_exists(self):
+        """tests situations where a job has multiple targets. There are
+        individual jobs that depend on individual targets. There is also another
+        row of jobs below that one. There is a total of three job rows. The top
+        job has all of it's targets completed and all of the second row jobs
+        have their targets completed. The top job has a target deleted. The top
+        job runs again and updates that target but doesn't overwrite the other
+        targets. Obviouslly the job that had one of it's dependencies updated
+        should be a next job, but so should the third row jobs that no longer
+        have a parent that should run. The event won't trickle down to them
+        because their parents are not stale and won't run again.
+        """

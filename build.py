@@ -1146,34 +1146,3 @@ class BuildGraph(BaseGraph):
         for node_id in self.node:
             if self.is_job(node_id):
                 yield node_id, self.get_job(node_id)
-
-    def get_next_jobs_to_run(self, job_id, update_set=None):
-        """Returns the jobs that are below job_id that need to run"""
-        if update_set is None:
-            update_set = set([])
-
-        if job_id in update_set:
-            return []
-
-        next_jobs_list = []
-
-        job = self.get_job(job_id)
-        if job.get_should_run():
-            next_jobs_list.append(job_id)
-            update_set.add(job_id)
-            return next_jobs_list
-
-        target_ids = self.get_target_ids(job_id)
-        for target_id in target_ids:
-            dependent_jobs = self.get_dependent_ids(target_id)
-            for dependent_job in dependent_jobs:
-                job = self.get_job(dependent_job)
-                job.invalidate()
-                should_run = job.get_should_run_immediate()
-                if should_run:
-                    next_jobs_list.append(dependent_job)
-
-        update_set.add(job_id)
-
-        return next_jobs_list
-

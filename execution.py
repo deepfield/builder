@@ -106,6 +106,35 @@ class ExecutionManager(object):
         else:
             self._execute_daemon()
 
+    def get_next_jobs_to_run(self, job_id, update_set=None):
+        """Returns the jobs that are below job_id that need to run"""
+        if update_set is None:
+            update_set = set([])
+
+        if job_id in update_set:
+            return []
+
+        next_jobs_list = []
+
+        job = self.build.get_job(job_id)
+        if job.get_should_run():
+            next_jobs_list.append(job_id)
+            update_set.add(job_id)
+            return next_jobs_list
+
+        target_ids = self.build.get_target_ids(job_id)
+        for target_id in target_ids:
+            dependent_jobs = self.build.get_dependent_ids(target_id)
+            for dependent_job in dependent_jobs:
+                job = self.build.get_job(dependent_job)
+                job.invalidate()
+                should_run = job.get_should_run()
+                if should_run:
+                    next_jobs_list.append(dependent_job)
+
+        update_set.add(job_id)
+
+        return next_jobs_list
 
     def _execute_inline(self):
         work_queue = Queue.Queue()
@@ -129,7 +158,7 @@ class ExecutionManager(object):
                 self._update_build(lambda: self.finish_job(job, success=success, log=log))
 
             # Get next jobs to execute
-            next_job_ids = self.build.get_next_jobs_to_run(job.get_id())
+            next_job_ids = self.get_next_jobs_to_run(job.get_id())
             next_jobs = map(lambda x: self.build.get_job(x), next_job_ids)
             map(work_queue.put, next_jobs)
 
@@ -202,7 +231,6 @@ class ExecutionManager(object):
             dependent.get_buildable()
             dependent.update_lower_nodes_should_run()
 
-
     def update(self, target_id):
         """Checks what should happen now that there is new information
         on a target
@@ -212,12 +240,12 @@ class ExecutionManager(object):
         creators_exist = False
         for creator_id in creator_ids:
             creators_exist = True
-            next_jobs = self.build.get_next_jobs_to_run(creator_id)
+            next_jobs = self.get_next_jobs_to_run(creator_id)
             for next_job in next_jobs:
                 self.run(next_job)
         if creators_exist == False:
             for dependent_id in self.build.get_dependent_ids(target_id):
-                next_jobs = self.build.get_next_jobs_to_run(dependent_id)
+                next_jobs = self.get_next_jobs_to_run(dependent_id)
                 for next_job in next_jobs:
                     self.run(next_job)
 
