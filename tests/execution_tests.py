@@ -643,6 +643,11 @@ class ExecutionManagerTests(unittest.TestCase):
 
 class ExecutionManagerTests(unittest.TestCase):
 
+    def _get_execution_manager(self, jobs):
+        build_manager = BuildManager(jobs, metas=[])
+        execution_manager = ExecutionManager(build_manager, MockExecutor(mtime=arrow.get('2015-01-01').timestamp))
+        return execution_manager
+
     @unit
     def test_no_depends_next_jobs(self):
         """tests_no_depends_next_jobs
@@ -654,8 +659,8 @@ class ExecutionManagerTests(unittest.TestCase):
         jobs = [SimpleTestJobDefinition("A",
             depends=None,
             targets=["A-target"])]
-        build_manager = BuildManager(jobs, metas=[])
-        execution_manager = ExecutionManager(build_manager, MockExecutor(mtime=arrow.get('2015-01-01').timestamp))
+        execution_manager = self._get_execution_manager(jobs)
+
 
         # When
         execution_manager.submit("A", {})
@@ -672,6 +677,21 @@ class ExecutionManagerTests(unittest.TestCase):
         the depended on job finishes, the other job should be the next job to
         run
         """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A",
+                depends=None,targets=["A-target"]),
+            SimpleTestJobDefinition("B",
+                depends=['A-target'], targets=["B-target"])
+        ]
+        execution_manager = self._get_execution_manager(jobs)
+
+        # When
+        execution_manager.submit("B", {})
+        execution_manager.execute("A")
+
+        # Then
+        self.assertEquals(["B"], execution_manager.get_next_jobs_to_run("A"))
 
     @unit
     def test_simple_get_next_jobs_failed(self):
