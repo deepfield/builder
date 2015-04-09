@@ -163,8 +163,8 @@ class ExecutionManager(object):
         success, log = self._execute(job, self.build)
 
         # Update job state
-        if self.executor.should_update_build_graph:
-            self._update_build(lambda: self.finish_job(job, success=success, log=log))
+        self._update_build(lambda: self.finish_job(job, success=success, log=log,
+            update_job_cache=self.executor.should_update_build_graph))
 
         return success, log
 

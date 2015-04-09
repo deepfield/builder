@@ -737,7 +737,7 @@ class ExecutionManagerTests(unittest.TestCase):
                 depends=['A-target'], targets=["B-target"])
         ]
         execution_manager = self._get_execution_manager(jobs)
-        execution_manager.executor.execute = mock.Mock(return_value=(True, ''))
+        execution_manager.executor.execute = mock.Mock(return_value=(False, ''))
 
         # When
         execution_manager.submit("B", {})
@@ -753,6 +753,23 @@ class ExecutionManagerTests(unittest.TestCase):
         When the dpended on job finishes, but fails and reaches it's max fail
         count, return nothing as the next job to run.
         """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A",
+                depends=None,targets=["A-target"]),
+            SimpleTestJobDefinition("B",
+                depends=['A-target'], targets=["B-target"])
+        ]
+        execution_manager = self._get_execution_manager(jobs)
+        execution_manager.executor.execute = mock.Mock(return_value=(False, ''))
+
+        # When
+        execution_manager.submit("B", {})
+        for i in xrange(6):
+            execution_manager.execute("A")
+
+        # The
+        self.assertEquals([], execution_manager.get_next_jobs_to_run("A"))
 
     @unit
     def test_multiple_get_next_jobs(self):
