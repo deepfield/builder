@@ -411,7 +411,7 @@ class MetaJob(TimestampExpandedJob):
 class JobDefinition(object):
     """A job"""
     def __init__(self, unexpanded_id=None, cache_time=None, targets=None,
-                 dependencies=None, config=None):
+                 dependencies=None, command=None, config=None):
         if targets is None:
             targets = {}
 
@@ -428,6 +428,7 @@ class JobDefinition(object):
         self.targets = targets
         self.dependencies = dependencies
         self.config = config
+        self.command = command
 
     def get_id(self):
         """
@@ -465,7 +466,7 @@ class JobDefinition(object):
 
     def get_command(self, unique_id, build_context, build_graph):
         """Used to get the command related to the command"""
-        raise NotImplementedError()
+        return self.command
 
     def get_dependencies(self):
         """most jobs will depend on the existance of a file, this is what is
