@@ -8,8 +8,31 @@ import funcy
 import builder.build
 import builder.execution
 from builder.tests.tests_jobs import *
+from builder.build import BuildManager
+from builder.execution import Executor, ExecutionManager
 
 from testing import unit, mock_mtime_generator
+
+class MockExecutor(Executor):
+    """ "Executes" by getting the job's command, logging it, and setting the target as available
+    """
+    should_update_build_graph = False
+
+    def __init__(self, mtime=None):
+        if mtime is None:
+            mtime = arrow.get().timestamp
+        self.mtime = mtime
+
+
+    def do_execute(self, job):
+        build_graph = job.build_graph
+        command = job.get_command()
+        target_ids = build_graph.get_target_ids(job.get_id())
+        for target_id in target_ids:
+            target = build_graph.get_target(target_id)
+            target.do_get_mtime = mock.Mock(return_value=self.mtime)
+        job.invalidate()
+        return True, command
 
 
 class ExecutionManagerTests(unittest.TestCase):
@@ -617,12 +640,30 @@ class ExecutionManagerTests(unittest.TestCase):
         self.assertEqual(should_run_new2, expected_should_run_new2)
         self.assertEqual(should_run_new3, expected_should_run_new3)
 
+
+class ExecutionManagerTests(unittest.TestCase):
+
     @unit
     def test_no_depends_next_jobs(self):
         """tests_no_depends_next_jobs
         tests a situation where nothing depends on the job. When the job
         finishes, nothing should be returned as the next job to run
         """
+
+        # Given
+        jobs = [SimpleTestJobDefinition("A",
+            depends=None,
+            targets=["A-target"])]
+        build_manager = BuildManager(jobs, metas=[])
+        execution_manager = ExecutionManager(build_manager, MockExecutor(mtime=arrow.get('2015-01-01').timestamp))
+
+        # When
+        execution_manager.submit("A", {})
+        execution_manager.execute("A")
+
+        # Then
+        self.assertEquals([], execution_manager.get_next_jobs_to_run("A"))
+
 
     @unit
     def test_simple_get_next_jobs(self):

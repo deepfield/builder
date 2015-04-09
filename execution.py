@@ -114,7 +114,6 @@ class ExecutionManager(object):
         if job_id in update_set:
             return []
 
-        import ipdb; ipdb.set_trace()
         next_jobs_list = []
 
         job = self.build.get_job(job_id)
