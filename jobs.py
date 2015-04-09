@@ -27,6 +27,7 @@ class Job(object):
 
         # State
         self.retries = 0
+        self.failed = False
         self.last_run = None
         self.stale = None
         self.buildable = None
@@ -53,6 +54,7 @@ class Job(object):
         self.last_run = None
         self.is_running = False
         self.force = False
+        self.failed = False
 
     def get_stale_alternates(self):
         """Returns True if the job does not have an alternate or if any
@@ -293,6 +295,14 @@ class Job(object):
 
         update_set.add(self.unique_id)
 
+    def set_failed(self, failed):
+        """Sets the job as failed and sets the state that a failed job should
+        have
+        """
+        self.failed = failed
+        self.force = False
+        self.should_run = False
+
     def get_parents_should_run(self):
         """Returns whether or not any contiguous ancestor job with the
         same cache_time bool value should run
@@ -332,6 +342,8 @@ class Job(object):
         """
         if self.force:
             return True
+        if self.failed:
+            return False
         if self.should_run is not None:
             return self.should_run
 
