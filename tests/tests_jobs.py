@@ -16,7 +16,7 @@ class FakeTarget(builder.targets.Target):
 
     @staticmethod
     def get_bulk_exists_mtime(targets):
-        return {target.get_id(): {"exists": target.exists, "mtime": target.mtime} for target in targets}
+        return {target.get_id(): {"exists": target.mtime is not None, "mtime": target.mtime} for target in targets}
 
 class SimpleJobTestMixin(object):
 
@@ -107,7 +107,7 @@ class ShouldRunRecurseJob(builder.jobs.Job):
                 unique_id, build_graph, build_context)
         self.should_run_immediate = should_run_immediate
 
-    def get_should_run_immediate(self, cached=True, cache_set=None):
+    def get_should_run_immediate(self):
         return self.should_run_immediate
 
 

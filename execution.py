@@ -1,5 +1,3 @@
-
-import builder.build
 import threading
 import time
 import subprocess
@@ -164,14 +162,16 @@ class ExecutionManager(object):
         self.update_targets(target_ids)
 
         job = self.build.get_job(job_id)
-        job.get_stale(cached=False)
+        job.invalidate()
+        job.get_stale()
 
         for target_id in target_ids:
             dependent_ids = self.build.get_dependent_ids(target_id)
             for dependent_id in dependent_ids:
                 dependent = self.build.get_job(dependent_id)
-                dependent.get_buildable(cached=False)
-                dependent.get_stale(cached=False)
+                dependent.invalidate()
+                dependent.get_buildable()
+                dependent.get_stale()
 
         job.update_lower_nodes_should_run()
 
@@ -186,22 +186,20 @@ class ExecutionManager(object):
             update_function_list[func].append(target)
 
         for update_function, targets in update_function_list.iteritems():
-            exists_mtime_dict = update_function(targets)
-            for target in targets:
-                target.exists = exists_mtime_dict[target.unique_id]["exists"]
-                target.mtime = exists_mtime_dict[target.unique_id]["mtime"]
-
+            update_function(targets)
 
     def update_target_cache(self, target_id):
         """Updates the cache due to a target finishing"""
         target = self.build.get_target(target_id)
-        target.get_mtime(cached=False)
+        target.invalidate()
+        target.get_mtime()
 
         dependent_ids = self.build.get_dependent_ids(target_id)
         for dependent_id in dependent_ids:
             dependent = self.build.get_job(dependent_id)
-            dependent.get_stale(cached=False)
-            dependent.get_buildable(cached=False)
+            dependent.invalidate()
+            dependent.get_stale()
+            dependent.get_buildable()
             dependent.update_lower_nodes_should_run()
 
 

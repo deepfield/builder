@@ -39,6 +39,21 @@ class Job(object):
     def __repr__(self):
         return "{}:{}".format(self.unexpanded_id, self.unique_id)
 
+    def invalidate(self):
+        """Sets all cached values to their default None"""
+        self.stale = None
+        self.buildable = None
+        self.should_run = None
+        self.parents_should_run = None
+
+    def reset(self):
+        """Sets all values to their defaults"""
+        self.invalidate()
+        self.retries = 0
+        self.last_run = None
+        self.is_running = False
+        self.force = False
+
     def get_stale_alternates(self):
         """Returns True if the job does not have an alternate or if any
         of it's alternates don't exist otherwise returns the mtimes of
@@ -146,7 +161,7 @@ class Job(object):
                             return True
         return False
 
-    def get_stale(self,cached=True):
+    def get_stale(self):
         """Returns whether or not the job needs to run to update it's output
 
         Often this job will look at the mtime of it's inputs and it's outputs
@@ -160,7 +175,7 @@ class Job(object):
             The job has no targets
             The job has no produces and is missing an alternates
         """
-        if cached and self.stale != None:
+        if self.stale != None:
             return self.stale
         if not self.past_cache_time():
             self.stale = False
@@ -182,7 +197,7 @@ class Job(object):
     def set_stale(self, stale):
         self.stale = stale
 
-    def get_buildable(self, cached=True):
+    def get_buildable(self):
         """Returns whether or not the job is buildable
 
         Buildability is true when all the depends are met. This is true when
@@ -191,7 +206,7 @@ class Job(object):
         Buildable conditions:
             All the above dependency nodes return true
         """
-        if cached and self.buildable is not None:
+        if self.buildable is not None:
             return self.buildable
 
         for dependency_node_id in self.build_graph.predecessors(self.unique_id):
@@ -258,8 +273,7 @@ class Job(object):
                                self.build_graph.predecessors(dependency_id))
         return parent_jobs
 
-    def update_lower_nodes_should_run(self, cache_set=None,
-                                      update_set=None):
+    def update_lower_nodes_should_run(self, update_set=None):
         """Updates whether or not the job should run based off the new
         information on the referrer
         """
@@ -269,30 +283,24 @@ class Job(object):
         if self.unique_id in update_set:
             return
 
-        self.get_should_run(cached=False, cache_set=cache_set)
+        self.invalidate()
+        self.get_should_run()
         for target_id in self.build_graph.neighbors(self.unique_id):
             for depends_id in self.build_graph.neighbors(target_id):
                 for job_id in self.build_graph.neighbors(depends_id):
                     job = self.build_graph.node[job_id]["object"]
-                    job.update_lower_nodes_should_run(cache_set=cache_set, update_set=update_set)
+                    job.update_lower_nodes_should_run(update_set=update_set)
 
         update_set.add(self.unique_id)
 
-    def get_parents_should_run(self, cached=True, cache_set=None):
+    def get_parents_should_run(self):
         """Returns whether or not any contiguous ancestor job with the
         same cache_time bool value should run
 
         False if an ancestor should run
         True if no ancestor should run
         """
-        if cached and self.parents_should_run is not None:
-            return self.parents_should_run
-
-        if cache_set is None:
-            cache_set = set([])
-
-        if (self.unique_id in cache_set and
-                self.parents_should_run is not None):
+        if self.parents_should_run is not None:
             return self.parents_should_run
 
         if self.should_ignore_parents():
@@ -301,14 +309,12 @@ class Job(object):
         for dependency_id in self.get_parent_jobs():
             dependency = self.build_graph.node[dependency_id]["object"]
             if not dependency.should_ignore_parents():
-                parents_should_run = dependency.get_parents_should_run(cached=cached, cache_set=cache_set)
-                should_run_immediate = dependency.get_should_run_immediate(cached=cached)
+                parents_should_run = dependency.get_parents_should_run()
+                should_run_immediate = dependency.get_should_run_immediate()
                 if parents_should_run or should_run_immediate:
                     self.parents_should_run = True
-                    cache_set.add(self.unique_id)
                     return True
 
-        cache_set.add(self.unique_id)
         self.parents_should_run = False
         return False
 
@@ -320,18 +326,18 @@ class Job(object):
         self.force = force
 
 
-    def get_should_run_immediate(self, cached=True):
+    def get_should_run_immediate(self):
         """Returns whether or not the node should run not caring about the
         ancestors should run status
         """
         if self.force:
             return True
-        if cached and self.should_run is not None:
+        if self.should_run is not None:
             return self.should_run
 
         has_cache_time = self.cache_time is not None
-        stale = self.get_stale(cached=cached)
-        buildable = self.get_buildable(cached=cached)
+        stale = self.get_stale()
+        buildable = self.get_buildable()
         if not stale or not buildable:
             self.should_run = False
             return False
@@ -344,14 +350,14 @@ class Job(object):
         self.should_run = False
         return False
 
-    def get_should_run(self, cached=True, cache_set=None):
+    def get_should_run(self):
         """Returns whether or not the job should run
 
         depends on it's current state and whether or not it's ancestors
         should run
         """
-        should_run_immediate = self.get_should_run_immediate(cached=cached)
-        parents_should_run = self.get_parents_should_run(cached=cached, cache_set=cache_set)
+        should_run_immediate = self.get_should_run_immediate()
+        parents_should_run = self.get_parents_should_run()
 
         return (should_run_immediate and not parents_should_run) or self.force
 
@@ -389,16 +395,16 @@ class TimestampExpandedJob(Job):
         return curfew_time < arrow.get()
 
 
-    def get_should_run(self, cached=True, cache_set=None):
+    def get_should_run(self):
         start_time = self.build_context["start_time"]
         if arrow.get() < start_time:
             return False
         else:
-            return super(TimestampExpandedJob, self).get_should_run(cached=cached, cache_set=cache_set)
+            return super(TimestampExpandedJob, self).get_should_run()
 
 class MetaJob(TimestampExpandedJob):
 
-    def get_should_run_immediate(self, cached=True):
+    def get_should_run_immediate(self):
         return False
 
 
@@ -461,7 +467,7 @@ class JobDefinition(object):
         """Used to get the command related to the command"""
         raise NotImplementedError()
 
-    def get_dependencies(self, build_context=None):
+    def get_dependencies(self):
         """most jobs will depend on the existance of a file, this is what is
         returned here. It is in the form
         {
@@ -472,7 +478,7 @@ class JobDefinition(object):
         """
         return self.dependencies
 
-    def get_targets(self, build_context=None):
+    def get_targets(self):
         """most jobs will output a target, specify them here
         form:
             {

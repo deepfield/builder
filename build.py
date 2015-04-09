@@ -2,9 +2,7 @@
 and the build graph
 """
 
-import arrow
 import collections
-import copy
 import os
 import networkx
 import tempfile
@@ -598,7 +596,7 @@ class BuildGraph(BaseGraph):
 
     def get_creator_ids_iter(self, target_id):
         """Returns an iter of job ids that are creators of the target.
-        
+
         Note:
             A creator is different than a producer. Creators include alternates,
             etc.
@@ -610,7 +608,7 @@ class BuildGraph(BaseGraph):
 
     def get_creator_ids(self, target_id):
         """Returns a list of job ids that are creators of the target
-        
+
         Note:
             A creator is different than a producer. Creators include alternates,
             etc.
@@ -801,9 +799,9 @@ class BuildGraph(BaseGraph):
                 dependent_edges = self.out_edges_iter(depends_id, data=True)
                 for _, dependent_id, data in dependent_edges:
                     if self.is_job(dependent_id):
-                        dependent_dict[data["kind"]][dependent_id] = data 
+                        dependent_dict[data["kind"]][dependent_id] = data
         return dependent_dict
-            
+
 
     def get_dependents_or_creators_iter(self, target_id, direction):
         """Takes in a target id and returns an iterator for either the dependent
@@ -916,11 +914,9 @@ class BuildGraph(BaseGraph):
         target_depends = {}
         unexpanded_job = self.rule_dependency_graph.get_job_definition(job.unexpanded_id)
         if direction == "up":
-            target_depends = unexpanded_job.get_dependencies(
-                    build_context=job.build_context)
+            target_depends = unexpanded_job.get_dependencies()
         else:
-            target_depends = unexpanded_job.get_targets(
-                    build_context=job.build_context)
+            target_depends = unexpanded_job.get_targets()
 
         expanded_targets_list = []
         # expanded for each type of target or dependency
@@ -1095,7 +1091,7 @@ class BuildGraph(BaseGraph):
         """Used to return a list of jobs to run"""
         should_run_list = []
         for _, job in self.job_iter():
-            if job.get_should_run(self):
+            if job.get_should_run():
                 should_run_list.append(job)
         return should_run_list
 
@@ -1162,7 +1158,7 @@ class BuildGraph(BaseGraph):
         next_jobs_list = []
 
         job = self.get_job(job_id)
-        if job.get_should_run(self):
+        if job.get_should_run():
             next_jobs_list.append(job_id)
             update_set.add(job_id)
             return next_jobs_list
@@ -1172,7 +1168,8 @@ class BuildGraph(BaseGraph):
             dependent_jobs = self.get_dependent_ids(target_id)
             for dependent_job in dependent_jobs:
                 job = self.get_job(dependent_job)
-                should_run = job.get_should_run_immediate(cached=False)
+                job.invalidate()
+                should_run = job.get_should_run_immediate()
                 if should_run:
                     next_jobs_list.append(dependent_job)
 
