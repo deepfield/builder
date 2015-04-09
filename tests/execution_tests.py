@@ -35,6 +35,38 @@ class MockExecutor(Executor):
         return True, command
 
 
+class ExtendedMockExecutor(Executor):
+    """"Executes" by running the jobs effect. An effect is a dictionary of
+    things to do. Here is an example effect
+    { }
+    This effect updates non of the targets
+
+    Here is another effect
+    {
+        "A-target": 500
+    }
+    This effect set's A's target's do_get_mtime to a mock thar returns 500
+    """
+    should_update_build_graph = True
+
+    def do_execute(self, job):
+        build_graph = job.build_graph
+        command = job.get_command()
+        effect = job.get_effect()
+        target_ids = build_graph.get_target_ids(job.get_id())
+        for target_id in target_ids:
+            target = build_graph.get_target(target_id)
+            if effect is None:
+                target = build_graph.get_target(target_id)
+                target.do_get_mtime = mock.Mock(return_value=1)
+            else:
+                target_effect = effect.get(target_id)
+                if target_effect is None:
+                    target.do_get_mtime = mock.Mock(
+
+        return True, command
+
+
 class ExecutionManagerTests(unittest.TestCase):
 
     def _get_execution_manager(self, jobs, executor=None):

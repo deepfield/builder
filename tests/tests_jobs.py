@@ -113,7 +113,6 @@ class ShouldRunRecurseJob(builder.jobs.Job):
 
 class ShouldRunRecurseJobDefinition(SimpleTestJobDefinition):
     def expand(self, build_graph, build_context):
-        print self.should_run_immediate, self.unexpanded_id
         counting_nodes = []
         expanded_nodes = super(ShouldRunRecurseJobDefinition, self).expand(build_graph,
                 build_context)
@@ -127,3 +126,29 @@ class ShouldRunRecurseJobDefinition(SimpleTestJobDefinition):
             counting_nodes.append(counting_node)
         return counting_nodes
 
+class EffectJobDefinition(SimpleTestJobDefinition):
+    def __init__(self, unexpanded_id=None, targets=None, depends=None,
+            config=None, should_run=False, parents_should_run=False,
+            target_type=None, expander_type=None,
+            depends_dict=None, targets_dict=None, effect=None, **kwargs):
+
+        self.count = 0
+        self.effect = effect
+        super(EffectJobDefinition, self).__init__(
+                unexpanded_id=unexpanded_id, targets=targets, depends=depends,
+                config=config, should_run=should_run,
+                parents_should_run=parents_should_run, target_type=target_type,
+                expander_type=expander_type, depends_dict=depends_dict,
+                target_dict=targets_dict, **kwargs)
+
+    def get_effect(self):
+        self.count = self.count + 1
+        if self.effect is None:
+            return self.effect
+
+        if isinstance(self.effect, dict):
+            return self.effect
+
+        if isinstance(self.effect, list):
+            min_count = min(self.count, len(self.effect))
+            return self.effect[min_count - 1]
