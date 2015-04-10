@@ -122,6 +122,7 @@ class ExecutionManager(object):
             update_set.add(job_id)
             return next_jobs_list
 
+
         target_ids = self.build.get_target_ids(job_id)
         for target_id in target_ids:
             dependent_jobs = self.build.get_dependent_ids(target_id)
@@ -162,8 +163,8 @@ class ExecutionManager(object):
         success, log = self._execute(job, self.build)
 
         # Update job state
-        if self.executor.should_update_build_graph:
-            self._update_build(lambda: self.finish_job(job, success=success, log=log))
+        self._update_build(lambda: self.finish_job(job, success=success, log=log,
+            update_job_cache=self.executor.should_update_build_graph))
 
         return success, log
 
@@ -187,6 +188,7 @@ class ExecutionManager(object):
         if success:
             job.should_run = False
             job.force = False
+            job.retries = 0
             if update_job_cache:
                 self.update_job_cache(job.get_id())
 

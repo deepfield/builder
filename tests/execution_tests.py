@@ -726,20 +726,82 @@ class ExecutionManagerTests(unittest.TestCase):
         self.assertEquals(["B"], execution_manager.get_next_jobs_to_run("A"))
 
     @unit
-    def test_simple_get_next_jobs_failed(self):
+    def test_simple_get_next_jobs_failed_but_creates_targets(self):
+        """test_simple_get_next_jobs_failed
+        test a situation where a job depends on a target of another job. When
+        the depended on job finishes, but fails, does not reach it's max
+        fail count, and creates targets, the dependent should be next job to run
+        """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A",
+                depends=None,targets=["A-target"]),
+            SimpleTestJobDefinition("B",
+                depends=['A-target'], targets=["B-target"])
+        ]
+        execution_manager = self._get_execution_manager(jobs)
+        do_execute = execution_manager.executor.do_execute
+        def mock_do_execute(job):
+            do_execute(job)
+            return False, ''
+
+        execution_manager.executor.execute = mock.Mock(side_effect=mock_do_execute)
+
+        # When
+        execution_manager.submit("B", {})
+        execution_manager.execute("A")
+
+        # The
+        self.assertEquals(["B"], execution_manager.get_next_jobs_to_run("A"))
+
+    @unit
+    def test_simple_get_next_jobs_failed_but_no_targets(self):
         """test_simple_get_next_jobs_failed
         test a situation where a job depends on a target of another job. When
         the depended on job finishes, but fails and does not reach it's max
-        fail count, the faile djob should be next job to run
+        fail count, and does not create targets, the job should run again
         """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A",
+                depends=None,targets=["A-target"]),
+            SimpleTestJobDefinition("B",
+                depends=['A-target'], targets=["B-target"])
+        ]
+        execution_manager = self._get_execution_manager(jobs)
+        execution_manager.executor.execute = mock.Mock(return_value=(False, ''))
+
+        # When
+        execution_manager.submit("B", {})
+        execution_manager.execute("A")
+
+        # The
+        self.assertEquals(["A"], execution_manager.get_next_jobs_to_run("A"))
 
     @unit
     def test_simple_get_next_jobs_failed_max(self):
         """test_simple_get_next_jobs_failed_max
         test a situation where a job depends on a target of another job.
-        When the dpended on job finishes, but fails and reaches it's max fail
+        When the depended on job finishes, but fails and reaches it's max fail
         count, return nothing as the next job to run.
         """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A",
+                depends=None,targets=["A-target"]),
+            SimpleTestJobDefinition("B",
+                depends=['A-target'], targets=["B-target"])
+        ]
+        execution_manager = self._get_execution_manager(jobs)
+        execution_manager.executor.execute = mock.Mock(return_value=(False, ''))
+
+        # When
+        execution_manager.submit("B", {})
+        for i in xrange(6):
+            execution_manager.execute("A")
+
+        # The
+        self.assertEquals([], execution_manager.get_next_jobs_to_run("A"))
 
     @unit
     def test_multiple_get_next_jobs(self):
@@ -748,6 +810,25 @@ class ExecutionManagerTests(unittest.TestCase):
         jobs depend on individual targets. When the depended on job finishes, all
         of the lower jobs should be the next job to run.
         """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A",
+                depends=None,targets=["A-target"]),
+            SimpleTestJobDefinition("B",
+                depends=['A-target'], targets=["B-target"]),
+            SimpleTestJobDefinition("C",
+                depends=['A-target'], targets=["C-target"]),
+            SimpleTestJobDefinition("D",
+                depends=['A-target'], targets=["D-target"]),
+        ]
+        execution_manager = self._get_execution_manager(jobs)
+
+        # When
+        execution_manager.submit("A", {}, direction={"up", "down"})
+        execution_manager.execute("A")
+
+        # Then
+        self.assertEquals({"B", "C", "D"}, set(execution_manager.get_next_jobs_to_run("A")))
 
     @unit
     def test_multiple_get_next_jobs_failed(self):
@@ -762,6 +843,27 @@ class ExecutionManagerTests(unittest.TestCase):
         is a possibility that the lower nodes are check for should run before
         the parent job is invalidated.
         """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A",
+                depends=None,targets=["A1-target", "A2-target", "A3-target"]),
+            SimpleTestJobDefinition("B",
+                depends=['A1-target'], targets=["B-target"]),
+            SimpleTestJobDefinition("C",
+                depends=['A2-target'], targets=["C-target"]),
+            SimpleTestJobDefinition("D",
+                depends=['A3-target'], targets=["D-target"]),
+        ]
+        execution_manager = self._get_execution_manager(jobs)
+        execution_manager.executor.execute = mock.Mock(return_value=(False, ''))
+        execution_manager.submit("A", {}, direction={"up", "down"})
+        execution_manager.build.get_target('A1-target').do_get_mtime = mock.Mock(return_value=None)
+
+        # When
+        execution_manager.execute("A")
+
+        # Then
+        self.assertEquals({"A"}, set(execution_manager.get_next_jobs_to_run("A")))
 
     @unit
     def test_multiple_get_next_jobs_failed_max(self):
@@ -772,6 +874,32 @@ class ExecutionManagerTests(unittest.TestCase):
         all the jobs below with dependencies that exist should be the next jobs
         to run.
         """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A",
+                depends=None,targets=["A1-target", "A2-target", "A3-target"]),
+            SimpleTestJobDefinition("B",
+                depends=['A1-target'], targets=["B-target"]),
+            SimpleTestJobDefinition("C",
+                depends=['A2-target'], targets=["C-target"]),
+            SimpleTestJobDefinition("D",
+                depends=['A3-target'], targets=["D-target"]),
+        ]
+        execution_manager = self._get_execution_manager(jobs)
+        execute = execution_manager.executor.execute
+        def mock_execute(job):
+            execute(job)
+            return False, ''
+        execution_manager.executor.execute = mock.Mock(side_effect=mock_execute)
+        execution_manager.submit("A", {}, direction={"up", "down"})
+
+        # When
+        for i in xrange(6):
+            execution_manager.execute("A")
+        execution_manager.build.get_target('A1-target').do_get_mtime = mock.Mock(return_value=None)
+
+        # Then
+        self.assertEquals({"C", "D"}, set(execution_manager.get_next_jobs_to_run("A")))
 
     @unit
     def test_depends_one_or_more_next_jobs(self):
