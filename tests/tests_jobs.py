@@ -135,7 +135,8 @@ class EffectJobDefinition(SimpleTestJobDefinition):
         if not isinstance(effect, list):
             effect = [effect]
         self.effect = effect
-        super(EffectJobDefinition, self).__init__(unexpanded_id=unexpanded_id, **kwargs)
+        super(EffectJobDefinition, self).__init__(unexpanded_id=unexpanded_id,
+                target_type=builder.targets.Target, **kwargs)
 
     def get_effect(self):
         return self.effect

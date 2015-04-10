@@ -144,15 +144,14 @@ class ExecutionManager(object):
         while not work_queue.empty():
             job_id = work_queue.get()
 
-            self.execute(job_id)
+            job = self.build.get_job(job_id)
+            self.execute(job)
 
             # Get next jobs to execute
             next_job_ids = self.get_next_jobs_to_run(job_id)
-            next_jobs = map(lambda x: self.build.get_job(x), next_job_ids)
-            map(work_queue.put, next_jobs)
+            map(work_queue.put, next_job_ids)
 
-    def execute(self, job_id):
-        job = self.build.get_job(job_id)
+    def execute(self, job):
         # Don't run a job more than the configured max number of retries
         if job.retries >= self.max_retries:
             job.set_failed(True)
@@ -160,10 +159,10 @@ class ExecutionManager(object):
             return
 
         # Execute job
-        success, log = self._execute(job, self.build)
+        success, log = self._execute(job)
 
         # Update job state
-        self._update_build(lambda: self.finish_job(job, success=success, log=log,
+        self._update_build(lambda: self.finish_job(job.unique_id, success=success, log=log,
             update_job_cache=self.executor.should_update_build_graph))
 
         return success, log
@@ -171,7 +170,7 @@ class ExecutionManager(object):
     def _execute_daemon(self):
         raise NotImplementedError()
 
-    def _execute(self, job, build_graph):
+    def _execute(self, job):
         if callable(self.executor):
             return self.executor(job)
         else:
@@ -182,34 +181,31 @@ class ExecutionManager(object):
             return self.build.get_starting_job_ids()
         return self._update_build(get_next_jobs)
 
-    def finish_job(self, job, success, log, update_job_cache=True):
+    def finish_job(self, job_id, success, log, update_job_cache=True):
+        job = self.build.get_job(job_id)
+
+        # Mark this job as finished running
         job.last_run = arrow.now()
         job.retries += 1
-        if success:
-            job.should_run = False
-            job.force = False
-            job.retries = 0
-            if update_job_cache:
-                self.update_job_cache(job.get_id())
+        if update_job_cache:
+            job.invalidate()
 
-    def update_job_cache(self, job_id):
-        """Updates the cache due to a job finishing"""
-        target_ids = self.build.get_target_ids(job_id)
-        self.update_targets(target_ids)
+            # updat all of it's targets
+            target_ids = self.build.get_target_ids(job_id)
+            self.update_targets(target_ids)
 
-        job = self.build.get_job(job_id)
-        job.invalidate()
-        job.get_stale()
+            # update all of it's dependents
+            for target_id in target_ids:
+                dependent_ids = self.build.get_dependent_ids(target_id)
+                for dependent_id in dependent_ids:
+                    dependent = self.build.get_job(dependent_id)
+                    dependent.invalidate()
 
-        for target_id in target_ids:
-            dependent_ids = self.build.get_dependent_ids(target_id)
-            for dependent_id in dependent_ids:
-                dependent = self.build.get_job(dependent_id)
-                dependent.invalidate()
-                dependent.get_buildable()
-                dependent.get_stale()
+            # check if it succeeded and set retries to 0
+            if not job.get_should_run_immediate():
+                job.foce = False
+                job.retries = 0
 
-        job.update_lower_nodes_should_run()
 
     def update_targets(self, target_ids):
         """Takes in a list of target ids and updates all of their needed
@@ -222,7 +218,7 @@ class ExecutionManager(object):
             update_function_list[func].append(target)
 
         for update_function, targets in update_function_list.iteritems():
-            update_function(targets)
+            mtime_dict = update_function(targets)
 
     def update_target_cache(self, target_id):
         """Updates the cache due to a target finishing"""

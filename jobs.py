@@ -299,9 +299,10 @@ class Job(object):
         """Sets the job as failed and sets the state that a failed job should
         have
         """
-        self.failed = failed
-        self.force = False
-        self.should_run = False
+        if failed == True:
+            self.failed = True
+            self.force = False
+            self.should_run = False
 
     def get_parents_should_run(self):
         """Returns whether or not any contiguous ancestor job with the

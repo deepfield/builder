@@ -59,7 +59,7 @@ class ExtendedMockExecutor(Executor):
             target = build_graph.get_target(target_id)
             if isinstance(effect, numbers.Number):
                 target.do_get_mtime = mock.Mock(return_value=effect)
-            if target_id not in effect:
+            elif target_id not in effect:
                 continue
             else:
                 target.do_get_mtime = mock.Mock(return_value=effect[target_id])
@@ -961,7 +961,7 @@ class ExecutionManagerTests(unittest.TestCase):
             EffectJobDefinition("A", targets=["A-target"]),
             EffectJobDefinition("B", depends=["A-target"], targets=["B-target"]),
         ]
-        execution_manager = self._get_execution_manager(jobs)
+        execution_manager = self._get_effect_execution_manager(jobs)
 
         # When
         execution_manager.submit("B", {})
