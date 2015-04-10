@@ -2561,13 +2561,10 @@ class GraphTest(unittest.TestCase):
         for job in jobs:
             build1.add_job(job.unexpanded_id, copy.deepcopy(build_context))
 
-        expected_starting_jobs = [
-                (build1.node
-                        ["get_starting_jobs_01"]
-                        ["object"]),
-                (build1.node
-                        ["get_starting_jobs_03"]
-                        ["object"])]
+        expected_starting_job_ids = [
+            "get_starting_jobs_01",
+            "get_starting_jobs_03"
+        ]
 
         (build1.node
                 ["get_starting_jobs_01"]
@@ -2595,10 +2592,10 @@ class GraphTest(unittest.TestCase):
                 ["object"].parents_should_run) = False
 
         # when
-        starting_jobs = build1.get_starting_jobs()
+        starting_job_ids = build1.get_starting_job_ids()
 
         # then
-        self.assertItemsEqual(starting_jobs, expected_starting_jobs)
+        self.assertItemsEqual(starting_job_ids, expected_starting_job_ids)
 
     @testing.unit
     def test_expand_exact(self):

@@ -130,7 +130,6 @@ class ShouldRunRecurseJobDefinition(SimpleTestJobDefinition):
 class EffectJobDefinition(SimpleTestJobDefinition):
     def __init__(self, unexpanded_id=None, effect=None, **kwargs):
 
-        self.count = 0
         if effect is None:
             effect = [1]
         if not isinstance(effect, list):
@@ -139,9 +138,7 @@ class EffectJobDefinition(SimpleTestJobDefinition):
         super(EffectJobDefinition, self).__init__(unexpanded_id=unexpanded_id, **kwargs)
 
     def get_effect(self):
-        self.count = self.count + 1
-        min_count = min(self.count, len(self.effect))
-        return self.effect[min_count - 1]
+        return self.effect
 
     def construct_job(self, expanded_id, build_graph, build_context):
         return EffectJob(job=self, unique_id=expanded_id, build_graph=build_graph, build_context=build_context,
@@ -152,6 +149,9 @@ class EffectJob(Job):
     def __init__(self, effect=None, *args, **kwargs):
         super(EffectJob, self).__init__(*args, **kwargs)
         self.effect = effect
+        self.count = 0
 
     def get_effect(self):
-        return self.effect
+        self.count = self.count + 1
+        min_count = min(self.count, len(self.effect))
+        return self.effect[min_count - 1]

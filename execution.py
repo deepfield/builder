@@ -142,12 +142,12 @@ class ExecutionManager(object):
         next_jobs = self.get_jobs_to_run()
         map(work_queue.put, next_jobs)
         while not work_queue.empty():
-            job = work_queue.get()
+            job_id = work_queue.get()
 
-            self.execute(job)
+            self.execute(job_id)
 
             # Get next jobs to execute
-            next_job_ids = self.get_next_jobs_to_run(job.get_id())
+            next_job_ids = self.get_next_jobs_to_run(job_id)
             next_jobs = map(lambda x: self.build.get_job(x), next_job_ids)
             map(work_queue.put, next_jobs)
 
@@ -179,7 +179,7 @@ class ExecutionManager(object):
 
     def get_jobs_to_run(self):
         def get_next_jobs():
-            return self.build.get_starting_jobs()
+            return self.build.get_starting_job_ids()
         return self._update_build(get_next_jobs)
 
     def finish_job(self, job, success, log, update_job_cache=True):
