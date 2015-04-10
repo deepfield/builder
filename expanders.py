@@ -187,39 +187,3 @@ class TimestampExpander(Expander):
             expanded_nodes.append(expanded_node)
 
         return expanded_nodes
-
-class DiamondRedundancyTopTargetCountingTimestampExpander(
-        TimestampExpander):
-    """Used to count the number of times expand is called"""
-    count = 0
-
-    def expand(self, build_context):
-        """Counts the number of times it is called"""
-        self.__class__.count = self.__class__.count + 1
-        return super(
-                DiamondRedundancyTopTargetCountingTimestampExpander,
-                self).expand(build_context)
-
-class DiamondRedundancyHighestTargetCountingTimestampExpander(
-        TimestampExpander):
-    """Used to count the number of times expand is called"""
-    count = 0
-
-    def expand(self, build_context):
-        """Counts the number of times it is called"""
-        self.__class__.count = self.__class__.count + 1
-        return super(
-                DiamondRedundancyHighestTargetCountingTimestampExpander,
-                self).expand(build_context)
-
-class DiamondRedundancySuperTargetCountingTimestampExpander(
-        TimestampExpander):
-    """Used to count the number of times expand is called"""
-    count = 0
-
-    def expand(self, build_context):
-        """Counts the number of times it is called"""
-        self.__class__.count = self.__class__.count + 1
-        return super(
-                DiamondRedundancySuperTargetCountingTimestampExpander,
-                self).expand(build_context)
