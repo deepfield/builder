@@ -489,7 +489,7 @@ class Job(object):
         str_targets = collections.defaultdict(list)
         for target_type, targets in targets_dict.iteritems():
             for target in targets:
-                str_dependencies[target_type].append(target.unexpanded_id)
+                str_targets[target_type].append(target.unexpanded_id)
 
         this_dict = {"depends": str_dependencies, "targets": str_targets}
 
