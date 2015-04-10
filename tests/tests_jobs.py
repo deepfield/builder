@@ -6,7 +6,7 @@ import networkx
 import numbers
 
 import builder
-from builder.jobs import JobDefinition, TimestampExpandedJobDefinition
+from builder.jobs import JobDefinition, TimestampExpandedJobDefinition, Job
 import testing
 import builder.jobs
 import builder.targets
@@ -142,3 +142,16 @@ class EffectJobDefinition(SimpleTestJobDefinition):
         self.count = self.count + 1
         min_count = min(self.count, len(self.effect))
         return self.effect[min_count - 1]
+
+    def construct_job(self, expanded_id, build_graph, build_context):
+        return EffectJob(job=self, unique_id=expanded_id, build_graph=build_graph, build_context=build_context,
+            effect=self.effect)
+
+
+class EffectJob(Job):
+    def __init__(self, effect=None, *args, **kwargs):
+        super(EffectJob, self).__init__(*args, **kwargs)
+        self.effect = effect
+
+    def get_effect(self):
+        return self.effect
