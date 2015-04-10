@@ -493,7 +493,7 @@ class Job(object):
 
         this_dict = {"depends": str_dependencies, "targets": str_targets}
 
-        print str(json.dumps(this_dict, indent=2))
+        return str(json.dumps(this_dict, indent=2))
 
 class TimestampExpandedJob(Job):
     """A job that combines the timestamp expanded node and the job node
