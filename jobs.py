@@ -466,8 +466,18 @@ class JobDefinition(object):
         context would use start time and end time and the node
         would expand from there
         """
-        state_type = self.get_job_type()
-        return [state_type(self, self.get_expandable_id(), build_graph, build_context)]
+        return [self.construct_job(self.get_expandable_id(), build_graph, build_context)]
+
+    def construct_job(self, expanded_id, build_graph, build_context):
+        """
+        Return the Job instance to insert into the build graph.
+
+        By default, make a Job instance using the
+        Job type returned by get_job_type.
+        """
+        job_type = self.get_job_type()
+        expanded_node = job_type(self, expanded_id, build_graph, build_context)
+        return expanded_node
 
     def get_enable(self):
         """Used to determine if the node should end up in the build graph
@@ -529,7 +539,7 @@ class TimestampExpandedJobDefinition(JobDefinition):
         """Expands the node based off of the file step and the start and
         end times
         """
-        job_type = self.get_job_type()
+
         expanded_contexts = (builder.expanders
                                     .TimestampExpander
                                     .expand_build_context(
@@ -539,7 +549,7 @@ class TimestampExpandedJobDefinition(JobDefinition):
 
         expanded_nodes = []
         for expanded_id, build_context in expanded_contexts.iteritems():
-            expanded_node = job_type(self, expanded_id, build_graph, build_context)
+            expanded_node = self.construct_job(expanded_id, build_graph, build_context)
             expanded_nodes.append(expanded_node)
 
         return expanded_nodes
