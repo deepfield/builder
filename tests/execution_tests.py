@@ -11,6 +11,7 @@ import builder.execution
 from builder.tests.tests_jobs import *
 from builder.build import BuildManager
 from builder.execution import Executor, ExecutionManager
+from builder.expanders import TimestampExpander
 
 from testing import unit, mock_mtime_generator
 
@@ -680,7 +681,7 @@ class ExecutionManagerTests(unittest.TestCase):
         execution_manager = ExecutionManager(build_manager, MockExecutor(mtime=arrow.get('2015-01-01').timestamp))
         return execution_manager
 
-    def _get_effect_execution_manager(self, jobs):
+    def _get_execution_manager_with_effects(self, jobs):
         build_manager = BuildManager(jobs, metas=[])
         execution_manager = ExecutionManager(build_manager, ExtendedMockExecutor())
         return execution_manager
@@ -914,6 +915,31 @@ class ExecutionManagerTests(unittest.TestCase):
         Complete each of it's dependencies individually. Each one should return
         nothing until the last one.
         """
+        # Given
+        jobs = [
+            EffectJobDefinition("A1",
+                depends=None, targets=["A1-target"],
+                effect={"A1-target": 1}),
+            EffectJobDefinition("A2",
+                depends=None, targets=["A2-target"],
+                effect={"A2-target": None}),
+            EffectJobDefinition("B",
+                depends=[
+                    {"unexpanded_id": "A1-target", "type": "depends_one_or_more"},
+                    {"unexpanded_id": "A2-target", "type": "depends_one_or_more"}],
+                targets=["B-target"])
+        ]
+        execution_manager = self._get_execution_manager_with_effects(jobs)
+        build_context = {"start_time": arrow.get("2015-01-01-00-00"), "end_time": arrow.get("2015-01-01-00-10")}
+        execution_manager.submit("B", build_context)
+
+        # When
+        execution_manager.execute("A1")
+        execution_manager.execute("A2")
+
+        # Then
+        self.assertEquals({}, set(execution_manager.get_next_jobs_to_run("A1")))
+        self.assertEquals({"A2"}, set(execution_manager.get_next_jobs_to_run("A2")))
 
     @unit
     def test_depends_one_or_more_next_jobs_failed_max_lower(self):
