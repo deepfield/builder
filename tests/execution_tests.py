@@ -680,6 +680,11 @@ class ExecutionManagerTests(unittest.TestCase):
         execution_manager = ExecutionManager(build_manager, MockExecutor(mtime=arrow.get('2015-01-01').timestamp))
         return execution_manager
 
+    def _get_effect_execution_manager(self, jobs):
+        build_manager = BuildManager(jobs, metas=[])
+        execution_manager = ExecutionManager(build_manager, ExtendedMockExecutor())
+        return execution_manager
+
     @unit
     def test_no_depends_next_jobs(self):
         """tests_no_depends_next_jobs
@@ -951,3 +956,21 @@ class ExecutionManagerTests(unittest.TestCase):
         tests a situtation where a job starts running and then updates it's
         targets and then the next job will run
         """
+        # Given
+        jobs = [
+            EffectJobDefinition("A", targets=["A-target"]),
+            EffectJobDefinition("B", depends=["A-target"], targets=["B-target"]),
+        ]
+        execution_manager = self._get_execution_manager(jobs)
+
+        # When
+        execution_manager.submit("B", {})
+        execution_manager.build.write_dot("graph.dot")
+        execution_manager.start_execution(inline=True)
+
+        # Then
+        job_A = execution_manager.build.get_job("A")
+        job_B = execution_manager.build.get_job("B")
+
+        self.assertEqual(job_A.count, 1)
+        self.assertEqual(job_B.count, 1)
