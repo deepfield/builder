@@ -1,5 +1,6 @@
 
 import mock
+import numbers
 import unittest
 
 import arrow
@@ -56,13 +57,12 @@ class ExtendedMockExecutor(Executor):
         target_ids = build_graph.get_target_ids(job.get_id())
         for target_id in target_ids:
             target = build_graph.get_target(target_id)
-            if effect is None:
-                target = build_graph.get_target(target_id)
-                target.do_get_mtime = mock.Mock(return_value=1)
+            if isinstance(effect, numbers.Number):
+                target.do_get_mtime = mock.Mock(return_value=effect)
+            if target_id not in effect:
+                continue
             else:
-                target_effect = effect.get(target_id)
-                if target_effect is None:
-                    target.do_get_mtime = mock.Mock(
+                target.do_get_mtime = mock.Mock(return_value=effect[target_id])
 
         return True, command
 
@@ -943,4 +943,11 @@ class ExecutionManagerTests(unittest.TestCase):
         should be a next job, but so should the third row jobs that no longer
         have a parent that should run. The event won't trickle down to them
         because their parents are not stale and won't run again.
+        """
+
+    @unit
+    def test_effect_job(self):
+        """test_effect_job
+        tests a situtation where a job starts running and then updates it's
+        targets and then the next job will run
         """

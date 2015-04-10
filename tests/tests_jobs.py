@@ -3,6 +3,7 @@ import unittest
 
 import arrow
 import networkx
+import numbers
 
 import builder
 from builder.jobs import JobDefinition, TimestampExpandedJobDefinition
@@ -133,6 +134,10 @@ class EffectJobDefinition(SimpleTestJobDefinition):
             depends_dict=None, targets_dict=None, effect=None, **kwargs):
 
         self.count = 0
+        if effect is None:
+            effect = [1]
+        if not isinstance(effect, list):
+            effect = [effect]
         self.effect = effect
         super(EffectJobDefinition, self).__init__(
                 unexpanded_id=unexpanded_id, targets=targets, depends=depends,
@@ -143,12 +148,5 @@ class EffectJobDefinition(SimpleTestJobDefinition):
 
     def get_effect(self):
         self.count = self.count + 1
-        if self.effect is None:
-            return self.effect
-
-        if isinstance(self.effect, dict):
-            return self.effect
-
-        if isinstance(self.effect, list):
-            min_count = min(self.count, len(self.effect))
-            return self.effect[min_count - 1]
+        min_count = min(self.count, len(self.effect))
+        return self.effect[min_count - 1]
