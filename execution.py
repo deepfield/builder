@@ -128,7 +128,6 @@ class ExecutionManager(object):
             dependent_jobs = self.build.get_dependent_ids(target_id)
             for dependent_job in dependent_jobs:
                 job = self.build.get_job(dependent_job)
-                job.invalidate()
                 should_run = job.get_should_run()
                 if should_run:
                     next_jobs_list.append(dependent_job)
@@ -218,7 +217,7 @@ class ExecutionManager(object):
             update_function_list[func].append(target)
 
         for update_function, targets in update_function_list.iteritems():
-            mtime_dict = update_function(targets)
+            update_function(targets)
 
     def update_target_cache(self, target_id):
         """Updates the cache due to a target finishing"""
