@@ -1087,12 +1087,12 @@ class BuildGraph(BaseGraph):
                               new_nodes, cache_set)
         return new_nodes
 
-    def get_starting_jobs(self):
+    def get_starting_job_ids(self):
         """Used to return a list of jobs to run"""
         should_run_list = []
-        for _, job in self.job_iter():
+        for job_id, job in self.job_iter():
             if job.get_should_run():
-                should_run_list.append(job)
+                should_run_list.append(job_id)
         return should_run_list
 
     def get_target(self, target_id):
