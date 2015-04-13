@@ -2912,8 +2912,8 @@ class GraphTest(unittest.TestCase):
         build_manager = builder.build.BuildManager(jobs, [])
         build = build_manager.make_build()
 
-        new_nodes1 = build.add_job(start_job1, build_context1)
-        new_nodes2 = build.add_job(start_job2, build_context2)
+        expanded_jobs, new_nodes1 = build.add_job(start_job1, build_context1)
+        expanded_jobs2, new_nodes2 = build.add_job(start_job2, build_context2)
 
         # Then
         self.assertEqual(len(new_nodes1), 6)

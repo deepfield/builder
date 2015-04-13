@@ -44,6 +44,7 @@ class Job(object):
 
     def invalidate(self):
         """Sets all cached values to their default None"""
+        print "Invalidating {}".format(self.unique_id)
         self.stale = None
         self.buildable = None
         self.should_run = None

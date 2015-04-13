@@ -88,12 +88,33 @@ class ExecutionManager(object):
         self.max_retries = max_retries
         self._build_lock = threading.RLock()
 
+    def _recursive_invalidate_job(self, job_id):
+        job = self.build.get_job(job_id)
+        job.invalidate()
+
+        target_ids = self.build.get_target_ids(job_id)
+        for target_id in target_ids:
+            self._recursive_invalidate_target(target_id)
+
+    def _recursive_invalidate_target(self, target_id):
+        target = self.build.get_target(target_id)
+        target.invalidate()
+        job_ids = self.build.get_dependent_ids(target_id)
+        for job_id in job_ids:
+            self._recursive_invalidate_job(job_id)
+
     def submit(self, job_definition_id, build_context, **kwargs):
         """
         Submit the provided job to be built
         """
         def update_build_graph():
-            self.build.add_job(job_definition_id, build_context, **kwargs)
+            # Add the job
+            new_jobs, created_nodes = self.build.add_job(job_definition_id, build_context, **kwargs)
+
+            # Invalidate the build graph for all child nodes
+            for job_id in new_jobs:
+                self._recursive_invalidate_job(job_id)
+
         self._update_build(update_build_graph)
 
     def start_execution(self, inline=True):

@@ -1008,6 +1008,27 @@ class ExecutionManagerTests(unittest.TestCase):
         or a force. When the running job finishes, none of it's lower jobs
         should run.
         """
+        # Given
+        jobs = [
+            EffectJobDefinition("A",
+                depends=None, targets=["A-target"],
+                effect=[1,100]),
+            EffectJobDefinition("B",
+                depends=["A-target"], targets=["B-target"], effect=1),
+            EffectJobDefinition("C",
+                depends=["B-target"], targets=["C-target"], effect=1),
+        ]
+        execution_manager = self._get_execution_manager_with_effects(jobs)
+        build_context = {}
+        execution_manager.submit("C", build_context)
+
+        # When
+        execution_manager.execute("A")
+        execution_manager.execute("B")
+        execution_manager.submit("A", {}, force=True)
+
+        # Then
+        self.assertEquals(set(), set(execution_manager.get_next_jobs_to_run("B")))
 
     @unit
     def test_multiple_targets_one_exists(self):

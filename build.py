@@ -1022,15 +1022,18 @@ class BuildGraph(BaseGraph):
             if current_depth >= depth:
                 return
 
+        expanded_nodes = []
         if "up" in direction:
             new_direction = set(["up"])
-            self._self_expand_next_direction(expanded_dependencies, depth,
+            expanded_nodes += self._self_expand_next_direction(expanded_dependencies, depth,
                                              current_depth, new_nodes,
                                              cache_set, "up", new_direction)
         if "down" in direction:
-            self._self_expand_next_direction(expanded_targets, depth,
+            expanded_nodes += self._self_expand_next_direction(expanded_targets, depth,
                                              current_depth, new_nodes,
                                              cache_set, "down", direction)
+        return expanded_nodes
+
 
     def add_meta(self, new_meta, build_context, direction=None, depth=None,
                  force=False):
@@ -1048,9 +1051,11 @@ class BuildGraph(BaseGraph):
         jobs = self.rule_dependency_graph.get_job_ids_from_meta(new_meta)
         new_nodes = []
         for job in jobs:
-            new_nodes = new_nodes + self.add_job(job, build_context,
+            expanded_jobs, new_expanded_nodes = self.add_job(job, build_context,
                                                  direction=direction,
                                                  depth=depth, force=force)
+            new_nodes = new_nodes + new_expanded_nodes
+
         return new_nodes
 
 
@@ -1083,11 +1088,11 @@ class BuildGraph(BaseGraph):
         cache_set = set()
 
         for expanded_job in expanded_jobs:
-            if force:
-                expanded_job.force = True
             self._self_expand(expanded_job, direction, depth, current_depth,
                               new_nodes, cache_set)
-        return new_nodes
+            if force:
+                self.get_job(expanded_job.get_id()).set_force(True)
+        return map(lambda x: x.get_id(), expanded_jobs), new_nodes
 
     def get_starting_job_ids(self):
         """Used to return a list of jobs to run"""
