@@ -6,6 +6,8 @@ import Queue
 import arrow
 import collections
 
+from celery import Celery
+
 class ExecutionThread(threading.Thread):
 
     def __init__(self, execution_manager):
@@ -27,13 +29,13 @@ class Executor(object):
         job = self.prepare_job_for_execution(job)
 
         status = False
-        log = ''
+        stdout = stderr = ''
         try:
-            status, log = self.do_execute(job)
+            status, stdout, stderr = self.do_execute(job)
         finally:
-            self.finish_job(job, status, log)
+            self.finish_job(job, status, stdout, stderr)
 
-        return status, log
+        return status, stdout, stderr
 
     def do_execute(self, job):
         raise NotImplementedError()
@@ -42,10 +44,12 @@ class Executor(object):
         job.is_running = True
         return job
 
-    def finish_job(self, job, status, log):
+    def finish_job(self, job, status, stdout, stderr):
         job.is_running = False
         deepy.log.info("Job {} complete. Status: {}".format(job.get_id(), status))
-        deepy.log.debug(log)
+        deepy.log.debug("{}(stdout): {}".format(job.get_id(), stdout))
+        deepy.log.debug("{}(stderr): {}".format(job.get_id(), stderr))
+
 
 class LocalExecutor(Executor):
 
@@ -55,7 +59,7 @@ class LocalExecutor(Executor):
         (stdout, stderr) = proc.communicate()
         deepy.log.info("{} STDOUT: {}".format(command, stdout))
         deepy.log.info("{} STDERR: {}".format(command, stderr))
-        return proc.returncode, '===='.join((stdout, stderr))
+        return proc.returncode == 0, stdout, stderr
 
 class PrintExecutor(Executor):
     """ "Executes" by printing and marking targets as available
@@ -73,11 +77,12 @@ class PrintExecutor(Executor):
             target.exists = True
             target.mtime = arrow.get()
 
-        return True, 'Log'
+        return True, '', ''
 
     def finish_job(self, job, status, log, build_graph):
         super(PrintExecutor, self).finish_job(job, status, log, build_graph)
         build_graph.finish_job(job, status, log, update_job_cache=False)
+
 
 class ExecutionManager(object):
 
@@ -178,13 +183,13 @@ class ExecutionManager(object):
             return
 
         # Execute job
-        success, log = self._execute(job)
+        success, stdout, stderr = self._execute(job)
 
         # Update job state
-        self._update_build(lambda: self.finish_job(job.unique_id, success=success, log=log,
+        self._update_build(lambda: self.finish_job(job.unique_id, success=success, stdout=stdout, stderr=stderr,
             update_job_cache=self.executor.should_update_build_graph))
 
-        return success, log
+        return success, stdout, stderr
 
     def _execute_daemon(self):
         raise NotImplementedError()
@@ -200,7 +205,7 @@ class ExecutionManager(object):
             return self.build.get_starting_job_ids()
         return self._update_build(get_next_jobs)
 
-    def finish_job(self, job_id, success, log, update_job_cache=True):
+    def finish_job(self, job_id, success, stdout, stderr, update_job_cache=True):
         job = self.build.get_job(job_id)
 
         # Mark this job as finished running

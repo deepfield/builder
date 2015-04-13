@@ -36,7 +36,7 @@ class MockExecutor(Executor):
             target = build_graph.get_target(target_id)
             target.do_get_mtime = mock.Mock(return_value=self.mtime)
         job.invalidate()
-        return True, command
+        return True, command, command
 
 
 class ExtendedMockExecutor(Executor):
@@ -72,7 +72,7 @@ class ExtendedMockExecutor(Executor):
             else:
                 target.do_get_mtime = mock.Mock(return_value=effect[target_id])
 
-        return success, command
+        return success, command, command
 
 
 class ExecutionManagerTests(unittest.TestCase):
@@ -756,7 +756,7 @@ class ExecutionManagerTests(unittest.TestCase):
         do_execute = execution_manager.executor.do_execute
         def mock_do_execute(job):
             do_execute(job)
-            return False, ''
+            return False, '', ''
 
         execution_manager.executor.execute = mock.Mock(side_effect=mock_do_execute)
 
@@ -782,7 +782,7 @@ class ExecutionManagerTests(unittest.TestCase):
                 depends=['A-target'], targets=["B-target"])
         ]
         execution_manager = self._get_execution_manager(jobs)
-        execution_manager.executor.execute = mock.Mock(return_value=(False, ''))
+        execution_manager.executor.execute = mock.Mock(return_value=(False, '', ''))
 
         # When
         execution_manager.submit("B", {})
@@ -806,7 +806,7 @@ class ExecutionManagerTests(unittest.TestCase):
                 depends=['A-target'], targets=["B-target"])
         ]
         execution_manager = self._get_execution_manager(jobs)
-        execution_manager.executor.execute = mock.Mock(return_value=(False, ''))
+        execution_manager.executor.execute = mock.Mock(return_value=(False, '', ''))
 
         # When
         execution_manager.submit("B", {})
@@ -868,7 +868,7 @@ class ExecutionManagerTests(unittest.TestCase):
                 depends=['A3-target'], targets=["D-target"]),
         ]
         execution_manager = self._get_execution_manager(jobs)
-        execution_manager.executor.execute = mock.Mock(return_value=(False, ''))
+        execution_manager.executor.execute = mock.Mock(return_value=(False, '', ''))
         execution_manager.submit("A", {}, direction={"up", "down"})
         execution_manager.build.get_target('A1-target').do_get_mtime = mock.Mock(return_value=None)
 
@@ -902,7 +902,7 @@ class ExecutionManagerTests(unittest.TestCase):
         execute = execution_manager.executor.execute
         def mock_execute(job):
             execute(job)
-            return False, ''
+            return False, '', ''
         execution_manager.executor.execute = mock.Mock(side_effect=mock_execute)
         execution_manager.submit("A", {}, direction={"up", "down"})
 
@@ -1098,3 +1098,4 @@ class ExecutionManagerTests(unittest.TestCase):
 
         self.assertEqual(job_A.count, 1)
         self.assertEqual(job_B.count, 1)
+
