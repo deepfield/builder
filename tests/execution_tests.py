@@ -1044,6 +1044,36 @@ class ExecutionManagerTests(unittest.TestCase):
         because their parents are not stale and won't run again.
         """
 
+        # Given
+        jobs = [
+            EffectJobDefinition("A",
+                depends=None, targets=["A1-target", "A2-target"],
+                effect=[{"A1-target": 1, "A2-target": None}, {"A1-target": 1, "A2-target": None}, {"A1-target": 1, "A2-target": 4}]),
+            EffectJobDefinition("B",
+                depends=["A1-target"], targets=["B-target"], effect=2),
+            EffectJobDefinition("C",
+                depends=["A2-target"], targets=["C-target"], effect=[2, 5]),
+            EffectJobDefinition("D",
+                depends=["B-target"], targets=["D-target"], effect=3),
+            EffectJobDefinition("E",
+                depends=["C-target"], targets=["E-target"], effect=[3, 6]),
+        ]
+        execution_manager = self._get_execution_manager_with_effects(jobs)
+        build_context = {}
+        execution_manager.submit("A", build_context, direction={"down", "up"})
+
+        # When
+        for execution in ("A", "B", "C", "D", "E", "A", "A"):
+            execution_manager.execute(execution)
+
+        # Then
+        self.assertEquals({"C"}, set(execution_manager.get_next_jobs_to_run("A")))
+        self.assertEquals(execution_manager.get_build().get_job("C").get_should_run(), True)
+        execution_manager.execute("C")
+        self.assertEquals({"E"}, set(execution_manager.get_next_jobs_to_run("C")))
+        self.assertEquals(execution_manager.get_build().get_job("E").get_should_run(), True)
+
+
     @unit
     def test_effect_job(self):
         """test_effect_job
