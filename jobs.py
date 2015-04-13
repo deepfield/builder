@@ -2,7 +2,9 @@
 the nodes that can be called and will perform an action.
 """
 
+import json
 import arrow
+import collections
 
 import builder.expanders
 import builder.targets
@@ -513,6 +515,23 @@ class JobDefinition(object):
         """
         return self.targets
 
+    def __repr__(self):
+        dependencies_dict = self.get_dependencies()
+        targets_dict = self.get_targets()
+
+        str_dependencies = collections.defaultdict(list)
+        for dependency_type, dependencies in dependencies_dict.iteritems():
+            for dependency in dependencies:
+                str_dependencies[dependency_type].append(dependency.unexpanded_id)
+
+        str_targets = collections.defaultdict(list)
+        for target_type, targets in targets_dict.iteritems():
+            for target in targets:
+                str_targets[target_type].append(target.unexpanded_id)
+
+        this_dict = {"depends": str_dependencies, "targets": str_targets}
+
+        return str(json.dumps(this_dict, indent=2))
 
 class TimestampExpandedJobDefinition(JobDefinition):
     """A job that combines the timestamp expanded node and the job node
@@ -583,3 +602,6 @@ class MetaTarget(object):
         graph
         """
         return True
+
+    def __repr__(self):
+        return str(json.dumps("MetaTarget({})".format(self.job_collection), indent=2))
