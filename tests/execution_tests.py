@@ -938,7 +938,7 @@ class ExecutionManagerTests(unittest.TestCase):
         execution_manager.execute("A2")
 
         # Then
-        self.assertEquals({}, set(execution_manager.get_next_jobs_to_run("A1")))
+        self.assertEquals(set(), set(execution_manager.get_next_jobs_to_run("A1")))
         self.assertEquals({"A2"}, set(execution_manager.get_next_jobs_to_run("A2")))
 
     @unit
@@ -987,7 +987,7 @@ class ExecutionManagerTests(unittest.TestCase):
             EffectJobDefinition("A", targets=["A-target"]),
             EffectJobDefinition("B", depends=["A-target"], targets=["B-target"]),
         ]
-        execution_manager = self._get_effect_execution_manager(jobs)
+        execution_manager = self._get_execution_manager_with_effects(jobs)
 
         # When
         execution_manager.submit("B", {})

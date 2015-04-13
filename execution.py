@@ -142,16 +142,15 @@ class ExecutionManager(object):
         map(work_queue.put, next_jobs)
         while not work_queue.empty():
             job_id = work_queue.get()
-
-            job = self.build.get_job(job_id)
-            self.execute(job)
+            self.execute(job_id)
 
             # Get next jobs to execute
             next_job_ids = self.get_next_jobs_to_run(job_id)
             map(work_queue.put, next_job_ids)
 
-    def execute(self, job):
+    def execute(self, job_id):
         # Don't run a job more than the configured max number of retries
+        job = self.build.get_job(job_id)
         if job.retries >= self.max_retries:
             job.set_failed(True)
             deepy.log.error("Maximum number of retries reached for {}".format(job))
