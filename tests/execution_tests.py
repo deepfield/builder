@@ -922,7 +922,7 @@ class ExecutionManagerTests(unittest.TestCase):
                 effect={"A1-target": 1}),
             EffectJobDefinition("A2",
                 depends=None, targets=["A2-target"],
-                effect={"A2-target": None}),
+                effect=[{"A2-target": None}, {"A2-target": 1}]),
             EffectJobDefinition("B",
                 depends=[
                     {"unexpanded_id": "A1-target", "type": "depends_one_or_more"},
@@ -940,6 +940,14 @@ class ExecutionManagerTests(unittest.TestCase):
         # Then
         self.assertEquals(set(), set(execution_manager.get_next_jobs_to_run("A1")))
         self.assertEquals({"A2"}, set(execution_manager.get_next_jobs_to_run("A2")))
+        self.assertEquals(execution_manager.get_build().get_job("B").get_should_run(), False)
+
+        # On rerun, A2 complete successfully and therefore B should run
+        execution_manager.execute("A2")
+        self.assertEquals({"B"}, set(execution_manager.get_next_jobs_to_run("A1")))
+        self.assertEquals({"B"}, set(execution_manager.get_next_jobs_to_run("A2")))
+        self.assertEquals(execution_manager.get_build().get_job("B").get_should_run(), True)
+
 
     @unit
     def test_depends_one_or_more_next_jobs_failed_max_lower(self):
