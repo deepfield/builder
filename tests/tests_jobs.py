@@ -99,6 +99,43 @@ class SimpleTimestampExpandedTestJob(SimpleJobTestMixin, TimestampExpandedJobDef
         self.setup_dependencies_and_targets(depends_dict, targets_dict, depends, targets)
 
 
+class EffectJobDefinition(SimpleTestJobDefinition):
+    def __init__(self, unexpanded_id=None, effect=None, **kwargs):
+
+        if effect is None:
+            effect = [1]
+        if not isinstance(effect, list):
+            effect = [effect]
+        self.effect = effect
+        super(EffectJobDefinition, self).__init__(unexpanded_id=unexpanded_id,
+                target_type=builder.targets.Target, **kwargs)
+
+    def get_effect(self):
+        return self.effect
+
+    def construct_job(self, expanded_id, build_graph, build_context):
+        return EffectJob(job=self, unique_id=expanded_id, build_graph=build_graph, build_context=build_context,
+            effect=self.effect)
+
+
+class EffectTimestampExpandedJobDefinition(SimpleTimestampExpandedTestJob):
+    def __init__(self, unexpanded_id=None, effect=None, **kwargs):
+
+        if effect is None:
+            effect = [1]
+        if not isinstance(effect, list):
+            effect = [effect]
+        self.effect = effect
+        super(EffectTimestampExpandedJobDefinition, self).__init__(unexpanded_id=unexpanded_id,
+                target_type=builder.targets.Target, **kwargs)
+
+    def get_effect(self):
+        return self.effect
+
+    def construct_job(self, expanded_id, build_graph, build_context):
+        return EffectJob(job=self, unique_id=expanded_id, build_graph=build_graph, build_context=build_context,
+            effect=self.effect)
+
 class ShouldRunRecurseJob(builder.jobs.Job):
     """Used to count how many times the should run is returned"""
 
@@ -127,23 +164,7 @@ class ShouldRunRecurseJobDefinition(SimpleTestJobDefinition):
             counting_nodes.append(counting_node)
         return counting_nodes
 
-class EffectJobDefinition(SimpleTestJobDefinition):
-    def __init__(self, unexpanded_id=None, effect=None, **kwargs):
 
-        if effect is None:
-            effect = [1]
-        if not isinstance(effect, list):
-            effect = [effect]
-        self.effect = effect
-        super(EffectJobDefinition, self).__init__(unexpanded_id=unexpanded_id,
-                target_type=builder.targets.Target, **kwargs)
-
-    def get_effect(self):
-        return self.effect
-
-    def construct_job(self, expanded_id, build_graph, build_context):
-        return EffectJob(job=self, unique_id=expanded_id, build_graph=build_graph, build_context=build_context,
-            effect=self.effect)
 
 
 class EffectJob(Job):

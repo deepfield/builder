@@ -3,7 +3,6 @@ import mock
 import numbers
 import unittest
 
-import arrow
 import funcy
 
 import builder.build
@@ -12,6 +11,9 @@ from builder.tests.tests_jobs import *
 from builder.build import BuildManager
 from builder.execution import Executor, ExecutionManager
 from builder.expanders import TimestampExpander
+
+import deepy.timerange
+arrow = deepy.timerange.arrow_factory
 
 from testing import unit, mock_mtime_generator
 
@@ -55,6 +57,11 @@ class ExtendedMockExecutor(Executor):
         build_graph = job.build_graph
         command = job.get_command()
         effect = job.get_effect()
+        if isinstance(effect, numbers.Number):
+            success = True
+        else:
+            success = effect.get('success') or True
+
         target_ids = build_graph.get_target_ids(job.get_id())
         for target_id in target_ids:
             target = build_graph.get_target(target_id)
@@ -65,7 +72,7 @@ class ExtendedMockExecutor(Executor):
             else:
                 target.do_get_mtime = mock.Mock(return_value=effect[target_id])
 
-        return True, command
+        return success, command
 
 
 class ExecutionManagerTests(unittest.TestCase):
@@ -906,6 +913,8 @@ class ExecutionManagerTests(unittest.TestCase):
 
         # Then
         self.assertEquals({"C", "D"}, set(execution_manager.get_next_jobs_to_run("A")))
+        self.assertEquals(execution_manager.get_build().get_job("C").get_should_run(), True)
+        self.assertEquals(execution_manager.get_build().get_job("D").get_should_run(), True)
 
     @unit
     def test_depends_one_or_more_next_jobs(self):
@@ -952,7 +961,7 @@ class ExecutionManagerTests(unittest.TestCase):
     @unit
     def test_depends_one_or_more_next_jobs_failed_max_lower(self):
         """test_depends_one_or_more_next_jobs_failed
-        test a situation where a job hads a depends one or more dependency. It
+        test a situation where a job has a depends one or more dependency. It
         is not past it's curfew so it needs all of the dependencies to run.
         Each of the dependencies should also depend on a single job so there are
         a total of three layers of jobs. Complete each of the jobs in the first
@@ -961,6 +970,36 @@ class ExecutionManagerTests(unittest.TestCase):
         bottom row as all of it's buildable dependencies are built and all of
         the non buildable dependencies are due to a failure.
         """
+        jobs = [
+            EffectTimestampExpandedJobDefinition("A", file_step="5min",
+                depends=None,
+                targets=[{"unexpanded_id": "A-target-%Y-%m-%d-%H-%M", "file_step": "5min"}]),
+            EffectTimestampExpandedJobDefinition("B", file_step="5min",
+                depends=None,
+                targets=[{"unexpanded_id": "B-target-%Y-%m-%d-%H-%M", "file_step": "5min"}],
+                effect=[{"B-target-2015-01-01-00-00": 1, "B-target-2015-01-01-00-05": None, "success": False}]),
+            EffectJobDefinition("C", expander_type=TimestampExpander,
+                depends=[
+                    {"unexpanded_id": "A-target-%Y-%m-%d-%H-%M", "file_step": "5min", "type": "depends_one_or_more"},
+                    {"unexpanded_id": "B-target-%Y-%m-%d-%H-%M", "file_step": "5min", "type": "depends_one_or_more"}],
+                targets=[{"unexpanded_id": "C-target-%Y-%m-%d-%H-%M", "file_step": "5min"}])
+        ]
+        execution_manager = self._get_execution_manager_with_effects(jobs)
+        build_context = {"start_time": arrow.get("2015-01-01-00-00"), "end_time": arrow.get("2015-01-01-00-10")}
+        execution_manager.submit("C", build_context)
+
+        # When
+        executions = ["A_2015-01-01-00-05-00", "A_2015-01-01-00-00-00", "B_2015-01-01-00-00-00"] + ["B_2015-01-01-00-05-00"]*6
+        for execution in executions:
+            execution_manager.execute(execution)
+
+        # Then
+        self.assertEquals(execution_manager.get_build().get_job("B_2015-01-01-00-05-00").get_should_run(), False)
+        self.assertEquals(execution_manager.get_build().get_job("B_2015-01-01-00-05-00").get_stale(), True)
+        for job_id in ("A_2015-01-01-00-05-00", "A_2015-01-01-00-00-00", "B_2015-01-01-00-00-00", "B_2015-01-01-00-05-00"):
+            self.assertEquals({"C"}, set(execution_manager.get_next_jobs_to_run(job_id)))
+        self.assertEquals(execution_manager.get_build().get_job("C").get_should_run(), True)
+
 
     @unit
     def test_upper_update(self):

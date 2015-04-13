@@ -503,6 +503,8 @@ class BuildGraph(BaseGraph):
 
     def is_job_definition(self, job_id):
         """Returns if the node relating to job id is a job node"""
+        if not job_id in self.node:
+            raise KeyError("Job Definition '{}' is not in rule dependency graph".format(job_id))
         job = self.node[job_id]
         if "object" not in job:
             return False
@@ -1109,6 +1111,8 @@ class BuildGraph(BaseGraph):
 
     def is_job(self, job_id):
         """Returns if the id passed in relates to a job node"""
+        if not job_id in self.node:
+            raise KeyError("Job '{}' is not in build graph".format(job_id))
         job_container = self.node[job_id]
         if "object" not in job_container:
             return False

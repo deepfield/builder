@@ -232,6 +232,9 @@ class Job(object):
     def set_buildable(self, buildable):
         self.buildable = buildable
 
+    def get_failed(self):
+        return self.failed
+
     def past_cache_time(self):
         """Returns true if the job is past it's cache time
 
@@ -345,7 +348,7 @@ class Job(object):
         """
         if self.force:
             return True
-        if self.failed:
+        if self.get_failed():
             return False
         if self.should_run is not None:
             return self.should_run
