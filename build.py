@@ -1094,19 +1094,20 @@ class BuildGraph(BaseGraph):
                 self.get_job(expanded_job.get_id()).set_force(True)
         return map(lambda x: x.get_id(), expanded_jobs), new_nodes
 
-    def get_starting_job_ids(self):
-        """Used to return a list of jobs to run"""
-        should_run_list = []
-        for job_id, job in self.job_iter():
-            if job.get_should_run():
-                should_run_list.append(job_id)
-        return should_run_list
 
     def get_target(self, target_id):
         """
         Fetch target with the given ID
         """
         return self.node[target_id]["object"]
+
+    def get_input_target_iter(self):
+        for target_id, target in self.target_iter():
+            if len(self.get_creator_ids(target_id)) == 0:
+                yield target_id, target
+
+    def get_input_target_ids(self):
+        return [target_id for target_id, target in self.get_input_target_iter()]
 
     def get_job_definition(self, job_definition_id):
         """
@@ -1155,3 +1156,10 @@ class BuildGraph(BaseGraph):
         for node_id in self.node:
             if self.is_job(node_id):
                 yield node_id, self.get_job(node_id)
+
+    def target_iter(self):
+        """Returns an iterator over the graph's (target_id, target) pairs
+        """
+        for node_id in self.node:
+            if self.is_target(node_id):
+                yield node_id, self.get_target(node_id)

@@ -103,7 +103,8 @@ class Executor(object):
             if not job.get_should_run_immediate():
                 job.force = False
                 job.retries = 0
-
+        next_jobs = self.get_execution_manager().get_next_jobs_to_run(job.get_id())
+        map(self.get_execution_manager().add_to_work_queue, next_jobs)
 
     def update_targets(self, target_ids):
         """Takes in a list of target ids and updates all of their needed
@@ -171,16 +172,20 @@ class PrintExecutor(Executor):
     should_update_build_graph = False
 
     def do_execute(self, job):
-        build_graph = job.build_graph
+        build_graph = self.get_build_graph()
         command = job.get_command()
         job.set_should_run(False)
-        
+
         print command
         target_ids = build_graph.get_target_ids(job.get_id())
         for target_id in target_ids:
             target = build_graph.get_target(target_id)
             target.exists = True
             target.mtime = arrow.get()
+            for dependent_job_id in build_graph.get_dependent_ids(target_id):
+                dependent_job = build_graph.get_job(dependent_job_id)
+                dependent_job.invalidate()
+                dependent_job.set_should_run(True)
 
         return ExecutionResult(is_async=False, status=True, stdout='', stderr='')
 
@@ -199,6 +204,7 @@ class ExecutionManager(object):
         self.build = build_manager.make_build()
         self.max_retries = max_retries
         self._build_lock = threading.RLock()
+        self._work_queue = Queue.Queue()
         self.executor = executor_factory(self)
 
 
@@ -230,6 +236,9 @@ class ExecutionManager(object):
                 self._recursive_invalidate_job(job_id)
 
         self._update_build(update_build_graph)
+
+    def add_to_work_queue(self, job_id):
+        self._work_queue.put(job_id)
 
     def start_execution(self, inline=True):
         """
@@ -272,16 +281,12 @@ class ExecutionManager(object):
         return next_jobs_list
 
     def _execute_inline(self):
-        work_queue = Queue.Queue()
+        work_queue = self._work_queue
         next_jobs = self.get_jobs_to_run()
         map(work_queue.put, next_jobs)
         while not work_queue.empty():
             job_id = work_queue.get()
             self.execute(job_id)
-
-            # Get next jobs to execute
-            next_job_ids = self.get_next_jobs_to_run(job_id)
-            map(work_queue.put, next_job_ids)
 
     def execute(self, job_id):
         # Don't run a job more than the configured max number of retries
@@ -294,7 +299,6 @@ class ExecutionManager(object):
         # Execute job
         result = self._execute(job)
 
-
         return result
 
     def _execute_daemon(self):
@@ -306,11 +310,14 @@ class ExecutionManager(object):
         else:
             return self.executor.execute(job)
 
-    def get_jobs_to_run(self):
-        def get_next_jobs():
-            return self.build.get_starting_job_ids()
-        return self._update_build(get_next_jobs)
 
+    def get_jobs_to_run(self):
+        """Used to return a list of jobs to run"""
+        should_run_list = []
+        for job_id, job in self.build.job_iter():
+            if job.get_should_run():
+                should_run_list.append(job_id)
+        return should_run_list
 
 
     def get_build(self):
