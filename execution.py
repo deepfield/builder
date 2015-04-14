@@ -173,7 +173,7 @@ class PrintExecutor(Executor):
 
     def do_execute(self, job):
         build_graph = job.build_graph
-        command = job.get_command(build_graph)
+        command = job.get_command()
         print command
         target_ids = build_graph.get_targets(job.get_id())
         for target_id in target_ids:
