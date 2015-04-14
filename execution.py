@@ -8,6 +8,23 @@ import collections
 
 from celery import Celery
 
+class ExecutionResult(object):
+    def __init__(self, is_async, status=None, stdout=None, stderr=None):
+        self._is_async = is_async
+        self.status = status
+        self.stdout = stdout
+        self.stderr = stderr
+
+    def finish(self, status, stdout, stderr):
+        self.status = status
+        self.stdout = stdout
+        self.stderr = stderr
+
+    def is_finished(self):
+        return self.status is not None
+
+
+
 class ExecutionThread(threading.Thread):
 
     def __init__(self, execution_manager):
@@ -23,32 +40,44 @@ class Executor(object):
     # Should be False if this executor will handle updating the job state
     should_update_build_graph = True
 
+    def __init__(self, execution_manager):
+        self._build_graph = execution_manager.get_build()
+        self._execution_manager = execution_manager
+
     def execute(self, job):
         if job.is_running:
             raise SystemError("Job {} is already running".format(job))
         job = self.prepare_job_for_execution(job)
 
-        status = False
-        stdout = stderr = ''
+        result = None
         try:
-            status, stdout, stderr = self.do_execute(job)
+            result = self.do_execute(job)
         finally:
-            self.finish_job(job, status, stdout, stderr)
+            self.finish_job(job, result)
 
-        return status, stdout, stderr
+        return result
 
     def do_execute(self, job):
         raise NotImplementedError()
+
+    def get_build_graph(self):
+        return self._build_graph
+
+
+    def get_execution_manager(self):
+        return self._execution_manager
+
 
     def prepare_job_for_execution(self, job):
         job.is_running = True
         return job
 
-    def finish_job(self, job, status, stdout, stderr):
+
+    def finish_job(self, job, result):
         job.is_running = False
-        deepy.log.info("Job {} complete. Status: {}".format(job.get_id(), status))
-        deepy.log.debug("{}(stdout): {}".format(job.get_id(), stdout))
-        deepy.log.debug("{}(stderr): {}".format(job.get_id(), stderr))
+        deepy.log.info("Job {} complete. Status: {}".format(job.get_id(), result.status))
+        deepy.log.debug("{}(stdout): {}".format(job.get_id(), result.stdout))
+        deepy.log.debug("{}(stderr): {}".format(job.get_id(), result.stderr))
 
 
 class LocalExecutor(Executor):
@@ -59,7 +88,9 @@ class LocalExecutor(Executor):
         (stdout, stderr) = proc.communicate()
         deepy.log.info("{} STDOUT: {}".format(command, stdout))
         deepy.log.info("{} STDERR: {}".format(command, stderr))
-        return proc.returncode == 0, stdout, stderr
+
+        return ExecutionResult(is_async=False, status=proc.returncode == 0, stdout=stdout, stderr=stderr)
+
 
 class PrintExecutor(Executor):
     """ "Executes" by printing and marking targets as available
@@ -77,21 +108,25 @@ class PrintExecutor(Executor):
             target.exists = True
             target.mtime = arrow.get()
 
-        return True, '', ''
+        return ExecutionResult(is_async=False, status=True, stdout='', stderr='')
 
-    def finish_job(self, job, status, log, build_graph):
-        super(PrintExecutor, self).finish_job(job, status, log, build_graph)
-        build_graph.finish_job(job, status, log, update_job_cache=False)
+
+    # def finish_job(self, job, result):
+    #     super(PrintExecutor, self).finish_job(job, result)
+    #     self.finish_job(job, result)
+
+
 
 
 class ExecutionManager(object):
 
-    def __init__(self, build_manager, executor, max_retries=5):
+    def __init__(self, build_manager, executor_factory, max_retries=5):
         self.build_manager = build_manager
         self.build = build_manager.make_build()
-        self.executor = executor
         self.max_retries = max_retries
         self._build_lock = threading.RLock()
+        self.executor = executor_factory(self)
+
 
     def _recursive_invalidate_job(self, job_id):
         job = self.build.get_job(job_id)
@@ -183,13 +218,13 @@ class ExecutionManager(object):
             return
 
         # Execute job
-        success, stdout, stderr = self._execute(job)
+        result = self._execute(job)
 
         # Update job state
-        self._update_build(lambda: self.finish_job(job.unique_id, success=success, stdout=stdout, stderr=stderr,
+        self._update_build(lambda: self.finish_job(job.unique_id, success=result.status, stdout=result.stdout, stderr=result.stderr,
             update_job_cache=self.executor.should_update_build_graph))
 
-        return success, stdout, stderr
+        return result
 
     def _execute_daemon(self):
         raise NotImplementedError()
