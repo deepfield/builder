@@ -92,7 +92,6 @@ class Executor(object):
             # updat all of it's targets
             target_ids = self.get_build_graph().get_target_ids(job.get_id())
             self.update_targets(target_ids)
-
             # update all of it's dependents
             for target_id in target_ids:
                 dependent_ids = self.get_build_graph().get_dependent_ids(target_id)
@@ -102,7 +101,7 @@ class Executor(object):
 
             # check if it succeeded and set retries to 0
             if not job.get_should_run_immediate():
-                job.foce = False
+                job.force = False
                 job.retries = 0
 
 
@@ -174,8 +173,10 @@ class PrintExecutor(Executor):
     def do_execute(self, job):
         build_graph = job.build_graph
         command = job.get_command()
+        job.set_should_run(False)
+        
         print command
-        target_ids = build_graph.get_targets(job.get_id())
+        target_ids = build_graph.get_target_ids(job.get_id())
         for target_id in target_ids:
             target = build_graph.get_target(target_id)
             target.exists = True
