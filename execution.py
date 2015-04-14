@@ -23,6 +23,9 @@ class ExecutionResult(object):
     def is_finished(self):
         return self.status is not None
 
+    def is_async(self):
+        return self._is_async
+
 
 
 class ExecutionThread(threading.Thread):
@@ -53,7 +56,8 @@ class Executor(object):
         try:
             result = self.do_execute(job)
         finally:
-            self.finish_job(job, result)
+            if result is not None and not result.is_async():
+                self.get_execution_manager()._update_build(lambda: self.finish_job(job, result, self.should_update_build_graph))
 
         return result
 
@@ -73,11 +77,80 @@ class Executor(object):
         return job
 
 
-    def finish_job(self, job, result):
-        job.is_running = False
+    def finish_job(self, job, result, update_job_cache=True):
         deepy.log.info("Job {} complete. Status: {}".format(job.get_id(), result.status))
         deepy.log.debug("{}(stdout): {}".format(job.get_id(), result.stdout))
         deepy.log.debug("{}(stderr): {}".format(job.get_id(), result.stderr))
+
+        # Mark this job as finished running
+        job.last_run = arrow.now()
+        job.retries += 1
+        job.is_running = False
+        if update_job_cache:
+            job.invalidate()
+
+            # updat all of it's targets
+            target_ids = self.get_build_graph().get_target_ids(job.get_id())
+            self.update_targets(target_ids)
+
+            # update all of it's dependents
+            for target_id in target_ids:
+                dependent_ids = self.get_build_graph().get_dependent_ids(target_id)
+                for dependent_id in dependent_ids:
+                    dependent = self.get_build_graph().get_job(dependent_id)
+                    dependent.invalidate()
+
+            # check if it succeeded and set retries to 0
+            if not job.get_should_run_immediate():
+                job.foce = False
+                job.retries = 0
+
+
+    def update_targets(self, target_ids):
+        """Takes in a list of target ids and updates all of their needed
+        values
+        """
+        update_function_list = collections.defaultdict(list)
+        for target_id in target_ids:
+            target = self.get_build_graph().get_target(target_id)
+            func = target.get_bulk_exists_mtime
+            update_function_list[func].append(target)
+
+        for update_function, targets in update_function_list.iteritems():
+            update_function(targets)
+
+    def update_target_cache(self, target_id):
+        """Updates the cache due to a target finishing"""
+        target = self.get_build_graph().get_target(target_id)
+        target.invalidate()
+        target.get_mtime()
+
+        dependent_ids = self.get_build_graph().get_dependent_ids(target_id)
+        for dependent_id in dependent_ids:
+            dependent = self.get_build_graph().get_job(dependent_id)
+            dependent.invalidate()
+            dependent.get_stale()
+            dependent.get_buildable()
+            dependent.update_lower_nodes_should_run()
+
+    def update(self, target_id):
+        """Checks what should happen now that there is new information
+        on a target
+        """
+        self.update_target_cache(target_id)
+        creator_ids = self.get_build_graph().get_creator_ids(target_id)
+        creators_exist = False
+        for creator_id in creator_ids:
+            creators_exist = True
+            next_jobs = self.get_next_jobs_to_run(creator_id)
+            for next_job in next_jobs:
+                self.run(next_job)
+        if creators_exist == False:
+            for dependent_id in self.get_build_graph().get_dependent_ids(target_id):
+                next_jobs = self.get_next_jobs_to_run(dependent_id)
+                for next_job in next_jobs:
+                    self.run(next_job)
+
 
 
 class LocalExecutor(Executor):
@@ -220,9 +293,6 @@ class ExecutionManager(object):
         # Execute job
         result = self._execute(job)
 
-        # Update job state
-        self._update_build(lambda: self.finish_job(job.unique_id, success=result.status, stdout=result.stdout, stderr=result.stderr,
-            update_job_cache=self.executor.should_update_build_graph))
 
         return result
 
@@ -240,76 +310,6 @@ class ExecutionManager(object):
             return self.build.get_starting_job_ids()
         return self._update_build(get_next_jobs)
 
-    def finish_job(self, job_id, success, stdout, stderr, update_job_cache=True):
-        job = self.build.get_job(job_id)
-
-        # Mark this job as finished running
-        job.last_run = arrow.now()
-        job.retries += 1
-        if update_job_cache:
-            job.invalidate()
-
-            # updat all of it's targets
-            target_ids = self.build.get_target_ids(job_id)
-            self.update_targets(target_ids)
-
-            # update all of it's dependents
-            for target_id in target_ids:
-                dependent_ids = self.build.get_dependent_ids(target_id)
-                for dependent_id in dependent_ids:
-                    dependent = self.build.get_job(dependent_id)
-                    dependent.invalidate()
-
-            # check if it succeeded and set retries to 0
-            if not job.get_should_run_immediate():
-                job.foce = False
-                job.retries = 0
-
-
-    def update_targets(self, target_ids):
-        """Takes in a list of target ids and updates all of their needed
-        values
-        """
-        update_function_list = collections.defaultdict(list)
-        for target_id in target_ids:
-            target = self.build.get_target(target_id)
-            func = target.get_bulk_exists_mtime
-            update_function_list[func].append(target)
-
-        for update_function, targets in update_function_list.iteritems():
-            update_function(targets)
-
-    def update_target_cache(self, target_id):
-        """Updates the cache due to a target finishing"""
-        target = self.build.get_target(target_id)
-        target.invalidate()
-        target.get_mtime()
-
-        dependent_ids = self.build.get_dependent_ids(target_id)
-        for dependent_id in dependent_ids:
-            dependent = self.build.get_job(dependent_id)
-            dependent.invalidate()
-            dependent.get_stale()
-            dependent.get_buildable()
-            dependent.update_lower_nodes_should_run()
-
-    def update(self, target_id):
-        """Checks what should happen now that there is new information
-        on a target
-        """
-        self.update_target_cache(target_id)
-        creator_ids = self.build.get_creator_ids(target_id)
-        creators_exist = False
-        for creator_id in creator_ids:
-            creators_exist = True
-            next_jobs = self.get_next_jobs_to_run(creator_id)
-            for next_job in next_jobs:
-                self.run(next_job)
-        if creators_exist == False:
-            for dependent_id in self.build.get_dependent_ids(target_id):
-                next_jobs = self.get_next_jobs_to_run(dependent_id)
-                for next_job in next_jobs:
-                    self.run(next_job)
 
 
     def get_build(self):

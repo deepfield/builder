@@ -17,28 +17,6 @@ arrow = deepy.timerange.arrow_factory
 
 from testing import unit, mock_mtime_generator
 
-class MockExecutor(Executor):
-    """ "Executes" by getting the job's command, logging it, and setting the target as available
-    """
-    should_update_build_graph = False
-
-    def __init__(self, execution_manager, mtime=None):
-        super(MockExecutor, self).__init__(execution_manager)
-        if mtime is None:
-            mtime = arrow.get().timestamp
-        self.mtime = mtime
-
-
-    def do_execute(self, job):
-        build_graph = self.get_build_graph()
-        command = job.get_command()
-        target_ids = build_graph.get_target_ids(job.get_id())
-        for target_id in target_ids:
-            target = build_graph.get_target(target_id)
-            target.do_get_mtime = mock.Mock(return_value=self.mtime)
-        job.invalidate()
-        return ExecutionResult(False, True, command, command)
-
 
 class ExtendedMockExecutor(Executor):
     """"Executes" by running the jobs effect. An effect is a dictionary of
@@ -686,7 +664,7 @@ class ExecutionManagerTests(unittest.TestCase):
 
     def _get_execution_manager(self, jobs):
         build_manager = BuildManager(jobs, metas=[])
-        execution_manager = ExecutionManager(build_manager, lambda execution_manager: MockExecutor(execution_manager, mtime=arrow.get('2015-01-01').timestamp))
+        execution_manager = ExecutionManager(build_manager, lambda execution_manager: ExtendedMockExecutor(execution_manager))
         return execution_manager
 
     def _get_execution_manager_with_effects(self, jobs):
@@ -702,7 +680,7 @@ class ExecutionManagerTests(unittest.TestCase):
         """
 
         # Given
-        jobs = [SimpleTestJobDefinition("A",
+        jobs = [EffectJobDefinition("A",
             depends=None,
             targets=["A-target"])]
         execution_manager = self._get_execution_manager(jobs)
@@ -725,9 +703,9 @@ class ExecutionManagerTests(unittest.TestCase):
         """
         # Given
         jobs = [
-            SimpleTestJobDefinition("A",
+            EffectJobDefinition("A",
                 depends=None,targets=["A-target"]),
-            SimpleTestJobDefinition("B",
+            EffectJobDefinition("B",
                 depends=['A-target'], targets=["B-target"])
         ]
         execution_manager = self._get_execution_manager(jobs)
@@ -748,9 +726,9 @@ class ExecutionManagerTests(unittest.TestCase):
         """
         # Given
         jobs = [
-            SimpleTestJobDefinition("A",
+            EffectJobDefinition("A",
                 depends=None,targets=["A-target"]),
-            SimpleTestJobDefinition("B",
+            EffectJobDefinition("B",
                 depends=['A-target'], targets=["B-target"])
         ]
         execution_manager = self._get_execution_manager(jobs)
@@ -777,9 +755,9 @@ class ExecutionManagerTests(unittest.TestCase):
         """
         # Given
         jobs = [
-            SimpleTestJobDefinition("A",
+            EffectJobDefinition("A",
                 depends=None,targets=["A-target"]),
-            SimpleTestJobDefinition("B",
+            EffectJobDefinition("B",
                 depends=['A-target'], targets=["B-target"])
         ]
         execution_manager = self._get_execution_manager(jobs)
@@ -801,13 +779,12 @@ class ExecutionManagerTests(unittest.TestCase):
         """
         # Given
         jobs = [
-            SimpleTestJobDefinition("A",
-                depends=None,targets=["A-target"]),
-            SimpleTestJobDefinition("B",
+            EffectJobDefinition("A",
+                depends=None,targets=["A-target"], effect={"A-target": None}),
+            EffectJobDefinition("B",
                 depends=['A-target'], targets=["B-target"])
         ]
         execution_manager = self._get_execution_manager(jobs)
-        execution_manager.executor.execute = mock.Mock(return_value=mock.Mock(status=True, stdout='', stderr=''))
 
         # When
         execution_manager.submit("B", {})
@@ -826,13 +803,13 @@ class ExecutionManagerTests(unittest.TestCase):
         """
         # Given
         jobs = [
-            SimpleTestJobDefinition("A",
+            EffectJobDefinition("A",
                 depends=None,targets=["A-target"]),
-            SimpleTestJobDefinition("B",
+            EffectJobDefinition("B",
                 depends=['A-target'], targets=["B-target"]),
-            SimpleTestJobDefinition("C",
+            EffectJobDefinition("C",
                 depends=['A-target'], targets=["C-target"]),
-            SimpleTestJobDefinition("D",
+            EffectJobDefinition("D",
                 depends=['A-target'], targets=["D-target"]),
         ]
         execution_manager = self._get_execution_manager(jobs)
@@ -890,21 +867,16 @@ class ExecutionManagerTests(unittest.TestCase):
         """
         # Given
         jobs = [
-            SimpleTestJobDefinition("A",
-                depends=None,targets=["A1-target", "A2-target", "A3-target"]),
-            SimpleTestJobDefinition("B",
+            EffectJobDefinition("A",
+                depends=None,targets=["A1-target", "A2-target", "A3-target"], effect={"A1-target": None, "A2-target":1, "A3-target":1}),
+            EffectJobDefinition("B",
                 depends=['A1-target'], targets=["B-target"]),
-            SimpleTestJobDefinition("C",
+            EffectJobDefinition("C",
                 depends=['A2-target'], targets=["C-target"]),
-            SimpleTestJobDefinition("D",
+            EffectJobDefinition("D",
                 depends=['A3-target'], targets=["D-target"]),
         ]
         execution_manager = self._get_execution_manager(jobs)
-        execute = execution_manager.executor.execute
-        def mock_execute(job):
-            execute(job)
-            return mock.Mock(status=True, stdout='', stderr='')
-        execution_manager.executor.execute = mock.Mock(side_effect=mock_execute)
         execution_manager.submit("A", {}, direction={"up", "down"})
 
         # When

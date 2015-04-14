@@ -100,7 +100,7 @@ class Target(object):
         exists_mtime_dict = {}
         for target in targets:
             local_path = target.unique_id
-            mtime = target.do_get_mtime(local_path)
+            mtime = target.do_get_mtime()
             exists = mtime is not None
             exists_mtime_dict[local_path] = {
                     "exists": exists,
