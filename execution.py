@@ -5,6 +5,7 @@ import deepy.log
 import Queue
 import arrow
 import collections
+import shlex
 
 from celery import Celery
 
@@ -48,8 +49,15 @@ class Executor(object):
         self._execution_manager = execution_manager
 
     def execute(self, job):
+        """Execute the specified job.
+        Returns None if the job does not execute because it is already running or because its get_should_run method returns False.
+        Otherwise, returns an appropriate ExecutionResult object.
+        """
         if job.is_running:
-            raise SystemError("Job {} is already running".format(job))
+            return None
+        if not job.get_should_run():
+            return None
+
         job = self.prepare_job_for_execution(job)
 
         result = None
@@ -157,8 +165,9 @@ class LocalExecutor(Executor):
 
     def do_execute(self, job):
         command = job.get_command()
+        command_list = shlex.split(command)
         deepy.log.info("Executing '{}'".format(command))
-        proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = proc.communicate()
         deepy.log.info("{} STDOUT: {}".format(command, stdout))
         deepy.log.info("{} STDERR: {}".format(command, stderr))
