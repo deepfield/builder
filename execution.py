@@ -235,6 +235,9 @@ class ExecutionManager(object):
             for job_id in new_jobs:
                 self._recursive_invalidate_job(job_id)
 
+            # Refresh all uncached existences
+            self.build.bulk_refresh_targets()
+
         self._update_build(update_build_graph)
 
     def add_to_work_queue(self, job_id):

@@ -7,10 +7,14 @@ import os
 import networkx
 import tempfile
 import subprocess
+import time
 
 import builder.dependencies
 import builder.jobs
 import builder.targets
+
+import logging
+LOG = logging.getLogger('builder')
 
 class BuildManager(object):
     dependency_registery = {
@@ -1074,6 +1078,7 @@ class BuildGraph(BaseGraph):
             A list of ids of nodes that are new to the graph during the adding
             of this new job
         """
+        LOG.debug("Adding job from job definition {} with build context {}".format(job_definition_id, build_context))
         if direction is None:
             direction = set(["up"])
 
@@ -1087,11 +1092,14 @@ class BuildGraph(BaseGraph):
         current_depth = 0
         cache_set = set()
 
+        start = time.time()
         for expanded_job in expanded_jobs:
             self._self_expand(expanded_job, direction, depth, current_depth,
                               new_nodes, cache_set)
             if force:
                 self.get_job(expanded_job.get_id()).set_force(True)
+        stop = time.time()
+        LOG.debug("It took {} seconds to expand the build graph".format((stop - start)))
         return map(lambda x: x.get_id(), expanded_jobs), new_nodes
 
 
@@ -1163,3 +1171,25 @@ class BuildGraph(BaseGraph):
         for node_id in self.node:
             if self.is_target(node_id):
                 yield node_id, self.get_target(node_id)
+
+    def bulk_refresh_targets(self, uncached_only=True):
+        """
+        Refresh all target existences in bulk.
+
+        uncached_only: Only refresh targets that have no cached value for existence
+        """
+        LOG.debug("Bulk refreshing existence")
+        type_target_map = collections.defaultdict(list)
+        for target_id, target in self.target_iter():
+            type_target_map[type(target)].append(target)
+
+        touched_target_ids = []
+        for target_type, targets in type_target_map.iteritems():
+            LOG.debug("Refreshing {} targets of type {}".format(len(targets), target_type))
+            exists_map = target_type.get_bulk_exists_mtime(targets)
+            for target_id, state in exists_map.iteritems():
+                target = self.get_target(target_id)
+                if target.is_cached() and uncached_only:
+                    continue
+                touched_target_ids.append(target_id)
+                target.set_mtime(state['mtime'])

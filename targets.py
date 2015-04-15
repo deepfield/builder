@@ -74,6 +74,17 @@ class Target(object):
             self.cached_mtime = True
             return self.mtime
 
+    def set_mtime(self, mtime):
+        """Set cached mtime value
+
+            mtime: Number of seconds since the epoch (float)
+        """
+        self.mtime = mtime
+        self.cached_mtime = True
+
+    def is_cached(self):
+        return self.cached_mtime
+
     def get_id(self):
         """ Returns a unique ID for this target
         """
