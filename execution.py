@@ -121,27 +121,6 @@ class Executor(object):
         for update_function, targets in update_function_list.iteritems():
             update_function(targets)
 
-    def update_target_cache(self, target_id):
-        """Updates the cache due to a target finishing"""
-        target = self.get_build_graph().get_target(target_id)
-        target.invalidate()
-        target.get_mtime()
-
-        dependent_ids = self.get_build_graph().get_dependent_ids(target_id)
-        for dependent_id in dependent_ids:
-            dependent = self.get_build_graph().get_job(dependent_id)
-            dependent.invalidate()
-            dependent.get_stale()
-            dependent.get_buildable()
-            dependent.update_lower_nodes_should_run()
-
-    def update(self, target_id):
-        """Checks what should happen now that there is new information
-        on a target
-        """
-        self.update_target_cache(target_id)
-
-
 
 class LocalExecutor(Executor):
 
