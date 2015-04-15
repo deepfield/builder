@@ -157,6 +157,7 @@ class LocalExecutor(Executor):
 
     def do_execute(self, job):
         command = job.get_command()
+        deepy.log.info("Executing '{}'".format(command))
         proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = proc.communicate()
         deepy.log.info("{} STDOUT: {}".format(command, stdout))

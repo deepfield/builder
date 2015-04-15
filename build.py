@@ -13,8 +13,8 @@ import builder.dependencies
 import builder.jobs
 import builder.targets
 
-import logging
-LOG = logging.getLogger('builder')
+import deepy.log
+LOG = deepy.log
 
 class BuildManager(object):
     dependency_registery = {
