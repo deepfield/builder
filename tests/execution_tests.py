@@ -2,6 +2,7 @@
 import mock
 import numbers
 import unittest
+import copy
 
 import funcy
 
@@ -50,6 +51,7 @@ class ExtendedMockExecutor(Executor):
                 continue
             else:
                 target.do_get_mtime = mock.Mock(return_value=effect[target_id])
+            print target_id, target.do_get_mtime()
 
         return ExecutionResult(False, success, command, command)
 
@@ -672,6 +674,57 @@ class ExecutionManagerTests(unittest.TestCase):
         execution_manager = ExecutionManager(build_manager, ExtendedMockExecutor)
         return execution_manager
 
+    @testing.unit
+    def test_get_starting_jobs(self):
+        # given
+        jobs = [SimpleTestJobDefinition('get_starting_jobs_01'),
+                SimpleTestJobDefinition('get_starting_jobs_02'),
+                SimpleTestJobDefinition('get_starting_jobs_03'),
+                SimpleTestJobDefinition('get_starting_jobs_04')]
+        execution_manager = self._get_execution_manager(jobs)
+        build1 = execution_manager.get_build()
+
+        build_context = {}
+        for job in jobs:
+            build1.add_job(job.unexpanded_id, copy.deepcopy(build_context))
+
+        expected_starting_job_ids = [
+            "get_starting_jobs_01",
+            "get_starting_jobs_03"
+        ]
+
+        (build1.node
+                ["get_starting_jobs_01"]
+                ["object"].should_run) = True
+        (build1.node
+                ["get_starting_jobs_01"]
+                ["object"].parents_should_run) = False
+        (build1.node
+                ["get_starting_jobs_02"]
+                ["object"].should_run) = True
+        (build1.node
+                ["get_starting_jobs_02"]
+                ["object"].parents_should_run) = True
+        (build1.node
+                ["get_starting_jobs_03"]
+                ["object"].should_run) = True
+        (build1.node
+                ["get_starting_jobs_03"]
+                ["object"].parents_should_run) = False
+        (build1.node
+                ["get_starting_jobs_04"]
+                ["object"].should_run) = False
+        (build1.node
+                ["get_starting_jobs_04"]
+                ["object"].parents_should_run) = False
+
+        # when
+        starting_job_ids = execution_manager.get_jobs_to_run()
+
+        # then
+        self.assertItemsEqual(starting_job_ids, expected_starting_job_ids)
+
+
     @unit
     def test_no_depends_next_jobs(self):
         """tests_no_depends_next_jobs
@@ -1005,7 +1058,9 @@ class ExecutionManagerTests(unittest.TestCase):
 
     @unit
     def test_multiple_targets_one_exists(self):
-        """tests situations where a job has multiple targets. There are
+        """test_multiple_targets_one_exists
+
+        tests situations where a job has multiple targets. There are
         individual jobs that depend on individual targets. There is also another
         row of jobs below that one. There is a total of three job rows. The top
         job has all of it's targets completed and all of the second row jobs
@@ -1025,11 +1080,11 @@ class ExecutionManagerTests(unittest.TestCase):
             EffectJobDefinition("B",
                 depends=["A1-target"], targets=["B-target"], effect=2),
             EffectJobDefinition("C",
-                depends=["A2-target"], targets=["C-target"], effect=[2, 5]),
+                depends=["A2-target"], targets=["C-target"], effect=5),
             EffectJobDefinition("D",
                 depends=["B-target"], targets=["D-target"], effect=3),
             EffectJobDefinition("E",
-                depends=["C-target"], targets=["E-target"], effect=[3, 6]),
+                depends=["C-target"], targets=["E-target"], effect=6),
         ]
         execution_manager = self._get_execution_manager_with_effects(jobs)
         build_context = {}
@@ -1040,12 +1095,14 @@ class ExecutionManagerTests(unittest.TestCase):
             execution_manager.execute(execution)
 
         # Then
-        self.assertEquals({"C"}, set(execution_manager.get_next_jobs_to_run("A")))
+        self.assertEquals({"C", "B"}, set(execution_manager.get_next_jobs_to_run("A")))
         self.assertEquals(execution_manager.get_build().get_job("C").get_should_run(), True)
         execution_manager.execute("C")
+        execution_manager.execute("B")
+        self.assertEquals({"D"}, set(execution_manager.get_next_jobs_to_run("B")))
         self.assertEquals({"E"}, set(execution_manager.get_next_jobs_to_run("C")))
         self.assertEquals(execution_manager.get_build().get_job("E").get_should_run(), True)
-
+        self.assertEquals(execution_manager.get_build().get_job("D").get_should_run(), True)
 
     @unit
     def test_effect_job(self):

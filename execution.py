@@ -111,8 +111,7 @@ class Executor(object):
             if not job.get_should_run_immediate():
                 job.force = False
                 job.retries = 0
-        next_jobs = self.get_execution_manager().get_next_jobs_to_run(job.get_id())
-        map(self.get_execution_manager().add_to_work_queue, next_jobs)
+        self.get_execution_manager().add_to_complete_queue(job.get_id())
 
     def update_targets(self, target_ids):
         """Takes in a list of target ids and updates all of their needed
@@ -146,18 +145,6 @@ class Executor(object):
         on a target
         """
         self.update_target_cache(target_id)
-        creator_ids = self.get_build_graph().get_creator_ids(target_id)
-        creators_exist = False
-        for creator_id in creator_ids:
-            creators_exist = True
-            next_jobs = self.get_next_jobs_to_run(creator_id)
-            for next_job in next_jobs:
-                self.run(next_job)
-        if creators_exist == False:
-            for dependent_id in self.get_build_graph().get_dependent_ids(target_id):
-                next_jobs = self.get_next_jobs_to_run(dependent_id)
-                for next_job in next_jobs:
-                    self.run(next_job)
 
 
 
@@ -200,13 +187,6 @@ class PrintExecutor(Executor):
         return ExecutionResult(is_async=False, status=True, stdout='', stderr='')
 
 
-    # def finish_job(self, job, result):
-    #     super(PrintExecutor, self).finish_job(job, result)
-    #     self.finish_job(job, result)
-
-
-
-
 class ExecutionManager(object):
 
     def __init__(self, build_manager, executor_factory, max_retries=5):
@@ -215,6 +195,7 @@ class ExecutionManager(object):
         self.max_retries = max_retries
         self._build_lock = threading.RLock()
         self._work_queue = Queue.Queue()
+        self._complete_queue = Queue.Queue()
         self.executor = executor_factory(self)
 
 
@@ -252,6 +233,9 @@ class ExecutionManager(object):
 
     def add_to_work_queue(self, job_id):
         self._work_queue.put(job_id)
+
+    def add_to_complete_queue(self, job_id):
+        self._complete_queue.put(job_id)
 
     def start_execution(self, inline=True):
         """
@@ -299,7 +283,10 @@ class ExecutionManager(object):
         map(work_queue.put, next_jobs)
         while not work_queue.empty():
             job_id = work_queue.get()
-            self.execute(job_id)
+            result = self.execute(job_id)
+            if not result.is_async():
+                next_jobs = self.get_next_jobs_to_run(job_id)
+                map(self.add_to_work_queue, next_jobs)
 
     def execute(self, job_id):
         # Don't run a job more than the configured max number of retries

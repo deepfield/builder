@@ -2547,57 +2547,6 @@ class GraphTest(unittest.TestCase):
                          expected_parents_should_run10)
 
     @testing.unit
-    def test_get_starting_jobs(self):
-        # given
-        jobs = [SimpleTestJobDefinition('get_starting_jobs_01'),
-                SimpleTestJobDefinition('get_starting_jobs_02'),
-                SimpleTestJobDefinition('get_starting_jobs_03'),
-                SimpleTestJobDefinition('get_starting_jobs_04')]
-
-        build_manager = builder.build.BuildManager(jobs, [])
-        build1 = build_manager.make_build()
-
-        build_context = {}
-        for job in jobs:
-            build1.add_job(job.unexpanded_id, copy.deepcopy(build_context))
-
-        expected_starting_job_ids = [
-            "get_starting_jobs_01",
-            "get_starting_jobs_03"
-        ]
-
-        (build1.node
-                ["get_starting_jobs_01"]
-                ["object"].should_run) = True
-        (build1.node
-                ["get_starting_jobs_01"]
-                ["object"].parents_should_run) = False
-        (build1.node
-                ["get_starting_jobs_02"]
-                ["object"].should_run) = True
-        (build1.node
-                ["get_starting_jobs_02"]
-                ["object"].parents_should_run) = True
-        (build1.node
-                ["get_starting_jobs_03"]
-                ["object"].should_run) = True
-        (build1.node
-                ["get_starting_jobs_03"]
-                ["object"].parents_should_run) = False
-        (build1.node
-                ["get_starting_jobs_04"]
-                ["object"].should_run) = False
-        (build1.node
-                ["get_starting_jobs_04"]
-                ["object"].parents_should_run) = False
-
-        # when
-        starting_job_ids = build1.get_starting_job_ids()
-
-        # then
-        self.assertItemsEqual(starting_job_ids, expected_starting_job_ids)
-
-    @testing.unit
     def test_expand_exact(self):
         # Given
         jobs = [
