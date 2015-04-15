@@ -780,17 +780,11 @@ class ExecutionManagerTests(unittest.TestCase):
         # Given
         jobs = [
             EffectJobDefinition("A",
-                depends=None,targets=["A-target"]),
+                depends=None,targets=["A-target"], effect={"A-target": 1, "success": False}),
             EffectJobDefinition("B",
                 depends=['A-target'], targets=["B-target"])
         ]
-        execution_manager = self._get_execution_manager(jobs)
-        do_execute = execution_manager.executor.do_execute
-        def mock_do_execute(job):
-            do_execute(job)
-            return mock.Mock(status=True, stdout='', stderr='')
-
-        execution_manager.executor.execute = mock.Mock(side_effect=mock_do_execute)
+        execution_manager = self._get_execution_manager_with_effects(jobs)
 
         # When
         execution_manager.submit("B", {})
