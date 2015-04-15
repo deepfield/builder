@@ -3,6 +3,7 @@ import mock
 import numbers
 import unittest
 import copy
+import json
 
 import funcy
 
@@ -10,7 +11,7 @@ import builder.build
 import builder.execution
 from builder.tests.tests_jobs import *
 from builder.build import BuildManager
-from builder.execution import Executor, ExecutionManager, ExecutionResult
+from builder.execution import Executor, ExecutionManager, ExecutionResult, _submit_from_json
 from builder.expanders import TimestampExpander
 
 import deepy.timerange
@@ -608,3 +609,26 @@ class ExecutionManagerTests2(unittest.TestCase):
         self.assertEqual(job_A.count, 1)
         self.assertEqual(job_B.count, 1)
 
+
+class ExecutionDaemonTests(unittest.TestCase):
+    def _get_execution_manager_with_effects(self):
+        build_manager = BuildManager([EffectTimestampExpandedJobDefinition("A", file_step="5min",
+            targets=[{"unexpanded_id": "A-target", "file_step": "5min"}])], metas=[])
+        execution_manager = ExecutionManager(build_manager, ExtendedMockExecutor)
+        return execution_manager
+
+    def test_submission(self):
+        # Given
+        execution_manager = self._get_execution_manager_with_effects()
+        json_body = json.dumps({
+          "job_definition_id": "A",
+          "build_context": {
+            "start_time": "2015-04-01", "end_time": "2015-04-01"
+          }
+        })
+
+        # When
+        _submit_from_json(execution_manager, json_body)
+
+        # Then
+        self.assertTrue(execution_manager.get_build().is_job("A_2015-04-01-00-00-00"))

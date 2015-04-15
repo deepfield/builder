@@ -301,25 +301,29 @@ class ExecutionManager(object):
             return f()
 
 
+def _submit_from_json(execution_manager, json_body):
+    payload = json.loads(json_body)
+    LOG.debug("Submitting job {}".format(payload))
+
+    # Clean up the payload a bit
+    build_context = payload.get('build_context', {})
+    for k in ('start_time', 'end_time'):
+        if k in build_context:
+            build_context[k] = arrow.get(build_context[k])
+
+    execution_manager.submit(**payload)
+    jobs_to_run = execution_manager.get_jobs_to_run()
+
+    map(execution_manager.add_to_work_queue, jobs_to_run)
+    LOG.debug("After submitting job, the following jobs should run: {}".format(jobs_to_run))
+
 class SubmitHandler(RequestHandler):
     def initialize(self, execution_manager):
         self.execution_manager = execution_manager
 
     def post(self):
-        payload = json.loads(self.request.body)
-        LOG.debug("Submitting job {}".format(payload))
+        _submit_from_json(self.execution_manager, self.request.body)
 
-        # Clean up the payload a bit
-        build_context = payload.get('build_context', {})
-        for k in ('start_time', 'end_time'):
-            if k in build_context:
-                build_context[k] = arrow.get(build_context[k])
-
-        self.execution_manager.submit(**payload)
-        jobs_to_run = self.execution_manager.get_jobs_to_run()
-
-        map(self.execution_manager.add_to_work_queue, jobs_to_run)
-        LOG.debug("After submitting job, the following jobs should run: {}".format(jobs_to_run))
 class ExecutionDaemon(object):
 
     def __init__(self, execution_manager, port=7001):
