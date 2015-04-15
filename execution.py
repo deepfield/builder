@@ -6,8 +6,14 @@ import Queue
 import arrow
 import collections
 import shlex
+import concurrent.futures
+import json
 
-from celery import Celery
+from tornado import gen
+from tornado import ioloop
+from tornado.web import asynchronous, RequestHandler, Application
+
+import deepy.log as LOG
 
 class ExecutionResult(object):
     def __init__(self, is_async, status=None, stdout=None, stderr=None):
@@ -64,7 +70,7 @@ class Executor(object):
         try:
             result = self.do_execute(job)
         finally:
-            if result is not None and not result.is_async():
+            if result is not None and not isinstance(result, concurrent.futures.Future):
                 self.get_execution_manager()._update_build(lambda: self.finish_job(job, result, self.should_update_build_graph))
 
         return result
@@ -86,9 +92,9 @@ class Executor(object):
 
 
     def finish_job(self, job, result, update_job_cache=True):
-        deepy.log.info("Job {} complete. Status: {}".format(job.get_id(), result.status))
-        deepy.log.debug("{}(stdout): {}".format(job.get_id(), result.stdout))
-        deepy.log.debug("{}(stderr): {}".format(job.get_id(), result.stderr))
+        LOG.info("Job {} complete. Status: {}".format(job.get_id(), result.status))
+        LOG.debug("{}(stdout): {}".format(job.get_id(), result.stdout))
+        LOG.debug("{}(stderr): {}".format(job.get_id(), result.stderr))
 
         # Mark this job as finished running
         job.last_run = arrow.now()
@@ -153,11 +159,11 @@ class LocalExecutor(Executor):
     def do_execute(self, job):
         command = job.get_command()
         command_list = shlex.split(command)
-        deepy.log.info("Executing '{}'".format(command))
+        LOG.info("Executing '{}'".format(command))
         proc = subprocess.Popen(command_list, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (stdout, stderr) = proc.communicate()
-        deepy.log.info("{} STDOUT: {}".format(command, stdout))
-        deepy.log.info("{} STDERR: {}".format(command, stderr))
+        LOG.info("{} STDOUT: {}".format(command, stdout))
+        LOG.info("{} STDERR: {}".format(command, stderr))
 
         return ExecutionResult(is_async=False, status=proc.returncode == 0, stdout=stdout, stderr=stderr)
 
@@ -232,20 +238,28 @@ class ExecutionManager(object):
         self._update_build(update_build_graph)
 
     def add_to_work_queue(self, job_id):
+        LOG.debug("Adding {} to ExecutionManager's work queue".format(job_id))
         self._work_queue.put(job_id)
 
     def add_to_complete_queue(self, job_id):
+        LOG.debug("Adding {} to ExecutionManager's complete queue".format(job_id))
         self._complete_queue.put(job_id)
 
     def start_execution(self, inline=True):
         """
         Begin executing jobs
         """
-
-        if inline:
-            self._execute_inline()
-        else:
-            self._execute_daemon()
+        LOG.info("Starting execution")
+        work_queue = self._work_queue
+        next_jobs = self.get_jobs_to_run()
+        map(work_queue.put, next_jobs)
+        while not work_queue.empty() or not inline:
+            LOG.debug("Getting job from the work queue")
+            job_id = work_queue.get()
+            result = self.execute(job_id)
+            if not isinstance(result, concurrent.futures.Future):
+                next_jobs = self.get_next_jobs_to_run(job_id)
+                map(self.add_to_work_queue, next_jobs)
 
     def get_next_jobs_to_run(self, job_id, update_set=None):
         """Returns the jobs that are below job_id that need to run"""
@@ -277,32 +291,20 @@ class ExecutionManager(object):
 
         return next_jobs_list
 
-    def _execute_inline(self):
-        work_queue = self._work_queue
-        next_jobs = self.get_jobs_to_run()
-        map(work_queue.put, next_jobs)
-        while not work_queue.empty():
-            job_id = work_queue.get()
-            result = self.execute(job_id)
-            if not result.is_async():
-                next_jobs = self.get_next_jobs_to_run(job_id)
-                map(self.add_to_work_queue, next_jobs)
 
     def execute(self, job_id):
         # Don't run a job more than the configured max number of retries
+        LOG.debug("ExecutionManager.execute({})".format(job_id))
         job = self.build.get_job(job_id)
         if job.retries >= self.max_retries:
             job.set_failed(True)
-            deepy.log.error("Maximum number of retries reached for {}".format(job))
+            LOG.error("Maximum number of retries reached for {}".format(job))
             return
 
         # Execute job
         result = self._execute(job)
 
         return result
-
-    def _execute_daemon(self):
-        raise NotImplementedError()
 
     def _execute(self, job):
         if callable(self.executor):
@@ -329,3 +331,40 @@ class ExecutionManager(object):
     def _update_build(self, f):
         with self._build_lock:
             return f()
+
+
+class SubmitHandler(RequestHandler):
+    def initialize(self, execution_manager):
+        self.execution_manager = execution_manager
+
+    def post(self):
+        payload = json.loads(self.request.body)
+        LOG.debug("Submitting job {}".format(payload))
+
+        # Clean up the payload a bit
+        build_context = payload.get('build_context', {})
+        for k in ('start_time', 'end_time'):
+            if k in build_context:
+                build_context[k] = arrow.get(build_context[k])
+
+        self.execution_manager.submit(**payload)
+        jobs_to_run = self.execution_manager.get_jobs_to_run()
+
+        map(self.execution_manager.add_to_work_queue, jobs_to_run)
+        LOG.debug("After submitting job, the following jobs should run: {}".format(jobs_to_run))
+class ExecutionDaemon(object):
+
+    def __init__(self, execution_manager, port=7001):
+        self.execution_manager = execution_manager
+        self.application = Application([
+            (r"/submit", SubmitHandler, {"execution_manager" : self.execution_manager}),
+        ])
+        self.port = port
+
+
+    def start(self):
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        executor.submit(self.execution_manager.start_execution, inline=False)
+        self.application.listen(self.port)
+        LOG.info("Starting job listener")
+        ioloop.IOLoop.instance().start()
