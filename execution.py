@@ -60,6 +60,7 @@ class Executor(object):
             result = self.do_execute(job)
         finally:
             if result is not None and not isinstance(result, concurrent.futures.Future):
+                LOG.debug("Finishing job {}".format(job.get_id()))
                 self.get_execution_manager()._update_build(lambda: self.finish_job(job, result, self.should_update_build_graph))
 
         return result
@@ -206,8 +207,10 @@ class ExecutionManager(object):
         self._update_build(update_build_graph)
 
     def add_to_work_queue(self, job_id):
-        LOG.debug("Adding {} to ExecutionManager's work queue".format(job_id))
+
         self._work_queue.put(job_id)
+        LOG.debug("Adding {} to ExecutionManager's work queue. There are now approximately {} jobs in the queue.".format(job_id, self._work_queue.qsize()))
+
 
     def add_to_complete_queue(self, job_id):
         LOG.debug("Adding {} to ExecutionManager's complete queue".format(job_id))
@@ -218,16 +221,55 @@ class ExecutionManager(object):
         Begin executing jobs
         """
         LOG.info("Starting execution")
+
+        # Seed initial jobs
         work_queue = self._work_queue
         next_jobs = self.get_jobs_to_run()
         map(work_queue.put, next_jobs)
+
+        # Start completed jobs consumer if not inline
+        executor = None
+        if not inline:
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+            executor.submit(self._consume_completed_jobs, block=True)
+
+        jobs_executed = 0
         while not work_queue.empty() or not inline:
-            LOG.debug("Getting job from the work queue")
+            LOG.debug("EXECUTION_LOOP => Getting job from the work queue")
             job_id = work_queue.get()
+            LOG.debug("EXECUTION_LOOP => Got job {} from work queue".format(job_id))
             result = self.execute(job_id)
-            if not isinstance(result, concurrent.futures.Future):
-                next_jobs = self.get_next_jobs_to_run(job_id)
-                map(self.add_to_work_queue, next_jobs)
+            #LOG.debug("EXECUTION_LOOP => Finished job {} from work queue".format(job_id))
+            jobs_executed += 1
+            if not isinstance(result, concurrent.futures.Future) and inline:
+                self._consume_completed_jobs(block=False)
+            elif inline:
+                LOG.debug("EXECUTION_LOOP => Waiting on execution to complete")
+                result.result() # Wait for job to complete
+                self._consume_completed_jobs(block=False)
+            LOG.debug("EXECUTION_LOOP => Finished consuming completed jobs for {}".format(job_id))
+            #else: It is an asynchronous result and we're running asynchronously, so let the _consume_completed_jobs
+            # thread add new jobs
+            LOG.debug("EXECUTION_LOOP => Executed {} jobs".format(jobs_executed))
+
+        LOG.debug("EXECUTION_LOOP => Execution is exiting")
+        if executor is not None:
+            executor.shutdown(wait=True)
+
+
+    def _consume_completed_jobs(self, block=False):
+
+        LOG.debug("EXECUTION_LOOP => Consuming completed jobs")
+        complete_queue = self._complete_queue
+        while not complete_queue.empty() or block:
+            job_id = complete_queue.get()
+            LOG.debug("COMPLETION_LOOP =>  Completed job {}".format(job_id))
+            next_jobs = self.get_next_jobs_to_run(job_id)
+            next_jobs = filter(lambda job_id: not self.build.get_job(job_id).is_running, next_jobs)
+            LOG.debug("COMPLETION_LOOP => Received completed job {}. Next jobs are {}".format(job_id, next_jobs))
+            map(self.add_to_work_queue, next_jobs)
+        LOG.debug("COMPLETION_LOOP => Done consuming completed jobs")
+
 
     def get_next_jobs_to_run(self, job_id, update_set=None):
         """Returns the jobs that are below job_id that need to run"""
