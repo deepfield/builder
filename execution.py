@@ -34,17 +34,6 @@ class ExecutionResult(object):
         return self._is_async
 
 
-
-class ExecutionThread(threading.Thread):
-
-    def __init__(self, execution_manager):
-        self.execution_manager = execution_manager
-        super(ExecutionThread, self).__init__()
-
-    def run(self):
-        time.sleep(1)
-        print "Sleeping"
-
 class Executor(object):
 
     # Should be False if this executor will handle updating the job state
