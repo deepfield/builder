@@ -1,5 +1,6 @@
 import threading
 import time
+import signal
 import subprocess
 import deepy.log
 import Queue
@@ -172,6 +173,7 @@ class ExecutionManager(object):
         self._work_queue = Queue.Queue()
         self._complete_queue = Queue.Queue()
         self.executor = executor_factory(self)
+        self.running = False
 
 
     def _recursive_invalidate_job(self, job_id):
@@ -221,6 +223,7 @@ class ExecutionManager(object):
         Begin executing jobs
         """
         LOG.info("Starting execution")
+        self.running = True
 
         # Seed initial jobs
         work_queue = self._work_queue
@@ -234,9 +237,15 @@ class ExecutionManager(object):
             executor.submit(self._consume_completed_jobs, block=True)
 
         jobs_executed = 0
-        while not work_queue.empty() or not inline:
+        ONEYEAR = 365 * 24 * 60 * 60
+        while (not work_queue.empty() or not inline) and self.running:
             LOG.debug("EXECUTION_LOOP => Getting job from the work queue")
-            job_id = work_queue.get()
+
+            try:
+                job_id = work_queue.get(True, timeout=1)
+            except Queue.Empty:
+                continue
+
             LOG.debug("EXECUTION_LOOP => Got job {} from work queue".format(job_id))
             result = self.execute(job_id)
             #LOG.debug("EXECUTION_LOOP => Finished job {} from work queue".format(job_id))
@@ -256,13 +265,21 @@ class ExecutionManager(object):
         if executor is not None:
             executor.shutdown(wait=True)
 
+    def stop_execution(self):
+        LOG.info("Stopping execution")
+        self.running = False
+
 
     def _consume_completed_jobs(self, block=False):
 
         LOG.debug("EXECUTION_LOOP => Consuming completed jobs")
         complete_queue = self._complete_queue
-        while not complete_queue.empty() or block:
-            job_id = complete_queue.get()
+        while (not complete_queue.empty() or block) and self.running:
+            try:
+                job_id = complete_queue.get(True, timeout=1)
+            except Queue.Empty:
+                continue
+
             LOG.debug("COMPLETION_LOOP =>  Completed job {}".format(job_id))
             next_jobs = self.get_next_jobs_to_run(job_id)
             next_jobs = filter(lambda job_id: not self.build.get_job(job_id).is_running, next_jobs)
@@ -374,11 +391,28 @@ class ExecutionDaemon(object):
             (r"/submit", SubmitHandler, {"execution_manager" : self.execution_manager}),
         ])
         self.port = port
+        self.is_closing = False
 
+    def signal_handler(self, signum, frame):
+            LOG.info('exiting...')
+            self.is_closing = True
+
+    def try_exit(self):
+        if self.is_closing:
+            # clean up here
+            ioloop.IOLoop.instance().stop()
+            LOG.info('exit success')
 
     def start(self):
+        is_closing = False
+
+        signal.signal(signal.SIGINT, self.signal_handler)
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         executor.submit(self.execution_manager.start_execution, inline=False)
         self.application.listen(self.port)
         LOG.info("Starting job listener")
+        ioloop.PeriodicCallback(self.try_exit, 500).start()
         ioloop.IOLoop.instance().start()
+        LOG.info("Shutting down")
+        self.execution_manager.stop_execution()
+        executor.shutdown()
