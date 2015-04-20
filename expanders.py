@@ -123,6 +123,10 @@ class TimestampExpander(Expander):
                 ...
         }
         """
+        # Handle bgpdumps (glob target with time_step: null)
+        if file_step is None:
+            return {}
+
         start_time = build_context["start_time"]
         end_time = build_context.get("end_time") or start_time
 
