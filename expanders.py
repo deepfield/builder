@@ -57,7 +57,6 @@ class Expander(object):
         if meta is None:
             meta = {}
 
-        if not type(edge_data) == dict: import ipdb; ipdb.set_trace()
         edge_data["ignore_mtime"] = ignore_mtime
         edge_data["ignore_produce"] = ignore_produce
 
