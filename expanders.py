@@ -40,7 +40,7 @@ class Expander(object):
     """
     def __init__(self, base_class, unexpanded_id, edge_data=None,
             node_data=None, config=None, ignore_mtime=False,
-            ignore_produce=False, meta=None):
+            ignore_produce=False, meta=None, **kwargs):
         """An unexpanded id is one that can be turned into a unique id
         provided that the correct build context is passed
 
@@ -67,12 +67,16 @@ class Expander(object):
         self.config = config
         self.meta = meta
 
+    @staticmethod
+    def expand_build_context(build_context, unexpanded_id, *args, **kwargs):
+        return {unexpanded_id: build_context}
+
     def expand(self, build_context):
         """Returns a list of a single instance that is instantiated with the
         unexpanded id and the same build context
         """
         return [self.base_class(self.unexpanded_id,
-                self.unexpanded_id, build_context)]
+                self.unexpanded_id, build_context) for build_context in self.expand_build_context(build_context, self.unexpanded_id).values()]
 
     def different(self, expander):
         """The other one should probably also check if they are different
