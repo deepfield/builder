@@ -43,6 +43,13 @@ class Executor(object):
     def __init__(self, execution_manager):
         self._build_graph = execution_manager.get_build()
         self._execution_manager = execution_manager
+        self._initialized = False
+
+    def initialize(self):
+        """
+        Put any expensive operations here that should only happen right before execution starts
+        """
+        pass
 
     def execute(self, job):
         """Execute the specified job.
@@ -224,6 +231,7 @@ class ExecutionManager(object):
         """
         LOG.info("Starting execution")
         self.running = True
+        self.executor.initialize()
 
         # Seed initial jobs
         work_queue = self._work_queue
