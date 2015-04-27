@@ -394,6 +394,7 @@ class SubmitHandler(RequestHandler):
 class ExecutionDaemon(object):
 
     def __init__(self, execution_manager, port=7001):
+        print port
         self.execution_manager = execution_manager
         self.application = Application([
             (r"/submit", SubmitHandler, {"execution_manager" : self.execution_manager}),
