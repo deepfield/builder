@@ -391,6 +391,7 @@ class SubmitHandler(RequestHandler):
         self.execution_manager = execution_manager
 
     def post(self):
+        LOG.debug("{}".format(self.request.body))
         _submit_from_json(self.execution_manager, self.request.body)
 
 class ExecutionDaemon(object):
