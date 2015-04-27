@@ -40,7 +40,7 @@ class Executor(object):
     # Should be False if this executor will handle updating the job state
     should_update_build_graph = True
 
-    def __init__(self, execution_manager):
+    def __init__(self, execution_manager, config=None):
         self._build_graph = execution_manager.get_build()
         self._execution_manager = execution_manager
         self._initialized = False
@@ -172,14 +172,15 @@ class PrintExecutor(Executor):
 
 class ExecutionManager(object):
 
-    def __init__(self, build_manager, executor_factory, max_retries=5):
+    def __init__(self, build_manager, executor_factory, max_retries=5, config=None):
         self.build_manager = build_manager
         self.build = build_manager.make_build()
         self.max_retries = max_retries
+        self.config = config
         self._build_lock = threading.RLock()
         self._work_queue = Queue.Queue()
         self._complete_queue = Queue.Queue()
-        self.executor = executor_factory(self)
+        self.executor = executor_factory(self, config=self.config)
         self.running = False
 
 
