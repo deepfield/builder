@@ -231,8 +231,6 @@ class ExecutionManager(object):
         """
         Begin executing jobs
         """
-        import ipdb;ipdb.set_trace()
-
         LOG.info("Starting execution")
         self.running = True
         self.executor.initialize()
