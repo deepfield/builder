@@ -585,6 +585,55 @@ class ExecutionManagerTests2(unittest.TestCase):
         self.assertEquals(execution_manager.get_build().get_job("D").get_should_run(), True)
 
     @unit
+    def test_multiple_targets_one_exists(self):
+        """test_multiple_targets_one_exists
+
+        tests situations where a job has multiple targets. There are
+        individual jobs that depend on individual targets. There is also another
+        row of jobs below that one. There is a total of three job rows. The top
+        job has all of it's targets completed and all of the second row jobs
+        have their targets completed. The top job has a target deleted. The top
+        job runs again and updates that target but doesn't overwrite the other
+        targets. Obviouslly the job that had one of it's dependencies updated
+        should be a next job, but so should the third row jobs that no longer
+        have a parent that should run. The event won't trickle down to them
+        because their parents are not stale and won't run again.
+        """
+
+        # Given
+        jobs = [
+            EffectJobDefinition("A",
+                depends=None, targets=["A1-target", "A2-target"],
+                effect=[{"A1-target": 4, "A2-target": None}, {"A1-target": 4,
+                        "A2-target": 6},]),
+            EffectJobDefinition("B",
+                depends=["A1-target"], targets=["B-target"], effect=5),
+            EffectJobDefinition("C",
+                depends=["A2-target"], targets=["C-target"], effect=5),
+            EffectJobDefinition("D",
+                depends=["B-target"], targets=["D-target"], effect=0),
+            EffectJobDefinition("E",
+                depends=["C-target"], targets=["E-target"], effect=0),
+        ]
+        execution_manager = self._get_execution_manager_with_effects(jobs)
+        build_context = {}
+        execution_manager.submit("A", build_context, direction={"down", "up"})
+
+        # When
+        for execution in ("A", "B", "C", "D", "E", "A", "A"):
+            execution_manager.execute(execution)
+
+        # Then
+        self.assertEquals({"C", "B"}, set(execution_manager.get_next_jobs_to_run("A")))
+        self.assertEquals(execution_manager.get_build().get_job("C").get_should_run(), True)
+        execution_manager.execute("C")
+        execution_manager.execute("B")
+        self.assertEquals({"D"}, set(execution_manager.get_next_jobs_to_run("B")))
+        self.assertEquals({"E"}, set(execution_manager.get_next_jobs_to_run("C")))
+        self.assertEquals(execution_manager.get_build().get_job("E").get_should_run(), True)
+        self.assertEquals(execution_manager.get_build().get_job("D").get_should_run(), True)
+
+    @unit
     def test_effect_job(self):
         """test_effect_job
         tests a situtation where a job starts running and then updates it's
