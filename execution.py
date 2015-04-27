@@ -181,6 +181,7 @@ class ExecutionManager(object):
         self._work_queue = Queue.Queue()
         self._complete_queue = Queue.Queue()
         self.executor = executor_factory(self, config=self.config)
+
         self.running = False
 
 
@@ -230,6 +231,8 @@ class ExecutionManager(object):
         """
         Begin executing jobs
         """
+        import ipdb;ipdb.set_trace()
+
         LOG.info("Starting execution")
         self.running = True
         self.executor.initialize()
