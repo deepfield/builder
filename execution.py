@@ -68,8 +68,9 @@ class Executor(object):
             result = self.do_execute(job)
         finally:
             if result is not None and not isinstance(result, concurrent.futures.Future):
-                LOG.debug("Finishing job {}".format(job.get_id()))
-                self.get_execution_manager()._update_build(lambda: self.finish_job(job, result, self.should_update_build_graph))
+                if not result.is_async:
+                    LOG.debug("Finishing job {}".format(job.get_id()))
+                    self.get_execution_manager()._update_build(lambda: self.finish_job(job, result, self.should_update_build_graph))
 
         return result
 
@@ -261,6 +262,8 @@ class ExecutionManager(object):
             #LOG.debug("EXECUTION_LOOP => Finished job {} from work queue".format(job_id))
             jobs_executed += 1
             if not isinstance(result, concurrent.futures.Future) and inline:
+                if result.is_async:
+                    raise NotImplementedError("Cannot run an async executor inline")
                 self._consume_completed_jobs(block=False)
             elif inline:
                 LOG.debug("EXECUTION_LOOP => Waiting on execution to complete")
