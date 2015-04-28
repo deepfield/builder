@@ -19,10 +19,20 @@ class FakeTarget(builder.targets.Target):
     def get_bulk_exists_mtime(targets):
         return {target.get_id(): {"exists": target.mtime is not None, "mtime": target.mtime} for target in targets}
 
+
+def new_expand_wrapper(old_expand, target_mtime):
+    def new_expand(*args, **kwargs):
+        targets = old_expand(*args, **kwargs)
+        for target in targets:
+            target.mtime = target_mtime
+        return targets
+    return new_expand
+
 class SimpleJobTestMixin(object):
 
     def setup_dependencies_and_targets(self, depends_dict, targets_dict, depends, targets):
         # Set up dependency dictionary
+        targets_mtime_dict = {}
         depends_dict = depends_dict or {}
         depends_dict.setdefault('depends', [])
         depends_dict.setdefault('depends_one_or_more', [])
@@ -30,11 +40,13 @@ class SimpleJobTestMixin(object):
             for depend in depends:
                 if isinstance(depend, dict):
                     depends_type = depend.pop('type', 'depends')
-                    depends_dict[depends_type].append(
-                        self.expander_type(
+                    target_mtime = depend.pop('start_mtime', None)
+                    expander = self.expander_type(
                             self.target_type,
-                        **depend)
-                    )
+                            **depend)
+                    expander.expand = new_expand_wrapper(expander.expand,
+                                                         target_mtime)
+                    depends_dict[depends_type].append(expander)
                 elif isinstance(depend, basestring):
                     depends_dict['depends'].append(
                         self.expander_type(
@@ -51,11 +63,14 @@ class SimpleJobTestMixin(object):
             for target in targets:
                 if isinstance(target, dict):
                     target_type = target.pop('type', 'produces')
-                    targets_dict[target_type].append(
-                        self.expander_type(
-                            self.target_type,
-                            **target)
-                     )
+                    target_mtime = target.pop('start_mtime', None)
+                    expander = self.expander_type(
+                        self.target_type,
+                        **target
+                    )
+                    expander.expand = new_expand_wrapper(expander.expand,
+                                                         target_mtime)
+                    targets_dict[target_type].append(expander)
                 elif isinstance(target, basestring):
 
                     targets_dict["produces"].append(
@@ -64,7 +79,6 @@ class SimpleJobTestMixin(object):
                             target)
                      )
         self.targets = targets_dict
-
 
 class SimpleTestJobDefinition(SimpleJobTestMixin, JobDefinition):
     """A simple API for creating a job through constructor args"""
@@ -163,8 +177,6 @@ class ShouldRunRecurseJobDefinition(SimpleTestJobDefinition):
                     self.should_run_immediate)
             counting_nodes.append(counting_node)
         return counting_nodes
-
-
 
 
 class EffectJob(Job):

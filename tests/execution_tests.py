@@ -585,55 +585,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         self.assertEquals(execution_manager.get_build().get_job("D").get_should_run(), True)
 
     @unit
-    def test_multiple_targets_one_exists(self):
-        """test_multiple_targets_one_exists
-
-        tests situations where a job has multiple targets. There are
-        individual jobs that depend on individual targets. There is also another
-        row of jobs below that one. There is a total of three job rows. The top
-        job has all of it's targets completed and all of the second row jobs
-        have their targets completed. The top job has a target deleted. The top
-        job runs again and updates that target but doesn't overwrite the other
-        targets. Obviouslly the job that had one of it's dependencies updated
-        should be a next job, but so should the third row jobs that no longer
-        have a parent that should run. The event won't trickle down to them
-        because their parents are not stale and won't run again.
-        """
-
-        # Given
-        jobs = [
-            EffectJobDefinition("A",
-                depends=None, targets=["A1-target", "A2-target"],
-                effect=[{"A1-target": 4, "A2-target": None}, {"A1-target": 4,
-                        "A2-target": 6},]),
-            EffectJobDefinition("B",
-                depends=["A1-target"], targets=["B-target"], effect=5),
-            EffectJobDefinition("C",
-                depends=["A2-target"], targets=["C-target"], effect=5),
-            EffectJobDefinition("D",
-                depends=["B-target"], targets=["D-target"], effect=0),
-            EffectJobDefinition("E",
-                depends=["C-target"], targets=["E-target"], effect=0),
-        ]
-        execution_manager = self._get_execution_manager_with_effects(jobs)
-        build_context = {}
-        execution_manager.submit("A", build_context, direction={"down", "up"})
-
-        # When
-        for execution in ("A", "B", "C", "D", "E", "A", "A"):
-            execution_manager.execute(execution)
-
-        # Then
-        self.assertEquals({"C", "B"}, set(execution_manager.get_next_jobs_to_run("A")))
-        self.assertEquals(execution_manager.get_build().get_job("C").get_should_run(), True)
-        execution_manager.execute("C")
-        execution_manager.execute("B")
-        self.assertEquals({"D"}, set(execution_manager.get_next_jobs_to_run("B")))
-        self.assertEquals({"E"}, set(execution_manager.get_next_jobs_to_run("C")))
-        self.assertEquals(execution_manager.get_build().get_job("E").get_should_run(), True)
-        self.assertEquals(execution_manager.get_build().get_job("D").get_should_run(), True)
-
-    @unit
     def test_effect_job(self):
         """test_effect_job
         tests a situtation where a job starts running and then updates it's
@@ -681,3 +632,380 @@ class ExecutionDaemonTests(unittest.TestCase):
 
         # Then
         self.assertTrue(execution_manager.get_build().is_job("A_2015-04-01-00-00-00"))
+
+    def test_update_lower_nodes(self):
+        """test_update_lower_nodes
+        Add a node that should run that is above the nodes in the graph.
+        All the other nodes originally didn't have parent's that should run.
+        Now they do.
+        """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition('job1', targets=['target1']),
+            SimpleTestJobDefinition('job2', targets=['target2'],
+                                    depends=['target1']),
+            SimpleTestJobDefinition('job3', targets=['target3'],
+                                    depends=['target2']),
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        execution_manager.build.add_job('job1', {}, depth=1)
+        execution_manager.build.add_job('job2', {}, depth=1)
+        execution_manager.build.add_job('job3', {}, depth=1)
+
+        build_graph = execution_manager.build
+        job1 = build_graph.get_job('job1')
+        job2 = build_graph.get_job('job2')
+        job3 = build_graph.get_job('job3')
+        job1.get_should_run_immediate = mock.Mock(return_value=True)
+        job2.parents_should_run = False
+        job3.parents_should_run = False
+
+        # When
+        execution_manager.update_newly_invalidated_jobs(['job1'])
+
+        # Then
+        self.assertFalse(job1.parents_should_run)
+        self.assertIsNone(job2.parents_should_run)
+        self.assertIsNone(job3.parents_should_run)
+
+    def test_update_lower_nodes_connection(self):
+        """test_update_lower_nodes_connection
+        Add a node that shouldn't run but has parent's that should run.
+        This node connects the parent nodes to lower nodes.
+        All the lower nodes originally didn't have parent's that should run.
+        Now they do.
+        """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition('job1', targets=['target1']),
+            SimpleTestJobDefinition('job2', targets=['target2'],
+                                    depends=['target1']),
+            SimpleTestJobDefinition('job3', targets=['target3'],
+                                    depends=['target2']),
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        execution_manager.build.add_job('job1', {}, depth=1)
+        execution_manager.build.add_job('job2', {}, depth=1)
+        execution_manager.build.add_job('job3', {}, depth=1)
+
+        build_graph = execution_manager.build
+        job1 = build_graph.get_job('job1')
+        job2 = build_graph.get_job('job2')
+        job3 = build_graph.get_job('job3')
+        job1.get_should_run_immediate = mock.Mock(return_value=True)
+        job2.get_should_run_immediate = mock.Mock(return_value=False)
+        job3.parents_should_run = False
+
+        # When
+        execution_manager.update_newly_invalidated_jobs(['job2'])
+
+        # Then
+        self.assertTrue(job2.parents_should_run)
+        self.assertIsNone(job3.parents_should_run)
+
+    def test_update_lower_nodes_cached(self):
+        """test_update_lower_nodes_cached
+        Add a node that should run. Update all lower nodes until you get to a
+        node that already had parent's that should have ran.
+        """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition('job1', targets=['target1']),
+            SimpleTestJobDefinition('job2', targets=['target2'],
+                                    depends=['target1']),
+            SimpleTestJobDefinition('job3', targets=['target3'],
+                                    depends=['target2']),
+            SimpleTestJobDefinition('job4', targets=['target4'],
+                                    depends=['target3']),
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        execution_manager.build.add_job('job1', {}, depth=1)
+        execution_manager.build.add_job('job2', {}, depth=1)
+        execution_manager.build.add_job('job3', {}, depth=1)
+        execution_manager.build.add_job('job4', {}, depth=1)
+
+        build_graph = execution_manager.build
+        job1 = build_graph.get_job('job1')
+        job2 = build_graph.get_job('job2')
+        job3 = build_graph.get_job('job3')
+        job4 = build_graph.get_job('job4')
+        job1.get_should_run_immediate = mock.Mock(return_value=True)
+        job2.parents_should_run = False
+        job3.parents_should_run = True
+        job4.parents_should_run = False # can't really happen
+                                        # just being used to check stopage
+
+        # When
+        execution_manager.update_newly_invalidated_jobs(['job1'])
+
+        # Then
+        self.assertIsNone(job2.parents_should_run)
+        self.assertTrue(job3.parents_should_run)
+        self.assertFalse(job4.parents_should_run)
+
+    def test_update_lower_exit_early(self):
+        """test_update_lower_exit_early
+        Add a node that should not run and it's parent's should not run.
+        Don't invalidate the lower nodes
+        """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition('job1', targets=['target1']),
+            SimpleTestJobDefinition('job2', targets=['target2'],
+                                    depends=['target1']),
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        execution_manager.build.add_job('job1', {}, depth=1)
+        execution_manager.build.add_job('job2', {}, depth=1)
+
+        build_graph = execution_manager.build
+        job1 = build_graph.get_job('job1')
+        job2 = build_graph.get_job('job2')
+        job1.get_should_run_immediate = mock.Mock(return_value=False)
+        job2.parents_should_run = False
+
+        # When
+        execution_manager.update_newly_invalidated_jobs(['job1'])
+
+        # Then
+        self.assertFalse(job2.parents_should_run)
+
+    def test_update_lower_nodes_ignore_parents(self):
+        """test_update_lower_nodes_ignore_parents
+        Add a node that should run. Update all lower nodes until you get to a
+        node that has a node that ignores it's parents
+        """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition('job1', targets=['target1']),
+            SimpleTestJobDefinition('job2', targets=['target2'],
+                                    depends=['target1']),
+            SimpleTestJobDefinition('job3', targets=['target3'],
+                                    depends=['target2']),
+            SimpleTestJobDefinition('job4', targets=['target4'],
+                                    depends=['target3']),
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        execution_manager.build.add_job('job1', {}, depth=1)
+        execution_manager.build.add_job('job2', {}, depth=1)
+        execution_manager.build.add_job('job3', {}, depth=1)
+        execution_manager.build.add_job('job4', {}, depth=1)
+
+        build_graph = execution_manager.build
+        job1 = build_graph.get_job('job1')
+        job2 = build_graph.get_job('job2')
+        job3 = build_graph.get_job('job3')
+        job4 = build_graph.get_job('job4')
+        job1.get_should_run_immediate = mock.Mock(return_value=True)
+        job2.parents_should_run = False
+        job3.ignore_parents = mock.Mock(return_value=True)
+        job3.parents_should_run = False
+        job4.parents_should_run = False # can't really happen
+                                        # just being used to check stopage
+
+        # When
+        execution_manager.update_newly_invalidated_jobs(['job1'])
+
+        # Then
+        self.assertIsNone(job2.parents_should_run)
+        self.assertFalse(job3.parents_should_run)
+        self.assertFalse(job4.parents_should_run)
+
+    def test_double_update_lower_nodes(self):
+        """test_double_update_lower_nodes
+        Update two nodes, make sure that all the things get iterated
+        through
+        """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("job1", targets=["target1"]),
+            SimpleTestJobDefinition("job2", targets=["target2"],
+                                    depends=["target1"]),
+            SimpleTestJobDefinition("job3", targets=["target3"],
+                                    depends=["target2"]),
+            SimpleTestJobDefinition("job1'", targets=["target1'"]),
+            SimpleTestJobDefinition("job2'", targets=["target2'"],
+                                    depends=["target1'"]),
+            SimpleTestJobDefinition("job3'", targets=["target3'"],
+                                    depends=["target2'"]),
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        execution_manager.build.add_job("job1", {}, depth=1)
+        execution_manager.build.add_job("job2", {}, depth=1)
+        execution_manager.build.add_job("job3", {}, depth=1)
+        execution_manager.build.add_job("job1'", {}, depth=1)
+        execution_manager.build.add_job("job2'", {}, depth=1)
+        execution_manager.build.add_job("job3'", {}, depth=1)
+
+        build_graph = execution_manager.build
+        job1 = build_graph.get_job("job1")
+        job2 = build_graph.get_job("job2")
+        job3 = build_graph.get_job("job3")
+        job1_ = build_graph.get_job("job1'")
+        job2_ = build_graph.get_job("job2'")
+        job3_ = build_graph.get_job("job3'")
+        job1.get_should_run_immediate = mock.Mock(return_value=True)
+        job2.parents_should_run = False
+        job3.parents_should_run = False
+        job1_.get_should_run_immediate = mock.Mock(return_value=True)
+        job2_.parents_should_run = False
+        job3_.parents_should_run = False
+
+        # When
+        execution_manager.update_newly_invalidated_jobs(["job1", "job1'"])
+
+        # Then
+        self.assertFalse(job1.parents_should_run)
+        self.assertIsNone(job2.parents_should_run)
+        self.assertIsNone(job3.parents_should_run)
+        self.assertFalse(job1_.parents_should_run)
+        self.assertIsNone(job2_.parents_should_run)
+        self.assertIsNone(job3_.parents_should_run)
+
+    def test_update_lower_first_ignores_parents(self):
+        """test_update_lower_first_ignores_parents
+        A test where the first job ignores it's parents. Nothing should be
+        updated as everything ignores things that ignores it's parents
+        """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition('job1', targets=['target1']),
+            SimpleTestJobDefinition('job2', targets=['target2'],
+                                    depends=['target1']),
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        execution_manager.build.add_job('job1', {}, depth=1)
+        execution_manager.build.add_job('job2', {}, depth=1)
+
+        build_graph = execution_manager.build
+        job1 = build_graph.get_job('job1')
+        job2 = build_graph.get_job('job2')
+        job1.get_should_run_immediate = mock.Mock(return_value=True)
+        job2.parents_should_run = False
+
+        # When
+        execution_manager.update_newly_invalidated_jobs(['job1'])
+
+        # Then
+        self.assertFalse(job2.parents_should_run)
+
+    def test_update_lower_same_twice(self):
+        """test_update_lower_same_twice
+        A test that has two jobs updated that have the same dependant job
+        The first job should invalidate the job, the second should find that
+        it's parents should run and stop there
+        """
+        # Given
+        jobs = [
+            SimpleTestJobDefinition('job1', targets=['target1']),
+            SimpleTestJobDefinition('job2', targets=['target2']),
+            SimpleTestJobDefinition('job3', targets=['target3'],
+                                    depends=[
+                                        'target1',
+                                        'target2',
+                                    ]),
+            SimpleTestJobDefinition('job4', targets=['target4'],
+                                    depends=['target3']),
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        execution_manager.build.add_job('job1', {}, depth=1)
+        execution_manager.build.add_job('job2', {}, depth=1)
+        execution_manager.build.add_job('job3', {}, depth=1)
+        execution_manager.build.add_job('job4', {}, depth=1)
+
+        build_graph = execution_manager.build
+        job1 = build_graph.get_job('job1')
+        job2 = build_graph.get_job('job2')
+        job3 = build_graph.get_job('job3')
+        job4 = build_graph.get_job('job4')
+        job1.get_should_run_immediate = mock.Mock(return_value=True)
+        job2.get_should_run_immediate = mock.Mock(return_value=True)
+        job3.parents_should_run = False
+        job4.parents_should_run = False
+
+        # When
+        execution_manager.update_newly_invalidated_jobs(['job1', 'job2'])
+
+        # Then
+        self.assertTrue(job3.parents_should_run)
+        self.assertIsNone(job4.parents_should_run)
+
+    @unit
+    def test_addition_updates(self):
+        """test_addition_updates
+        This tests to make sure that when a job is added to the graph that the
+        execution system updates the graph to be consisitent
+        """
+        jobs = [
+            SimpleTestJobDefinition(
+                'job1', targets=[
+                    {
+                        'unexpanded_id': 'target1',
+                        'start_mtime': 100,
+                    }
+                ], depends=[
+                    {
+                        'unexpanded_id': 'super_target1',
+                        'start_mtime': 200,
+                    }
+                ]
+            ),
+            SimpleTestJobDefinition('job2', targets=['target2'],
+                                    depends=['target1']),
+            SimpleTestJobDefinition('job3', targets=['target3'],
+                                    depends=['target2']),
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        execution_manager.build.add_job('job2', {}, depth=1)
+        execution_manager.build.add_job('job3', {}, depth=1)
+
+        build_graph = execution_manager.build
+        job2 = build_graph.get_job('job2')
+        job3 = build_graph.get_job('job3')
+        job2.parents_should_run = False
+        job3.parents_should_run = False
+
+        # When
+        execution_manager.submit('job1', {})
+        job1 = build_graph.get_job('job1')
+
+        # Then
+        self.assertFalse(job1.parents_should_run)
+        self.assertIsNone(job2.parents_should_run)
+        self.assertIsNone(job3.parents_should_run)

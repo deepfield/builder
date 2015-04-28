@@ -3589,6 +3589,56 @@ class GraphTest(unittest.TestCase):
         self.assertFalse(job_A.should_run)
         self.assertFalse(job_A.force)
 
+    def test_new_and_force_nodes_from_add(self):
+        # Given
+        jobs = [
+            SimpleTimestampExpandedTestJob(
+                "job1", file_step="5min",
+                targets=[
+                    {
+                        "unexpanded_id": "target1-%Y-%m-%d-%H-%M",
+                        "file_step": "5min",
+                    }
+                ]
+            ),
+            SimpleTimestampExpandedTestJob(
+                "job2", file_step="5min",
+                targets=[
+                    {
+                        "unexpanded_id": "target2-%Y-%m-%d-%H-%M",
+                        "file_step": "5min",
+                    }
+                ],
+                depends=[
+                    {
+                        "unexpanded_id": "target1-%Y-%m-%d-%H-%M",
+                        "file_step": "5min",
+                    }
+                ]
+            ),
+        ]
+
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
+        build.add_job(
+            "job2", {
+                "start_time": arrow.get(0),
+                "end_time": arrow.get(300*2),
+            }
+        )
+
+        # When
+        stuff = build.add_job(
+            "job2", {
+                "start_time": arrow.get(0),
+                "end_time": arrow.get(300*3),
+            }
+        )
+
+        # Then
+        self.assertTrue(False)
+        self.assertStuffAboutStuff()
+
 class RuleDependencyGraphTest(unittest.TestCase):
 
     def _get_rdg(self):

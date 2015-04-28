@@ -185,6 +185,43 @@ class ExecutionManager(object):
 
         self.running = False
 
+    def _update_newly_invalidated_jobs_recurse(self, job_id):
+        """Takes in a job id and updates all below it"""
+        build_graph = self.build
+        job = build_graph.get_job(job_id)
+
+        # We pretend that the job has incorrect state if it is invalidated so we
+        # don't have to check if it is actually correct or not
+        if job.get_parents_should_run() or job.should_ignore_parents():
+            return
+
+        job.invalidate()
+
+        target_ids = build_graph.get_target_ids(job_id)
+        for target_id in target_ids:
+            dependent_ids = build_graph.get_dependent_ids(target_id)
+            for dependent_id in dependent_ids:
+                self._update_newly_invalidated_jobs_recurse(dependent_id)
+
+    def update_newly_invalidated_jobs(self, job_ids):
+        """Takes in a list of newly invalided jobs and updates the state of all
+        things below it to be consistent
+        """
+        build_graph = self.build
+
+        for job_id in job_ids:
+            job = build_graph.get_job(job_id)
+            # We can skip jobs that shouldn't run and doesn't have parents that
+            # should run as the state of the things below it can't be changed by
+            # this
+            if not (job.get_should_run_immediate() or
+                    job.get_parents_should_run()):
+                continue
+            target_ids = build_graph.get_target_ids(job_id)
+            for target_id in target_ids:
+                dependent_ids = build_graph.get_dependent_ids(target_id)
+                for dependent_id in dependent_ids:
+                    self._update_newly_invalidated_jobs_recurse(dependent_id)
 
     def _recursive_invalidate_job(self, job_id):
         job = self.build.get_job(job_id)
@@ -209,12 +246,11 @@ class ExecutionManager(object):
             # Add the job
             new_jobs, created_nodes = self.build.add_job(job_definition_id, build_context, **kwargs)
 
-            # Invalidate the build graph for all child nodes
-            for job_id in new_jobs:
-                self._recursive_invalidate_job(job_id)
-
             # Refresh all uncached existences
             self.build.bulk_refresh_targets()
+
+            # Invalidate the build graph for all child nodes
+            self.update_newly_invalidated_jobs(new_jobs)
 
         self._update_build(update_build_graph)
 

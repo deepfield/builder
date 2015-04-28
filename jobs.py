@@ -374,10 +374,14 @@ class Job(object):
         depends on it's current state and whether or not it's ancestors
         should run
         """
-        should_run_immediate = self.get_should_run_immediate()
-        parents_should_run = self.get_parents_should_run()
+        if self.force:
+            return True
 
-        return (should_run_immediate and not parents_should_run) or self.force
+        if self.get_parents_should_run():
+            return False
+
+
+        return self.get_should_run_immediate()
 
     def set_should_run(self, should_run):
         self.should_run = should_run
