@@ -16,18 +16,56 @@ import builder.targets
 import deepy.log
 LOG = deepy.log
 
-class BuildManager(object):
-    dependency_registery = {
-        "depends": builder.dependencies.depends,
-        "depends_one_or_more": builder.dependencies.depends_one_or_more,
-    }
+class BuildUpdate(object):
+    """Used to contain the results of a build update.
 
+    Add job and add meta will return this. The tuple contains the new jobs added to
+    the graph during the expansion, the new targets added to the graph during
+    expansion, the new dependency nodes added the graph during the expansion, the
+    jobs that were part of the expansion, the targets that were part of the
+    expansion, the dependency nodes that were part of the expansion, and the jobs
+    that were not forced but are now forced
+    """
+    def __init__(self, new_jobs=None, new_targets=None, new_dependencies=None,
+                 jobs=None, targets=None, dependencies=None, forced=None):
+        if new_jobs is None:
+            new_jobs = set()
+        if new_targets is None:
+            new_targets = set()
+        if new_dependencies is None:
+            new_dependencies = set()
+        if jobs is None:
+            jobs = set()
+        if targets is None:
+            targets = set()
+        if dependencies is None:
+            dependencies = set()
+        if forced is None:
+            forced = set()
+
+        self.new_jobs = new_jobs
+        self.new_targets = targets
+        self.dependencies = dependencies
+        self.jobs = jobs
+        self.targets = targets
+        self.dependencies = dependencies
+        self.forced = forced
+
+
+class BuildManager(object):
     """A build manager holds a rule dependency graph and is then creates a new
     build graph by recieving a list of start jobs and a build_context
 
     A build manager is usefull when looking to creating separate build graphs
     using the same rule dependency graph.
     """
+
+    dependency_registery = {
+
+        "depends": builder.dependencies.depends,
+        "depends_one_or_more": builder.dependencies.depends_one_or_more,
+    }
+
     def __init__(self, jobs, metas, dependency_registery=None, config=None):
         super(BuildManager, self).__init__()
 
@@ -206,7 +244,7 @@ class RuleDependencyGraph(BaseGraph):
         if not self.is_meta(meta_id):
             raise RuntimeError("{} is not a meta node".format(meta_id))
 
-    def is_job(self, job_id):
+    def is_job_definition(self, job_id):
         """Returns if the id passed in relates to a job node"""
         job = self.node[job_id]
         if "object" not in job:
@@ -215,7 +253,7 @@ class RuleDependencyGraph(BaseGraph):
             return False
         return True
 
-    def assert_job(self, job_id):
+    def assert_job_definition(self, job_id):
         """Raises a runtime error if the job_id doesn't correspond to a job.
 
         Checks the node with id job_id and then raises and error if there is no
@@ -230,10 +268,10 @@ class RuleDependencyGraph(BaseGraph):
         Raises:
             RuntimeError: raised if the node specified is not a job node
         """
-        if not self.is_job(job_id):
+        if not self.is_job_definition(job_id):
             raise RuntimeError("{} is not a job node".format(job_id))
 
-    def is_target(self, target_id):
+    def is_target_expander(self, target_id):
         """Returns if the id passed in relates to a target node or not"""
         target = self.node[target_id]
         if "object" not in target:
@@ -242,7 +280,7 @@ class RuleDependencyGraph(BaseGraph):
             return False
         return True
 
-    def assert_target(self, target_id):
+    def assert_target_expander(self, target_id):
         """Raises a runtime error if the target_id doesn't correspond to a
         target
 
@@ -258,7 +296,7 @@ class RuleDependencyGraph(BaseGraph):
         Raises:
             RuntimeError: raised if the node specified is not a target node
         """
-        if not self.is_target(target_id):
+        if not self.is_target_expander(target_id):
             raise RuntimeError("{} is not a target node".format(target_id))
 
     def filter_target_ids(self, target_ids):
@@ -277,7 +315,7 @@ class RuleDependencyGraph(BaseGraph):
         """
         output_target_ids = []
         for target_id in target_ids:
-            if self.is_target(target_id):
+            if self.is_target_expander(target_id):
                 output_target_ids.append(target_id)
         return output_target_ids
 
@@ -297,11 +335,11 @@ class RuleDependencyGraph(BaseGraph):
         """
         output_job_ids = []
         for job_id in job_ids:
-            if self.is_job(job_id):
+            if self.is_job_definition(job_id):
                 output_job_ids.append(job_id)
         return output_job_ids
 
-    def get_target_ids(self, job_id, type=None):
+    def get_target_ids(self, job_id):
         """Returns a list of the ids of all the targets for the job_id
 
         The targets for the job_id are the target nodes that are direct
@@ -313,7 +351,7 @@ class RuleDependencyGraph(BaseGraph):
         Returns:
             A list of ids corresponding to the targets of job_id
         """
-        self.assert_job(job_id)
+        self.assert_job_definition(job_id)
         neighbor_ids = self.neighbors(job_id)
         return self.filter_target_ids(neighbor_ids)
 
@@ -330,7 +368,7 @@ class RuleDependencyGraph(BaseGraph):
         Returns:
             A list of ids corresponding to the dependencies of job_id
         """
-        self.assert_job(job_id)
+        self.assert_job_definition(job_id)
         target_ids = self.predecessors(job_id)
         dependency_target_ids = self.filter_target_ids(target_ids)
         return dependency_target_ids
@@ -346,7 +384,7 @@ class RuleDependencyGraph(BaseGraph):
         Returns:
             A list of ids corresponding to the creators of the target_id
         """
-        self.assert_target(target_id)
+        self.assert_target_expander(target_id)
         parent_ids = self.predecessors(target_id)
         return self.filter_job_ids(parent_ids)
 
@@ -361,7 +399,7 @@ class RuleDependencyGraph(BaseGraph):
         Returns:
             A list of ids corresponding to the dependents of the target_id
         """
-        self.assert_target(target_id)
+        self.assert_target_expander(target_id)
         job_ids = self.neighbors(target_id)
         dependent_ids = self.filter_job_ids(job_ids)
         return dependent_ids
@@ -389,7 +427,7 @@ class RuleDependencyGraph(BaseGraph):
 
     def get_target(self, target_id):
         """Returns the object corresponding to the target_id"""
-        self.assert_target(target_id)
+        self.assert_target_expander(target_id)
         return self.node[target_id]["object"]
 
     def get_job_definition(self, job_definition_id):
@@ -405,14 +443,14 @@ class RuleDependencyGraph(BaseGraph):
             the object in the object keyword for the node corresponding to
             job_id
         """
-        self.assert_job(job_definition_id)
+        self.assert_job_definition(job_definition_id)
         return self.node.get(job_definition_id, {}).get('object')
 
     def get_all_jobs(self):
         """Return a list of all jobs in the rule dependency graph
         """
         jobs = []
-        for job_id in filter(lambda x: self.is_job(x), self.node):
+        for job_id in filter(lambda x: self.is_job_definition(x), self.node):
             jobs.append(self.get_job_definition(job_id))
 
         return jobs
@@ -444,7 +482,7 @@ class RuleDependencyGraph(BaseGraph):
             if self.is_meta(job_id):
                 job_ids = job_ids + self.get_job_ids_from_meta(job_id)
             else:
-                self.assert_job(job_id)
+                self.assert_job_definition(job_id)
                 job_ids.append(job_id)
 
         return job_ids
@@ -463,7 +501,7 @@ class BuildGraph(BaseGraph):
         self.dependency_registery = dependency_registery
         self.config = config
 
-    def add_node(self, node, attr_dict=None, **kwargs):
+    def add_node(self, node, build_update=None, attr_dict=None, **kwargs):
         """Adds a job, target, dependency node to the graph
 
         A node is added to the graph where the object keyword of the node will
@@ -501,59 +539,53 @@ class BuildGraph(BaseGraph):
         node_data.update(kwargs)
         node_data["object"] = node
 
+        if build_update is not None:
+            if node.unique_id in self:
+                if self.is_job_object(node):
+                    build_update.jobs.add(node.unique_id)
+                elif self.is_target_object(node):
+                    build_update.targets.add(node.unqiue_id)
+                elif self.is_dependency_type_object(node):
+                    build_update.new_dependencies.add(node.unique_id)
+            else:
+                if self.is_job_object(node):
+                    build_update.new_jobs.add(node.unique_id)
+                elif self.is_target_object(node):
+                    build_update.new_targets.add(node.unqiue_id)
+                elif self.is_dependency_type_object(node):
+                    build_update.new_dependencies.add(node.unique_id)
+
         super(BuildGraph, self).add_node(node.unique_id, attr_dict=node_data)
         node = self.node[node.unique_id]["object"]
         return node
 
-    def is_job_definition(self, job_id):
-        """Returns if the node relating to job id is a job node"""
-        if not job_id in self.node:
-            raise KeyError("Job Definition '{}' is not in rule dependency graph".format(job_id))
-        job = self.node[job_id]
-        if "object" not in job:
-            return False
-        if not isinstance(job["object"], builder.jobs.JobDefinition):
-            return False
-        return True
+    def is_dependency_type_object(self, dependency_type):
+        """Returns true if the object passed in is a dependnecy type object"""
+        return isinstance(dependency_type)
 
     def is_dependency_type(self, dependency_id):
         """Returns if the ndoe relating to dependnecy id is a dependency node"""
         dependency_container = self.node[dependency_id]
         if "object" not in dependency_container:
             return False
-        if not isinstance(dependency_container["object"],
-                          builder.dependencies.Dependency):
+        if not self.is_dependency_type_object(dependency_container["object"]):
             return False
         return True
-
-    def assert_job_definition(self, job_definition_id):
-        """Raises a runtime error if the job_id doesn't correspond to a job.
-
-        Checks the node with id job_id and then raises and error if there is no
-        object in the node or the object is not a JobDefinition
-
-        Args:
-            job_id: the id of the node that should be a JobDefinition
-
-        Returns:
-            None
-
-        Raises:
-            RuntimeError: raised if the node specified is not a JobDefinition node
-        """
-        if not self.is_job_definition(job_definition_id):
-            raise RuntimeError("{} is not a job node".format(job_definition_id))
 
     def assert_dependency_type(self, dependency_id):
         if not self.is_dependency_type(dependency_id):
             raise RuntimeError("{} is not a depends node".format(dependency_id))
+
+    def is_target_object(self, target):
+        """Returns true if the object is a target"""
+        return isinstance(target, builder.targets.Target)
 
     def is_target(self, target_id):
         """Returns if the node related to target_id is a target node"""
         target = self.node[target_id]
         if "object" not in target:
             return False
-        if not isinstance(target["object"], builder.targets.Target):
+        if not self.is_target_object(target["object"]):
             return False
         return True
 
@@ -994,8 +1026,7 @@ class BuildGraph(BaseGraph):
         return next_nodes
 
 
-    def _self_expand(self, node, direction, depth, current_depth, new_nodes,
-                     cache_set):
+    def _self_expand(self, job, direction, depth, current_depth, build_update):
         """Input a node to expand and a build_context, magic ensues
 
         The node should already be an expanded node. It then expands out the
@@ -1006,10 +1037,12 @@ class BuildGraph(BaseGraph):
             direction: the direction to expand in the graph
             depth: the maximum depth that any branch should be
             current_depth: the depth that the branch is in
-            cache_set: A set of jobs that have already been expanded
+            build_update: the BuildUpdate to hold all the values relating to the
+                current update
         """
-        if node.unique_id in cache_set:
+        if job.unique_id in build_update.jobs:
             return
+
 
         new = node.unique_id not in self
         node = self.add_node(node)
@@ -1082,8 +1115,6 @@ class BuildGraph(BaseGraph):
         if direction is None:
             direction = set(["up"])
 
-        # take care of meta targets
-        new_nodes = []
 
         start_job = self.rule_dependency_graph.get_job_definition(job_definition_id)
         expanded_jobs = start_job.expand(self, build_context)
@@ -1093,14 +1124,15 @@ class BuildGraph(BaseGraph):
         cache_set = set()
 
         start = time.time()
+        build_update = BuildUpdate()
         for expanded_job in expanded_jobs:
             self._self_expand(expanded_job, direction, depth, current_depth,
-                              new_nodes, cache_set)
+                              build_update, cache_set)
             if force:
                 self.get_job(expanded_job.get_id()).set_force(True)
         stop = time.time()
         LOG.debug("It took {} seconds to expand the build graph".format((stop - start)))
-        return map(lambda x: x.get_id(), expanded_jobs), new_nodes
+        return build_update
 
 
     def get_target(self, target_id):
@@ -1123,6 +1155,10 @@ class BuildGraph(BaseGraph):
         """
         return self.rule_dependency_graph.get_job_definition(job_definition_id)
 
+    def is_job_object(self, job):
+        """Returns true if the job object passed is a job"""
+        return isinstance(job, builder.jobs.Job)
+
     def is_job(self, job_id):
         """Returns if the id passed in relates to a job node"""
         if not job_id in self.node:
@@ -1130,7 +1166,7 @@ class BuildGraph(BaseGraph):
         job_container = self.node[job_id]
         if "object" not in job_container:
             return False
-        if not isinstance(job_container["object"], builder.jobs.Job):
+        if not self.is_job_object(job_container["object"]):
             return False
         return True
 
