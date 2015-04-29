@@ -19,38 +19,46 @@ LOG = deepy.log
 class BuildUpdate(object):
     """Used to contain the results of a build update.
 
-    Add job and add meta will return this. The tuple contains the new jobs added to
-    the graph during the expansion, the new targets added to the graph during
-    expansion, the new dependency nodes added the graph during the expansion, the
-    jobs that were part of the expansion, the targets that were part of the
-    expansion, the dependency nodes that were part of the expansion, and the jobs
-    that were not forced but are now forced
+    Add job and add meta will return this
+
+    attr:
+        new_jobs: job nodes that were added to the graph
+        new_targets: targets nodes that were added to the graph
+        newly_forced: jobs that are forced that either were not part of the
+            graph before or that were not forced before
+        jobs: jobs that were part of the expansion
+        targets: targets that were part of the expansion
+        forced: jobs that are forced
     """
-    def __init__(self, new_jobs=None, new_targets=None, new_dependencies=None,
-                 jobs=None, targets=None, dependencies=None, forced=None):
+    def __init__(self, new_jobs=None, new_targets=None, newly_forced=None,
+                 jobs=None, targets=None, forced=None):
         if new_jobs is None:
             new_jobs = set()
         if new_targets is None:
             new_targets = set()
-        if new_dependencies is None:
-            new_dependencies = set()
+        if newly_forced is None:
+            newly_forced = set()
         if jobs is None:
             jobs = set()
         if targets is None:
             targets = set()
-        if dependencies is None:
-            dependencies = set()
         if forced is None:
             forced = set()
 
         self.new_jobs = new_jobs
-        self.new_targets = targets
-        self.dependencies = dependencies
+        self.new_targets = new_targets
+        self.newly_forced = newly_forced
         self.jobs = jobs
         self.targets = targets
-        self.dependencies = dependencies
         self.forced = forced
 
+    def merge(self, build_update):
+        self.new_jobs = self.new_jobs | build_update.new_jobs
+        self.new_targets = self.new_targets | build_update.new_targets
+        self.newly_forced = self.newly_forced | build_update.newly_forced
+        self.jobs = self.jobs | build_update.jobs
+        self.targets = self.targets | build_update.targets
+        self.forced = self.forced | build_update.forced
 
 class BuildManager(object):
     """A build manager holds a rule dependency graph and is then creates a new
@@ -540,20 +548,15 @@ class BuildGraph(BaseGraph):
         node_data["object"] = node
 
         if build_update is not None:
-            if node.unique_id in self:
-                if self.is_job_object(node):
-                    build_update.jobs.add(node.unique_id)
-                elif self.is_target_object(node):
-                    build_update.targets.add(node.unqiue_id)
-                elif self.is_dependency_type_object(node):
-                    build_update.new_dependencies.add(node.unique_id)
-            else:
+            if node.unique_id not in self:
                 if self.is_job_object(node):
                     build_update.new_jobs.add(node.unique_id)
                 elif self.is_target_object(node):
-                    build_update.new_targets.add(node.unqiue_id)
-                elif self.is_dependency_type_object(node):
-                    build_update.new_dependencies.add(node.unique_id)
+                    build_update.new_targets.add(node.unique_id)
+            if self.is_job_object(node):
+                build_update.jobs.add(node.unique_id)
+            elif self.is_target_object(node):
+                build_update.targets.add(node.unique_id)
 
         super(BuildGraph, self).add_node(node.unique_id, attr_dict=node_data)
         node = self.node[node.unique_id]["object"]
@@ -561,7 +564,7 @@ class BuildGraph(BaseGraph):
 
     def is_dependency_type_object(self, dependency_type):
         """Returns true if the object passed in is a dependnecy type object"""
-        return isinstance(dependency_type)
+        return isinstance(dependency_type, builder.dependencies.Dependency)
 
     def is_dependency_type(self, dependency_id):
         """Returns if the ndoe relating to dependnecy id is a dependency node"""
@@ -866,7 +869,7 @@ class BuildGraph(BaseGraph):
                              "{}".format(direction))
 
     def _connect_targets(self, node, target_type, targets, edge_data,
-                         new_nodes):
+                         build_update):
         """Connets the node to it's targets
 
         All the targets are connected to the node. The corresponding edge data
@@ -880,15 +883,12 @@ class BuildGraph(BaseGraph):
             edge_data: any extra data to be added to the edge dict
         """
         for target in targets:
-            new = target.unique_id not in self
-            target = self.add_node(target)
-            if new:
-                new_nodes.append(target.unique_id)
+            target = self.add_node(target, build_update)
             self.add_edge(node.unique_id, target.unique_id, edge_data,
                           label=target_type, kind=target_type)
 
     def _connect_dependencies(self, node, dependency_type, dependencies, data,
-                              new_nodes):
+                              build_update):
         """Connets the node to it's dependnecies
 
         All the depenencies are connected to the node. The corresponding edge
@@ -912,25 +912,20 @@ class BuildGraph(BaseGraph):
                                                      dependency_node_id,
                                                      dependency_type.func_name)
 
-        new = dependency.unique_id not in self
-        self.add_node(dependency, label=dependency_type.func_name)
-        if new:
-            new_nodes.append(dependency.unique_id)
+        # self.add_node(dependency, build_update, label=dependency_type.func_name)
+        self.add_node(dependency, build_update)
 
         self.add_edge(dependency_node_id, node.unique_id, data,
                       label=dependency_type.func_name,
                       kind=dependency_type.func_name)
 
         for dependency in dependencies:
-            new = dependency.unique_id not in self
-            dependency = self.add_node(dependency)
-            if new:
-                new_nodes.append(dependency.unique_id)
+            dependency = self.add_node(dependency, build_update)
             self.add_edge(dependency.unique_id, dependency_node_id, data,
                           label=dependency_type.func_name,
                           kind=dependency_type.func_name)
 
-    def _expand_direction(self, job, direction, new_nodes):
+    def _expand_direction(self, job, direction, build_update):
         """Takes in a node and expands it's targets or dependencies and adds
         them to the graph
 
@@ -945,6 +940,7 @@ class BuildGraph(BaseGraph):
         # The node has already been expanded in that direction
         if job.expanded_directions[direction]:
             target_ids = self.get_target_or_dependency_ids(job.unique_id, direction)
+            build_update.targets.update(target_ids)
             return [self.get_target(x) for x in target_ids]
         job.expanded_directions[direction] = True
 
@@ -967,16 +963,16 @@ class BuildGraph(BaseGraph):
                     dependency_type = self.dependency_registery[target_type]
                     self._connect_dependencies(job, dependency_type,
                                                expanded_targets, edge_data,
-                                               new_nodes)
+                                               build_update)
 
                 if direction == "down":
                     self._connect_targets(job, target_type, expanded_targets,
-                                          edge_data, new_nodes)
+                                          edge_data, build_update)
                 expanded_targets_list = expanded_targets_list + expanded_targets
         return expanded_targets_list
 
     def _self_expand_next_direction(self, expanded_directions, depth,
-                                    current_depth, new_nodes, cache_set,
+                                    current_depth, build_update, cache_set,
                                     direction, directions_to_recurse):
         """Expands out the next job nodes
 
@@ -1022,11 +1018,11 @@ class BuildGraph(BaseGraph):
         # continue expanding in the direction given
         for next_node in next_nodes:
             self._self_expand(next_node, directions_to_recurse, depth, current_depth,
-                              new_nodes, cache_set)
+                              build_update, cache_set)
         return next_nodes
 
 
-    def _self_expand(self, job, direction, depth, current_depth, build_update):
+    def _self_expand(self, job, direction, depth, current_depth, build_update, cache_set):
         """Input a node to expand and a build_context, magic ensues
 
         The node should already be an expanded node. It then expands out the
@@ -1040,35 +1036,31 @@ class BuildGraph(BaseGraph):
             build_update: the BuildUpdate to hold all the values relating to the
                 current update
         """
-        if job.unique_id in build_update.jobs:
+        if job.unique_id in cache_set:
             return
 
 
-        new = node.unique_id not in self
-        node = self.add_node(node)
-        if new:
-            new_nodes.append(node.unique_id)
+        job = self.add_node(job, build_update)
 
-        expanded_targets = self._expand_direction(node, "down", new_nodes)
-        expanded_dependencies = self._expand_direction(node, "up", new_nodes)
-        cache_set.add(node.unique_id)
+        expanded_targets = self._expand_direction(job, "down", build_update)
+        expanded_dependencies = self._expand_direction(job, "up", build_update)
+        cache_set.add(job.unique_id)
 
         if depth is not None:
-            if not isinstance(node, builder.jobs.MetaJob):
-                current_depth = current_depth + 1
+            current_depth = current_depth + 1
             if current_depth >= depth:
                 return
 
         expanded_nodes = []
         if "up" in direction:
             new_direction = set(["up"])
-            expanded_nodes += self._self_expand_next_direction(expanded_dependencies, depth,
-                                             current_depth, new_nodes,
-                                             cache_set, "up", new_direction)
+            expanded_nodes += self._self_expand_next_direction(
+                    expanded_dependencies, depth, current_depth, build_update,
+                    cache_set, "up", new_direction)
         if "down" in direction:
-            expanded_nodes += self._self_expand_next_direction(expanded_targets, depth,
-                                             current_depth, new_nodes,
-                                             cache_set, "down", direction)
+            expanded_nodes += self._self_expand_next_direction(
+                    expanded_targets, depth, current_depth, build_update,
+                    cache_set, "down", direction)
         return expanded_nodes
 
 
@@ -1086,14 +1078,13 @@ class BuildGraph(BaseGraph):
             of this new meta
         """
         jobs = self.rule_dependency_graph.get_job_ids_from_meta(new_meta)
-        new_nodes = []
+        build_update = BuildUpdate()
         for job in jobs:
-            expanded_jobs, new_expanded_nodes = self.add_job(job, build_context,
-                                                 direction=direction,
-                                                 depth=depth, force=force)
-            new_nodes = new_nodes + new_expanded_nodes
+            build_update.merge(self.add_job(job, build_context,
+                                            direction=direction,
+                                            depth=depth, force=force))
 
-        return new_nodes
+        return build_update
 
 
     def add_job(self, job_definition_id, build_context, direction=None, depth=None,
@@ -1125,10 +1116,16 @@ class BuildGraph(BaseGraph):
 
         start = time.time()
         build_update = BuildUpdate()
+        cache_set = set()
         for expanded_job in expanded_jobs:
             self._self_expand(expanded_job, direction, depth, current_depth,
                               build_update, cache_set)
             if force:
+                job_id = expanded_job.get_id()
+                job = self.get_job(job_id)
+                if not job.get_force():
+                    build_update.newly_forced.add(job_id)
+                build_update.forced.add(job_id)
                 self.get_job(expanded_job.get_id()).set_force(True)
         stop = time.time()
         LOG.debug("It took {} seconds to expand the build graph".format((stop - start)))

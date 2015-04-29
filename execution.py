@@ -90,6 +90,18 @@ class Executor(object):
         return job
 
 
+    def _finish_job_invalidate_recurse(self, job_id):
+        build_graph = self.get_build_graph()
+        job = build_graph.get_job(job_id)
+        job.invalidate()
+        if not job.get_should_run() and not job.should_ignore_parents():
+            target_ids = build_graph.get_target_ids(job_id)
+            for target_id in target_ids:
+                dependent_ids = build_graph.get_dependent_ids(target_id)
+                for dependent_id in dependent_ids:
+                    self._finish_job_invalidate_recurse(dependent_id)
+
+
     def finish_job(self, job, result, update_job_cache=True):
         LOG.info("Job {} complete. Status: {}".format(job.get_id(), result.status))
         LOG.debug("{}(stdout): {}".format(job.get_id(), result.stdout))
@@ -100,11 +112,13 @@ class Executor(object):
         job.retries += 1
         job.is_running = False
         if update_job_cache:
-            job.invalidate()
+            target_ids = self.get_build_graph().get_target_ids(job.get_id())
+            self._execution_manager.update_targets(target_ids)
+
+            job_id = job.unique_id
+            self._finish_job_invalidate_recurse(job_id)
 
             # updat all of it's targets
-            target_ids = self.get_build_graph().get_target_ids(job.get_id())
-            self.update_targets(target_ids)
             # update all of it's dependents
             for target_id in target_ids:
                 dependent_ids = self.get_build_graph().get_dependent_ids(target_id)
@@ -116,20 +130,12 @@ class Executor(object):
             if not job.get_should_run_immediate():
                 job.force = False
                 job.retries = 0
+            else:
+                if job.retries >= self.get_execution_manager().max_retries:
+                    job.set_failed(True)
+                    job.invalidate()
+                    LOG.error("Maximum number of retries reached for {}".format(job))
         self.get_execution_manager().add_to_complete_queue(job.get_id())
-
-    def update_targets(self, target_ids):
-        """Takes in a list of target ids and updates all of their needed
-        values
-        """
-        update_function_list = collections.defaultdict(list)
-        for target_id in target_ids:
-            target = self.get_build_graph().get_target(target_id)
-            func = target.get_bulk_exists_mtime
-            update_function_list[func].append(target)
-
-        for update_function, targets in update_function_list.iteritems():
-            update_function(targets)
 
 
 class LocalExecutor(Executor):
@@ -244,15 +250,29 @@ class ExecutionManager(object):
         """
         def update_build_graph():
             # Add the job
-            new_jobs, created_nodes = self.build.add_job(job_definition_id, build_context, **kwargs)
+            build_update = self.build.add_job(job_definition_id, build_context, **kwargs)
 
             # Refresh all uncached existences
-            self.build.bulk_refresh_targets()
+            self.update_targets(build_update.new_targets)
 
             # Invalidate the build graph for all child nodes
-            self.update_newly_invalidated_jobs(new_jobs)
+            newly_invalidated_jobs = build_update.new_jobs | build_update.newly_forced
+            self.update_newly_invalidated_jobs(newly_invalidated_jobs)
 
         self._update_build(update_build_graph)
+
+    def update_targets(self, target_ids):
+        """Takes in a list of target ids and updates all of their needed
+        values
+        """
+        update_function_list = collections.defaultdict(list)
+        for target_id in target_ids:
+            target = self.build.get_target(target_id)
+            func = target.get_bulk_exists_mtime
+            update_function_list[func].append(target)
+
+        for update_function, targets in update_function_list.iteritems():
+            update_function(targets)
 
     def add_to_work_queue(self, job_id):
 
@@ -298,7 +318,7 @@ class ExecutionManager(object):
             #LOG.debug("EXECUTION_LOOP => Finished job {} from work queue".format(job_id))
             jobs_executed += 1
             if not isinstance(result, concurrent.futures.Future) and inline:
-                if result.is_async:
+                if result.is_async():
                     raise NotImplementedError("Cannot run an async executor inline")
                 self._consume_completed_jobs(block=False)
             elif inline:
@@ -336,46 +356,60 @@ class ExecutionManager(object):
             map(self.add_to_work_queue, next_jobs)
         LOG.debug("COMPLETION_LOOP => Done consuming completed jobs")
 
-
-    def get_next_jobs_to_run(self, job_id, update_set=None):
-        """Returns the jobs that are below job_id that need to run"""
-        if update_set is None:
-            update_set = set([])
-
-        if job_id in update_set:
-            return []
-
-        next_jobs_list = []
-
+    def get_next_jobs_to_run_recurse(self, job_id):
+        next_job_ids = set()
         job = self.build.get_job(job_id)
         if job.get_should_run():
-            next_jobs_list.append(job_id)
-            update_set.add(job_id)
-            return next_jobs_list
+            next_job_ids.add(job_id)
+        else:
+            target_ids = self.build.get_target_ids(job_id)
+            for target_id in target_ids:
+                dependent_ids = self.build.get_dependent_ids(target_id)
+                for dependent_id in dependent_ids:
+                    next_job_ids |= self.get_next_jobs_to_run_recurse(
+                            dependent_id)
+        return next_job_ids
+
+    def get_next_jobs_to_run(self, job_id):
+        """Returns the jobs that are below job_id that need to run"""
+        # import ipdb;ipdb.set_trace()
+
+        # if update_set is None:
+        #     update_set = set([])
+
+        # if job_id in update_set:
+        #     return []
+
+        # next_jobs_list = []
+
+        # job = self.build.get_job(job_id)
+        # if job.get_should_run():
+        #     next_jobs_list.append(job_id)
+        #     update_set.add(job_id)
+        #     return next_jobs_list
 
 
-        target_ids = self.build.get_target_ids(job_id)
-        for target_id in target_ids:
-            dependent_jobs = self.build.get_dependent_ids(target_id)
-            for dependent_job in dependent_jobs:
-                job = self.build.get_job(dependent_job)
-                should_run = job.get_should_run()
-                if should_run:
-                    next_jobs_list.append(dependent_job)
+        # target_ids = self.build.get_target_ids(job_id)
+        # for target_id in target_ids:
+        #     dependent_jobs = self.build.get_dependent_ids(target_id)
+        #     for dependent_job in dependent_jobs:
+        #         job = self.build.get_job(dependent_job)
+        #         should_run = job.get_should_run()
+        #         if should_run:
+        #             next_jobs_list.append(dependent_job)
 
-        update_set.add(job_id)
+        # update_set.add(job_id)
 
-        return next_jobs_list
+        # return next_jobs_list
+        next_jobs = self.get_next_jobs_to_run_recurse(job_id)
+        print next_jobs
+        return next_jobs
 
 
     def execute(self, job_id):
         # Don't run a job more than the configured max number of retries
         LOG.debug("ExecutionManager.execute({})".format(job_id))
         job = self.build.get_job(job_id)
-        if job.retries >= self.max_retries:
-            job.set_failed(True)
-            LOG.error("Maximum number of retries reached for {}".format(job))
-            return
 
         # Execute job
         result = self._execute(job)

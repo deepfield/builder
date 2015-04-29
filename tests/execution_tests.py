@@ -54,7 +54,10 @@ class ExtendedMockExecutor(Executor):
                 target.do_get_mtime = mock.Mock(return_value=effect[target_id])
             print target_id, target.do_get_mtime()
 
-        return ExecutionResult(False, success, command, command)
+        result = ExecutionResult(False, success, command, command)
+        self.finish_job(job, result, update_job_cache=True)
+        return result
+
 
 
 class ExecutionManagerTests1(unittest.TestCase):
@@ -152,7 +155,7 @@ class ExecutionManagerTests2(unittest.TestCase):
 
     def _get_execution_manager(self, jobs):
         build_manager = BuildManager(jobs, metas=[])
-        execution_manager = ExecutionManager(build_manager, lambda execution_manager: ExtendedMockExecutor(execution_manager))
+        execution_manager = ExecutionManager(build_manager, lambda execution_manager, config=None: ExtendedMockExecutor(execution_manager, config=config))
         return execution_manager
 
     def _get_execution_manager_with_effects(self, jobs):
@@ -230,7 +233,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager.execute("A")
 
         # Then
-        self.assertEquals([], execution_manager.get_next_jobs_to_run("A"))
+        self.assertEquals(set([]), execution_manager.get_next_jobs_to_run("A"))
 
 
     @unit
@@ -254,7 +257,41 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager.execute("A")
 
         # Then
-        self.assertEquals(["B"], execution_manager.get_next_jobs_to_run("A"))
+        self.assertEquals(set(["B"]), execution_manager.get_next_jobs_to_run("A"))
+
+    @unit
+    def test_simple_get_next_jobs_lower(self):
+        # Given
+        jobs = [
+            EffectJobDefinition("A", depends=None, targets=["A-target"]),
+            EffectJobDefinition(
+                "B", depends=["A-target"], targets=[
+                    {
+                        "unexpanded_id": "B-target",
+                        "start_mtime": 200
+                    }
+                ]
+            ),
+            EffectJobDefinition(
+                "C", depends=[
+                    {
+                        "unexpanded_id": "B-target",
+                        "start_mtime": 200
+                    }
+                ], targets=["C-target"]
+            )
+        ]
+        execution_manager = self._get_execution_manager(jobs)
+
+        # When
+        execution_manager.submit("C", {})
+        execution_manager.execute("A")
+
+        # Then
+        for node_id, node in execution_manager.build.node.iteritems():
+            if execution_manager.build.is_target_object(node["object"]):
+                print node_id, node["object"].get_mtime()
+        self.assertEquals(set(["C"]), execution_manager.get_next_jobs_to_run("A"))
 
     @unit
     def test_simple_get_next_jobs_failed_but_creates_targets(self):
@@ -277,7 +314,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager.execute("A")
 
         # The
-        self.assertEquals(["B"], execution_manager.get_next_jobs_to_run("A"))
+        self.assertEquals(set(["B"]), execution_manager.get_next_jobs_to_run("A"))
 
     @unit
     def test_simple_get_next_jobs_failed_but_no_targets(self):
@@ -301,7 +338,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager.execute("A")
 
         # The
-        self.assertEquals(["A"], execution_manager.get_next_jobs_to_run("A"))
+        self.assertEquals(set(["A"]), execution_manager.get_next_jobs_to_run("A"))
 
     @unit
     def test_simple_get_next_jobs_failed_max(self):
@@ -325,7 +362,7 @@ class ExecutionManagerTests2(unittest.TestCase):
             execution_manager.execute("A")
 
         # The
-        self.assertEquals([], execution_manager.get_next_jobs_to_run("A"))
+        self.assertEquals(set([]), execution_manager.get_next_jobs_to_run("A"))
 
     @unit
     def test_multiple_get_next_jobs(self):
@@ -532,6 +569,10 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager.execute("A")
         execution_manager.execute("B")
         execution_manager.submit("A", {}, force=True)
+        execution_manager.build.write_dot("graph.dot")
+        for node_id, node in execution_manager.build.node.iteritems():
+            if execution_manager.build.is_target(node_id):
+                print node_id, node["object"].get_mtime()
 
         # Then
         self.assertEquals(set(), set(execution_manager.get_next_jobs_to_run("B")))
@@ -599,7 +640,7 @@ class ExecutionManagerTests2(unittest.TestCase):
 
         # When
         execution_manager.submit("B", {})
-        execution_manager.build.write_dot("graph.dot")
+
         execution_manager.start_execution(inline=True)
 
         # Then
@@ -1009,3 +1050,4 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertFalse(job1.parents_should_run)
         self.assertIsNone(job2.parents_should_run)
         self.assertIsNone(job3.parents_should_run)
+

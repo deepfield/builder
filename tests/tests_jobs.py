@@ -2,6 +2,7 @@
 import unittest
 
 import arrow
+import mock
 import networkx
 import numbers
 
@@ -25,6 +26,8 @@ def new_expand_wrapper(old_expand, target_mtime):
         targets = old_expand(*args, **kwargs)
         for target in targets:
             target.mtime = target_mtime
+            target.do_get_mtime = mock.Mock(return_value=target_mtime)
+            target.cached_mtime = True
         return targets
     return new_expand
 
@@ -40,12 +43,14 @@ class SimpleJobTestMixin(object):
             for depend in depends:
                 if isinstance(depend, dict):
                     depends_type = depend.pop('type', 'depends')
+                    has_mtime = "start_mtime" in depend
                     target_mtime = depend.pop('start_mtime', None)
                     expander = self.expander_type(
                             self.target_type,
                             **depend)
-                    expander.expand = new_expand_wrapper(expander.expand,
-                                                         target_mtime)
+                    if has_mtime:
+                        expander.expand = new_expand_wrapper(expander.expand,
+                                                             target_mtime)
                     depends_dict[depends_type].append(expander)
                 elif isinstance(depend, basestring):
                     depends_dict['depends'].append(
@@ -63,13 +68,15 @@ class SimpleJobTestMixin(object):
             for target in targets:
                 if isinstance(target, dict):
                     target_type = target.pop('type', 'produces')
+                    has_mtime = "start_mtime" in target
                     target_mtime = target.pop('start_mtime', None)
                     expander = self.expander_type(
                         self.target_type,
                         **target
                     )
-                    expander.expand = new_expand_wrapper(expander.expand,
-                                                         target_mtime)
+                    if has_mtime:
+                        expander.expand = new_expand_wrapper(expander.expand,
+                                                             target_mtime)
                     targets_dict[target_type].append(expander)
                 elif isinstance(target, basestring):
 
