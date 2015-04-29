@@ -372,35 +372,6 @@ class ExecutionManager(object):
 
     def get_next_jobs_to_run(self, job_id):
         """Returns the jobs that are below job_id that need to run"""
-        # import ipdb;ipdb.set_trace()
-
-        # if update_set is None:
-        #     update_set = set([])
-
-        # if job_id in update_set:
-        #     return []
-
-        # next_jobs_list = []
-
-        # job = self.build.get_job(job_id)
-        # if job.get_should_run():
-        #     next_jobs_list.append(job_id)
-        #     update_set.add(job_id)
-        #     return next_jobs_list
-
-
-        # target_ids = self.build.get_target_ids(job_id)
-        # for target_id in target_ids:
-        #     dependent_jobs = self.build.get_dependent_ids(target_id)
-        #     for dependent_job in dependent_jobs:
-        #         job = self.build.get_job(dependent_job)
-        #         should_run = job.get_should_run()
-        #         if should_run:
-        #             next_jobs_list.append(dependent_job)
-
-        # update_set.add(job_id)
-
-        # return next_jobs_list
         next_jobs = self.get_next_jobs_to_run_recurse(job_id)
         print next_jobs
         return next_jobs
