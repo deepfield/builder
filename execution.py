@@ -253,10 +253,12 @@ class ExecutionManager(object):
             build_update = self.build.add_job(job_definition_id, build_context, **kwargs)
 
             # Refresh all uncached existences
+            LOG.debug("updating {} targets".format(len(build_update.new_targets)))
             self.update_targets(build_update.new_targets)
 
             # Invalidate the build graph for all child nodes
             newly_invalidated_jobs = build_update.new_jobs | build_update.newly_forced
+            LOG.debug("updating {} jobs".format(len(newly_invalidated_jobs)))
             self.update_newly_invalidated_jobs(newly_invalidated_jobs)
 
         self._update_build(update_build_graph)
