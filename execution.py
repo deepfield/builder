@@ -454,6 +454,7 @@ def _submit_from_json(execution_manager, json_body):
     for k in ('start_time', 'end_time'):
         if k in build_context:
             build_context[k] = arrow.get(build_context[k])
+    LOG.debug("build_context is {}".format(build_context))
 
     execution_manager.submit(**payload)
     jobs_to_run = execution_manager.get_jobs_to_run()
