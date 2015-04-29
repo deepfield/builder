@@ -56,8 +56,6 @@ class Executor(object):
         Returns None if the job does not execute because it is already running or because its get_should_run method returns False.
         Otherwise, returns an appropriate ExecutionResult object.
         """
-        if job.is_running:
-            return None
         if not job.get_should_run():
             return None
 
