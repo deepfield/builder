@@ -453,6 +453,7 @@ def _submit_from_json(execution_manager, json_body):
     build_context = payload.get('build_context', {})
     for k in ('start_time', 'end_time'):
         if k in build_context:
+            LOG.debug("converting {}".format(k))
             build_context[k] = arrow.get(build_context[k])
     LOG.debug("build_context is {}".format(build_context))
 
