@@ -579,20 +579,6 @@ class ExecutionManagerTests2(unittest.TestCase):
 
     @unit
     def test_multiple_targets_one_exists(self):
-        """test_multiple_targets_one_exists
-
-        tests situations where a job has multiple targets. There are
-        individual jobs that depend on individual targets. There is also another
-        row of jobs below that one. There is a total of three job rows. The top
-        job has all of it's targets completed and all of the second row jobs
-        have their targets completed. The top job has a target deleted. The top
-        job runs again and updates that target but doesn't overwrite the other
-        targets. Obviouslly the job that had one of it's dependencies updated
-        should be a next job, but so should the third row jobs that no longer
-        have a parent that should run. The event won't trickle down to them
-        because their parents are not stale and won't run again.
-        """
-
         # Given
         jobs = [
             EffectJobDefinition("A",
@@ -609,28 +595,25 @@ class ExecutionManagerTests2(unittest.TestCase):
         ]
         execution_manager = self._get_execution_manager_with_effects(jobs)
         build_context = {}
-        execution_manager.submit("A", build_context, direction={"down", "up"})
+        execution_manager.build.add_job("A", build_context, direction={"down", "up"})
 
         # When
-        for execution in ("A", "B", "C", "D", "E", "A", "A"):
-            execution_manager.execute(execution)
+        for execution in ("A", "B", "C", "E", "A", "A"):
+            job = execution_manager.build.get_job(execution)
+            if job.get_should_run_immediate():
+                print execution
+                execution_manager.execute(execution)
 
         # Then
-        self.assertEquals({"C", "B"}, set(execution_manager.get_next_jobs_to_run("A")))
+        self.assertEquals({"C", "D"}, set(execution_manager.get_next_jobs_to_run("A")))
         self.assertEquals(execution_manager.get_build().get_job("C").get_should_run(), True)
         execution_manager.execute("C")
-        execution_manager.execute("B")
-        self.assertEquals({"D"}, set(execution_manager.get_next_jobs_to_run("B")))
         self.assertEquals({"E"}, set(execution_manager.get_next_jobs_to_run("C")))
         self.assertEquals(execution_manager.get_build().get_job("E").get_should_run(), True)
         self.assertEquals(execution_manager.get_build().get_job("D").get_should_run(), True)
 
     @unit
     def test_effect_job(self):
-        """test_effect_job
-        tests a situtation where a job starts running and then updates it's
-        targets and then the next job will run
-        """
         # Given
         jobs = [
             EffectJobDefinition("A", targets=["A-target"]),
@@ -706,7 +689,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         job3.parents_should_run = False
 
         # When
-        execution_manager.update_newly_invalidated_jobs(['job1'])
+        execution_manager.update_parents_should_run('job1')
 
         # Then
         self.assertFalse(job1.parents_should_run)
@@ -746,7 +729,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         job3.parents_should_run = False
 
         # When
-        execution_manager.update_newly_invalidated_jobs(['job2'])
+        execution_manager.update_parents_should_run('job2')
 
         # Then
         self.assertTrue(job2.parents_should_run)
@@ -789,7 +772,7 @@ class ExecutionDaemonTests(unittest.TestCase):
                                         # just being used to check stopage
 
         # When
-        execution_manager.update_newly_invalidated_jobs(['job1'])
+        execution_manager.update_parents_should_run('job1')
 
         # Then
         self.assertIsNone(job2.parents_should_run)
@@ -822,7 +805,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         job2.parents_should_run = False
 
         # When
-        execution_manager.update_newly_invalidated_jobs(['job1'])
+        execution_manager.update_parents_should_run('job1')
 
         # Then
         self.assertFalse(job2.parents_should_run)
@@ -865,7 +848,7 @@ class ExecutionDaemonTests(unittest.TestCase):
                                         # just being used to check stopage
 
         # When
-        execution_manager.update_newly_invalidated_jobs(['job1'])
+        execution_manager.update_parents_should_run('job1')
 
         # Then
         self.assertIsNone(job2.parents_should_run)
@@ -903,6 +886,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         execution_manager.build.add_job("job3'", {}, depth=1)
 
         build_graph = execution_manager.build
+        build_graph.write_dot("graph.dot")
         job1 = build_graph.get_job("job1")
         job2 = build_graph.get_job("job2")
         job3 = build_graph.get_job("job3")
@@ -917,7 +901,8 @@ class ExecutionDaemonTests(unittest.TestCase):
         job3_.parents_should_run = False
 
         # When
-        execution_manager.update_newly_invalidated_jobs(["job1", "job1'"])
+        for job_id in ["job1", "job1'"]:
+            execution_manager.update_parents_should_run(job_id)
 
         # Then
         self.assertFalse(job1.parents_should_run)
@@ -953,7 +938,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         job2.parents_should_run = False
 
         # When
-        execution_manager.update_newly_invalidated_jobs(['job1'])
+        execution_manager.update_parents_should_run('job1')
 
         # Then
         self.assertFalse(job2.parents_should_run)
@@ -997,7 +982,8 @@ class ExecutionDaemonTests(unittest.TestCase):
         job4.parents_should_run = False
 
         # When
-        execution_manager.update_newly_invalidated_jobs(['job1', 'job2'])
+        for job_id in ["job1", "job2"]:
+            execution_manager.update_parents_should_run(job_id)
 
         # Then
         self.assertTrue(job3.parents_should_run)
@@ -1051,3 +1037,249 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertIsNone(job2.parents_should_run)
         self.assertIsNone(job3.parents_should_run)
 
+    @unit
+    def test_update_target_no_creator_should_not_run(self):
+        # Given
+        jobs = [
+            SimpleTestJobDefinition('job1', targets=['target1'],
+                                    depends=['super_target1']),
+            SimpleTestJobDefinition('job2', targets=['target2'],
+                                    depends=['target1'])
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        build_graph = execution_manager.build
+        build_graph.add_job("job2", {})
+
+        job1 = build_graph.get_job("job1")
+        job2 = build_graph.get_job("job2")
+
+        job1.should_run_immediate = True
+        job2.should_run_immediate = True
+        job1.parents_should_run = False
+        job2.parents_should_run = True
+
+        super_target1 = build_graph.get_target("super_target1")
+        target1 = build_graph.get_target("target1")
+        target2 = build_graph.get_target("target2")
+        super_target1.do_get_mtime = mock.Mock(return_value=100)
+        target1.do_get_mtime = mock.Mock(return_value=200)
+        target2.do_get_mtime = mock.Mock(return_value=None)
+
+        # When
+        execution_manager.external_update_targets(['super_target1'])
+
+        # Then
+        self.assertFalse(execution_manager._work_queue.empty())
+        self.assertEqual(execution_manager._work_queue.get(False), 'job2')
+        self.assertTrue(execution_manager._work_queue.empty())
+
+    @unit
+    def test_update_target_no_creator_should_run(self):
+        # Given
+        jobs = [
+            SimpleTestJobDefinition('job1', targets=['target1'],
+                                    depends=['super_target1']),
+            SimpleTestJobDefinition('job2', targets=['target2'],
+                                    depends=['target1'])
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        build_graph = execution_manager.build
+        build_graph.add_job("job2", {})
+
+        job1 = build_graph.get_job("job1")
+        job2 = build_graph.get_job("job2")
+
+        job1.should_run_immediate = True
+        job2.should_run_immediate = True
+        job1.parents_should_run = False
+        job2.parents_should_run = True
+
+        super_target1 = build_graph.get_target("super_target1")
+        target1 = build_graph.get_target("target1")
+        target2 = build_graph.get_target("target2")
+        super_target1.do_get_mtime = mock.Mock(return_value=100)
+        target1.do_get_mtime = mock.Mock(return_value=50)
+        target2.do_get_mtime = mock.Mock(return_value=None)
+
+        # When
+        execution_manager.external_update_targets(['super_target1'])
+
+        # Then
+        self.assertFalse(execution_manager._work_queue.empty())
+        self.assertEqual(execution_manager._work_queue.get(False), 'job1')
+        self.assertTrue(execution_manager._work_queue.empty())
+
+    @unit
+    def test_update_target_no_creator_should_not_run_deep(self):
+        # Given
+        jobs = [
+            SimpleTestJobDefinition('job1', targets=['target1'],
+                                    depends=['super_target1']),
+            SimpleTestJobDefinition('job2', targets=['target2'],
+                                    depends=['target1']),
+            SimpleTestJobDefinition('job3', targets=['target3'],
+                                    depends=['target2']),
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        build_graph = execution_manager.build
+        build_graph.add_job("job3", {})
+
+        job1 = build_graph.get_job("job1")
+        job2 = build_graph.get_job("job2")
+        job3 = build_graph.get_job("job3")
+
+        job1.should_run_immediate = True
+        job2.should_run_immediate = False
+        job3.should_run_immediate = True
+        job1.parents_should_run = False
+        job2.parents_should_run = True
+        job3.parents_should_run = True
+
+        super_target1 = build_graph.get_target("super_target1")
+        target1 = build_graph.get_target("target1")
+        target2 = build_graph.get_target("target2")
+        target3 = build_graph.get_target("target3")
+        super_target1.do_get_mtime = mock.Mock(return_value=100)
+        target1.do_get_mtime = mock.Mock(return_value=150)
+        target2.do_get_mtime = mock.Mock(return_value=200)
+        target3.do_get_mtime = mock.Mock(return_value=None)
+
+        # When
+        execution_manager.external_update_targets(['super_target1'])
+
+        # Then
+        self.assertFalse(execution_manager._work_queue.empty())
+        self.assertEqual(execution_manager._work_queue.get(False), 'job3')
+        self.assertTrue(execution_manager._work_queue.empty())
+
+    @unit
+    def test_update_target_should_run(self):
+        # Given
+        jobs = [
+            SimpleTestJobDefinition('job1', targets=['target1']),
+            SimpleTestJobDefinition('job2', targets=['target2'],
+                                    depends=['target1']),
+            SimpleTestJobDefinition('job3', targets=['target3'],
+                                    depends=['target2']),
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        build_graph = execution_manager.build
+        build_graph.add_job("job3", {})
+
+        job1 = build_graph.get_job("job1")
+        job2 = build_graph.get_job("job2")
+        job3 = build_graph.get_job("job3")
+
+        job1.should_run_immediate = False
+        job2.should_run_immediate = False
+        job3.should_run_immediate = True
+        job1.parents_should_run = False
+        job2.parents_should_run = False
+        job3.parents_should_run = False
+
+        target1 = build_graph.get_target("target1")
+        target2 = build_graph.get_target("target2")
+        target3 = build_graph.get_target("target3")
+        target1.do_get_mtime = mock.Mock(return_value=None)
+        target2.do_get_mtime = mock.Mock(return_value=100)
+        target3.do_get_mtime = mock.Mock(return_value=50)
+
+        # When
+        execution_manager.external_update_targets(['target1'])
+
+        # Then
+        self.assertFalse(execution_manager._work_queue.empty())
+        self.assertEqual(execution_manager._work_queue.get(False), 'job1')
+        self.assertTrue(job3.get_parents_should_run())
+        self.assertTrue(execution_manager._work_queue.empty())
+
+    @unit
+    def test_update_target_multiple(self):
+        # Given
+        jobs = [
+            SimpleTestJobDefinition('job1', targets=['target1']),
+            SimpleTestJobDefinition('job2', targets=['target2'],
+                                    depends=['target1']),
+            SimpleTestJobDefinition('job3', targets=['target3'],
+                                    depends=['target2']),
+            SimpleTestJobDefinition("job1'", targets=["target1'"],
+                                    depends=["super_target1'"]),
+            SimpleTestJobDefinition("job2'", targets=["target2'"],
+                                    depends=["target1'"]),
+            SimpleTestJobDefinition("job3'", targets=["target3'"],
+                                    depends=["target2'"]),
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+
+        build_graph = execution_manager.build
+        build_graph.add_job("job3", {})
+        build_graph.add_job("job3'", {})
+
+        job1 = build_graph.get_job("job1")
+        job2 = build_graph.get_job("job2")
+        job3 = build_graph.get_job("job3")
+        job1_ = build_graph.get_job("job1'")
+        job2_ = build_graph.get_job("job2'")
+        job3_ = build_graph.get_job("job3'")
+
+        job1.should_run_immediate = False
+        job2.should_run_immediate = False
+        job3.should_run_immediate = True
+        job1.parents_should_run = False
+        job2.parents_should_run = False
+        job3.parents_should_run = False
+        job1_.should_run_immediate = True
+        job2_.should_run_immediate = False
+        job3_.should_run_immediate = True
+        job1_.parents_should_run = False
+        job2_.parents_should_run = True
+        job3_.parents_should_run = True
+
+        target1 = build_graph.get_target("target1")
+        target2 = build_graph.get_target("target2")
+        target3 = build_graph.get_target("target3")
+        target1.do_get_mtime = mock.Mock(return_value=None)
+        target2.do_get_mtime = mock.Mock(return_value=100)
+        target3.do_get_mtime = mock.Mock(return_value=50)
+
+        super_target1_ = build_graph.get_target("super_target1'")
+        target1_ = build_graph.get_target("target1'")
+        target2_ = build_graph.get_target("target2'")
+        target3_ = build_graph.get_target("target3'")
+        super_target1_.do_get_mtime = mock.Mock(return_value=100)
+        target1_.do_get_mtime = mock.Mock(return_value=150)
+        target2_.do_get_mtime = mock.Mock(return_value=200)
+        target3_.do_get_mtime = mock.Mock(return_value=None)
+
+        # When
+        execution_manager.external_update_targets(["target1", "super_target1'"])
+
+        # Then
+        self.assertFalse(execution_manager._work_queue.empty())
+        work_job1 = execution_manager._work_queue.get(False)
+        self.assertFalse(execution_manager._work_queue.empty())
+        work_job2 = execution_manager._work_queue.get(False)
+        self.assertIn(work_job1, ["job3'", "job1"])
+        self.assertIn(work_job2, ["job3'", "job1"])
+        self.assertNotEqual(work_job1, work_job2)
+        self.assertTrue(job3.get_parents_should_run())
+        self.assertTrue(execution_manager._work_queue.empty())

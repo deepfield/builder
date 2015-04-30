@@ -56,9 +56,6 @@ class Executor(object):
         Returns None if the job does not execute because it is already running or because its get_should_run method returns False.
         Otherwise, returns an appropriate ExecutionResult object.
         """
-        if not job.get_should_run():
-            return None
-
         job = self.prepare_job_for_execution(job)
 
         result = None
@@ -84,21 +81,7 @@ class Executor(object):
 
 
     def prepare_job_for_execution(self, job):
-        job.is_running = True
         return job
-
-
-    def _finish_job_invalidate_recurse(self, job_id):
-        build_graph = self.get_build_graph()
-        job = build_graph.get_job(job_id)
-        job.invalidate()
-        if not job.get_should_run() and not job.should_ignore_parents():
-            target_ids = build_graph.get_target_ids(job_id)
-            for target_id in target_ids:
-                dependent_ids = build_graph.get_dependent_ids(target_id)
-                for dependent_id in dependent_ids:
-                    self._finish_job_invalidate_recurse(dependent_id)
-
 
     def finish_job(self, job, result, update_job_cache=True):
         LOG.info("Job {} complete. Status: {}".format(job.get_id(), result.status))
@@ -114,7 +97,7 @@ class Executor(object):
             self._execution_manager.update_targets(target_ids)
 
             job_id = job.unique_id
-            self._finish_job_invalidate_recurse(job_id)
+            self.get_execution_manager().update_parents_should_run(job_id)
 
             # updat all of it's targets
             # update all of it's dependents
@@ -189,44 +172,6 @@ class ExecutionManager(object):
 
         self.running = False
 
-    def _update_newly_invalidated_jobs_recurse(self, job_id):
-        """Takes in a job id and updates all below it"""
-        build_graph = self.build
-        job = build_graph.get_job(job_id)
-
-        # We pretend that the job has incorrect state if it is invalidated so we
-        # don't have to check if it is actually correct or not
-        if job.get_parents_should_run() or job.should_ignore_parents():
-            return
-
-        job.invalidate()
-
-        target_ids = build_graph.get_target_ids(job_id)
-        for target_id in target_ids:
-            dependent_ids = build_graph.get_dependent_ids(target_id)
-            for dependent_id in dependent_ids:
-                self._update_newly_invalidated_jobs_recurse(dependent_id)
-
-    def update_newly_invalidated_jobs(self, job_ids):
-        """Takes in a list of newly invalided jobs and updates the state of all
-        things below it to be consistent
-        """
-        build_graph = self.build
-
-        for job_id in job_ids:
-            job = build_graph.get_job(job_id)
-            # We can skip jobs that shouldn't run and doesn't have parents that
-            # should run as the state of the things below it can't be changed by
-            # this
-            if not (job.get_should_run_immediate() or
-                    job.get_parents_should_run()):
-                continue
-            target_ids = build_graph.get_target_ids(job_id)
-            for target_id in target_ids:
-                dependent_ids = build_graph.get_dependent_ids(target_id)
-                for dependent_id in dependent_ids:
-                    self._update_newly_invalidated_jobs_recurse(dependent_id)
-
     def _recursive_invalidate_job(self, job_id):
         job = self.build.get_job(job_id)
         job.invalidate()
@@ -248,7 +193,10 @@ class ExecutionManager(object):
         """
         def update_build_graph():
             # Add the job
-            build_update = self.build.add_job(job_definition_id, build_context, **kwargs)
+            if self.build.rule_dependency_graph.is_job_definition(job_definition_id):
+                build_update = self.build.add_job(job_definition_id, build_context, **kwargs)
+            else:
+                build_update = self.build.add_meta(job_definition_id, build_context, **kwargs)
 
             # Refresh all uncached existences
             LOG.debug("updating {} targets".format(len(build_update.new_targets)))
@@ -257,14 +205,101 @@ class ExecutionManager(object):
             # Invalidate the build graph for all child nodes
             newly_invalidated_jobs = build_update.new_jobs | build_update.newly_forced
             LOG.debug("updating {} jobs".format(len(newly_invalidated_jobs)))
-            self.update_newly_invalidated_jobs(newly_invalidated_jobs)
+            for newly_invalidated_job in newly_invalidated_jobs:
+                self.update_parents_should_run(newly_invalidated_job)
 
         self._update_build(update_build_graph)
+
+    def _update_parents_should_not_run_recurse(self, job_id):
+        build_graph = self.build
+        job = build_graph.get_job(job_id)
+
+        if not job.get_parents_should_run or job.should_ignore_parents():
+            return
+
+        job.invalidate()
+
+        if job.get_parents_should_run() or job.get_should_run():
+            return
+
+        target_ids = build_graph.get_target_ids(job_id)
+        for target_id in target_ids:
+            dependent_ids = build_graph.get_dependent_ids(target_id)
+            for dependent_id in dependent_ids:
+                self._update_parents_should_not_run_recurse(dependent_id)
+
+    def _update_parents_should_run_recurse(self, job_id):
+        build_graph = self.build
+        job = build_graph.get_job(job_id)
+
+        if job.get_parents_should_run() or job.should_ignore_parents():
+            return
+
+        job.invalidate()
+
+        target_ids = build_graph.get_target_ids(job_id)
+        for target_id in target_ids:
+            dependent_ids = build_graph.get_dependent_ids(target_id)
+            for dependent_id in dependent_ids:
+                self._update_parents_should_run_recurse(dependent_id)
+
+    def update_parents_should_run(self, job_id):
+        build_graph = self.build
+        job = build_graph.get_job(job_id)
+        job.invalidate()
+
+        target_ids = build_graph.get_target_ids(job_id)
+        dependent_ids = []
+        for target_id in target_ids:
+            dependent_ids = (dependent_ids +
+                             build_graph.get_dependent_ids(target_id))
+
+        if job.get_should_run() or job.get_parents_should_run():
+            for dependent_id in dependent_ids:
+                self._update_parents_should_run_recurse(dependent_id)
+        else:
+            for dependent_id in dependent_ids:
+                self._update_parents_should_not_run_recurse(dependent_id)
+
+    def external_update_targets(self, target_ids):
+        """Updates the state of a single target and updates everything below
+        it
+        """
+        build_graph = self.build
+        update_job_ids = set()
+        self.update_targets(target_ids)
+        for target_id in target_ids:
+            add_ids = build_graph.get_creator_ids(target_id)
+            if not add_ids:
+                add_ids = build_graph.get_dependent_ids(target_id)
+            for add_id in add_ids:
+                update_job_ids.add(add_id)
+
+        for update_job_id in update_job_ids:
+            self.update_parents_should_run(update_job_id)
+
+        # Update the upper jobs that states depend on the target
+        for update_job_id in update_job_ids:
+            next_job_to_run_ids = self.get_next_jobs_to_run(update_job_id)
+            for next_job_to_run_id in next_job_to_run_ids:
+                self.add_to_work_queue(next_job_to_run_id)
+
+    def update_top_most(self):
+        top_most = []
+        for node_id in self.build:
+            if self.build.in_degree(node_id) == 0:
+                if self.build.is_target(node_id):
+                    target = self.build.get_target(node_id)
+                    if target.get_mtime() is not None:
+                        continue
+                    top_most.append(node_id)
+        self.external_update_targets(top_most)
 
     def update_targets(self, target_ids):
         """Takes in a list of target ids and updates all of their needed
         values
         """
+        LOG.debug("updating {} targets".format(len(target_ids)))
         update_function_list = collections.defaultdict(list)
         for target_id in target_ids:
             target = self.build.get_target(target_id)
@@ -275,7 +310,9 @@ class ExecutionManager(object):
             update_function(targets)
 
     def add_to_work_queue(self, job_id):
-
+        job = self.build.get_job(job_id)
+        if job.is_running:
+            return
         self._work_queue.put(job_id)
         LOG.debug("Adding {} to ExecutionManager's work queue. There are now approximately {} jobs in the queue.".format(job_id, self._work_queue.qsize()))
 
@@ -373,7 +410,6 @@ class ExecutionManager(object):
     def get_next_jobs_to_run(self, job_id):
         """Returns the jobs that are below job_id that need to run"""
         next_jobs = self.get_next_jobs_to_run_recurse(job_id)
-        print next_jobs
         return next_jobs
 
 
@@ -432,6 +468,14 @@ def _submit_from_json(execution_manager, json_body):
     map(execution_manager.add_to_work_queue, jobs_to_run)
     LOG.debug("After submitting job, the following jobs should run: {}".format(jobs_to_run))
 
+def _update_from_json(execution_manager, json_body):
+    execution_manager.build.write_dot("graph.dot")
+    payload = json.loads(json_body)
+    LOG.debug("Updating target {}".format(payload))
+
+    execution_manager.update_targets(payload["target_ids"])
+
+
 class SubmitHandler(RequestHandler):
     def initialize(self, execution_manager):
         self.execution_manager = execution_manager
@@ -440,12 +484,30 @@ class SubmitHandler(RequestHandler):
         LOG.debug("{}".format(self.request.body))
         _submit_from_json(self.execution_manager, self.request.body)
 
+class UpdateHandler(RequestHandler):
+    def initialize(self, execution_manager):
+        self.execution_manager = execution_manager
+
+    def post(self):
+        LOG.debug("{}".format(self.request.body))
+        _update_from_json(self.execution_manager, self.request.body)
+
+class UpdateTopMostHandler(RequestHandler):
+    def initialize(self, execution_manager):
+        self.execution_manager = execution_manager
+
+    def post(self):
+        LOG.debug("{}".format(self.request.body))
+        self.execution_manager.update_top_most()
+
 class ExecutionDaemon(object):
 
     def __init__(self, execution_manager, port=7001):
         self.execution_manager = execution_manager
         self.application = Application([
             (r"/submit", SubmitHandler, {"execution_manager" : self.execution_manager}),
+            (r"/update", UpdateHandler, {"execution_manager" : self.execution_manager}),
+            (r"/update_top_most", UpdateTopMostHandler, {"execution_manager" : self.execution_manager}),
         ])
         self.port = port
         self.is_closing = False

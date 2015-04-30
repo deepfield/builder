@@ -374,9 +374,6 @@ class Job(object):
         depends on it's current state and whether or not it's ancestors
         should run
         """
-        if self.is_running:
-            return False
-
         if self.force:
             return True
 

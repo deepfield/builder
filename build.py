@@ -433,7 +433,7 @@ class RuleDependencyGraph(BaseGraph):
         self.assert_meta(meta_id)
         return self.node[meta_id]["object"]
 
-    def get_target(self, target_id):
+    def get_target_expander(self, target_id):
         """Returns the object corresponding to the target_id"""
         self.assert_target_expander(target_id)
         return self.node[target_id]["object"]
