@@ -1126,7 +1126,7 @@ class BuildGraph(BaseGraph):
                 if not job.get_force():
                     build_update.newly_forced.add(job_id)
                 build_update.forced.add(job_id)
-                self.get_job(expanded_job.get_id()).set_force(True)
+                job.set_force(True)
         stop = time.time()
         LOG.debug("It took {} seconds to expand the build graph".format((stop - start)))
         return build_update
