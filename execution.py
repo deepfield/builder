@@ -191,6 +191,9 @@ class ExecutionManager(object):
         """
         Submit the provided job to be built
         """
+        if not self.running:
+            raise RuntimeError("Cannot submit to a execution manager that "
+                               "isn't running")
         def update_build_graph():
             # Add the job
             if self.build.rule_dependency_graph.is_job_definition(job_definition_id):

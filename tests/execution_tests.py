@@ -90,6 +90,7 @@ class ExecutionManagerTests1(unittest.TestCase):
         }
 
         # When
+        execution_manager.running = True
         execution_manager.submit('buildable_job', build_context)
 
         # Then
@@ -229,6 +230,7 @@ class ExecutionManagerTests2(unittest.TestCase):
 
 
         # When
+        execution_manager.running = True
         execution_manager.submit("A", {})
         execution_manager.execute("A")
 
@@ -253,6 +255,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager = self._get_execution_manager(jobs)
 
         # When
+        execution_manager.running = True
         execution_manager.submit("B", {})
         execution_manager.execute("A")
 
@@ -284,6 +287,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager = self._get_execution_manager(jobs)
 
         # When
+        execution_manager.running = True
         execution_manager.submit("C", {})
         execution_manager.execute("A")
 
@@ -310,6 +314,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager = self._get_execution_manager_with_effects(jobs)
 
         # When
+        execution_manager.running = True
         execution_manager.submit("B", {})
         execution_manager.execute("A")
 
@@ -334,6 +339,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager.executor.execute = mock.Mock(return_value=mock.Mock(status=True, stdout='', stderr=''))
 
         # When
+        execution_manager.running = True
         execution_manager.submit("B", {})
         execution_manager.execute("A")
 
@@ -357,6 +363,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager = self._get_execution_manager(jobs)
 
         # When
+        execution_manager.running = True
         execution_manager.submit("B", {})
         for i in xrange(6):
             execution_manager.execute("A")
@@ -385,6 +392,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager = self._get_execution_manager(jobs)
 
         # When
+        execution_manager.running = True
         execution_manager.submit("A", {}, direction={"up", "down"})
         execution_manager.execute("A")
 
@@ -417,6 +425,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         ]
         execution_manager = self._get_execution_manager(jobs)
         execution_manager.executor.execute = mock.Mock(return_value=mock.Mock(status=True, stdout='', stderr=''))
+        execution_manager.running = True
         execution_manager.submit("A", {}, direction={"up", "down"})
         execution_manager.build.get_target('A1-target').do_get_mtime = mock.Mock(return_value=None)
 
@@ -447,6 +456,7 @@ class ExecutionManagerTests2(unittest.TestCase):
                 depends=['A3-target'], targets=["D-target"]),
         ]
         execution_manager = self._get_execution_manager(jobs)
+        execution_manager.running = True
         execution_manager.submit("A", {}, direction={"up", "down"})
 
         # When
@@ -483,6 +493,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         ]
         execution_manager = self._get_execution_manager_with_effects(jobs)
         build_context = {"start_time": arrow.get("2015-01-01-00-00"), "end_time": arrow.get("2015-01-01-00-10")}
+        execution_manager.running = True
         execution_manager.submit("B", build_context)
 
         # When
@@ -529,6 +540,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         ]
         execution_manager = self._get_execution_manager_with_effects(jobs)
         build_context = {"start_time": arrow.get("2015-01-01-00-00"), "end_time": arrow.get("2015-01-01-00-10")}
+        execution_manager.running = True
         execution_manager.submit("C", build_context)
 
         # When
@@ -563,6 +575,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         ]
         execution_manager = self._get_execution_manager_with_effects(jobs)
         build_context = {}
+        execution_manager.running = True
         execution_manager.submit("C", build_context)
 
         # When
@@ -622,7 +635,8 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager = self._get_execution_manager_with_effects(jobs)
 
         # When
-        execution_manager.build.add_job("B", {})
+        execution_manager.running = True
+        execution_manager.submit("B", {})
         execution_manager.start_execution(inline=True)
 
         # Then
@@ -651,6 +665,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         })
 
         # When
+        execution_manager.running = True
         _submit_from_json(execution_manager, json_body)
 
         # Then
@@ -1028,6 +1043,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         job3.parents_should_run = False
 
         # When
+        execution_manager.running = True
         execution_manager.submit('job1', {})
         job1 = build_graph.get_job('job1')
 
