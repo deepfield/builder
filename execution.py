@@ -203,10 +203,14 @@ class ExecutionManager(object):
             self.update_targets(build_update.new_targets)
 
             # Invalidate the build graph for all child nodes
-            newly_invalidated_jobs = build_update.new_jobs | build_update.newly_forced
-            LOG.debug("updating {} jobs".format(len(newly_invalidated_jobs)))
-            for newly_invalidated_job in newly_invalidated_jobs:
-                self.update_parents_should_run(newly_invalidated_job)
+            newly_invalidated_job_ids = build_update.new_jobs | build_update.newly_forced
+            LOG.debug("updating {} jobs".format(len(newly_invalidated_job_ids)))
+            for newly_invalidated_job_id in newly_invalidated_job_ids:
+                self.update_parents_should_run(newly_invalidated_job_id)
+                next_job_to_run_ids = self.get_next_jobs_to_run(
+                        newly_invalidated_job_id)
+                for next_job_to_run_id in next_job_to_run_ids:
+                    self.add_to_work_queue(next_job_to_run_id)
 
         self._update_build(update_build_graph)
 
@@ -313,6 +317,7 @@ class ExecutionManager(object):
         job = self.build.get_job(job_id)
         if job.is_running:
             return
+        job.is_running = True
         self._work_queue.put(job_id)
         LOG.debug("Adding {} to ExecutionManager's work queue. There are now approximately {} jobs in the queue.".format(job_id, self._work_queue.qsize()))
 
@@ -332,7 +337,7 @@ class ExecutionManager(object):
         # Seed initial jobs
         work_queue = self._work_queue
         next_jobs = self.get_jobs_to_run()
-        map(work_queue.put, next_jobs)
+        map(self.add_to_work_queue, next_jobs)
 
         # Start completed jobs consumer if not inline
         executor = None

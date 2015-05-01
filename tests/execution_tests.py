@@ -106,7 +106,7 @@ class ExecutionManagerTests1(unittest.TestCase):
         }
 
         # When
-        execution_manager.submit('buildable_job', build_context, force=True)
+        execution_manager.build.add_job('buildable_job', build_context, force=True)
         execution_manager.start_execution(inline=True)
 
         # Then
@@ -126,7 +126,7 @@ class ExecutionManagerTests1(unittest.TestCase):
         }
 
         # When
-        execution_manager.submit('B', build_context)
+        execution_manager.build.add_job('B', build_context)
         execution_manager.start_execution(inline=True)
 
         # Then
@@ -145,7 +145,7 @@ class ExecutionManagerTests1(unittest.TestCase):
         }
 
         # When
-        execution_manager.submit('A', build_context)
+        execution_manager.build.add_job('A', build_context)
         execution_manager.start_execution(inline=True)
 
         # Then
@@ -622,8 +622,7 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager = self._get_execution_manager_with_effects(jobs)
 
         # When
-        execution_manager.submit("B", {})
-
+        execution_manager.build.add_job("B", {})
         execution_manager.start_execution(inline=True)
 
         # Then
