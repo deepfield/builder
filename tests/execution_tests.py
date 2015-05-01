@@ -582,7 +582,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager.execute("A")
         execution_manager.execute("B")
         execution_manager.submit("A", {}, force=True)
-        execution_manager.build.write_dot("graph.dot")
         for node_id, node in execution_manager.build.node.iteritems():
             if execution_manager.build.is_target(node_id):
                 print node_id, node["object"].get_mtime()
@@ -900,7 +899,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         execution_manager.build.add_job("job3'", {}, depth=1)
 
         build_graph = execution_manager.build
-        build_graph.write_dot("graph.dot")
         job1 = build_graph.get_job("job1")
         job2 = build_graph.get_job("job2")
         job3 = build_graph.get_job("job3")
@@ -1298,3 +1296,37 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertNotEqual(work_job1, work_job2)
         self.assertTrue(job3.get_parents_should_run())
         self.assertTrue(execution_manager._work_queue.empty())
+
+    def test_force_existing(self):
+        # Given
+        jobs = [
+            EffectJobDefinition(
+                "job1", depends=[
+                    {
+                        "unexpanded_id": "super_target1",
+                        "start_mtime": 100,
+                    }
+                ], targets=["target1"], effect=200
+            )
+        ]
+
+        build_manager = BuildManager(jobs, [])
+        execution_manager = ExecutionManager(build_manager,
+                                             ExtendedMockExecutor)
+        execution_manager.executor.execute = mock.Mock(wraps=execution_manager.executor.execute)
+
+        execution_manager.running = True
+        execution_manager.submit("job1", {})
+        execution_manager.start_execution(inline=True)
+
+        # When
+        execution_manager.running = True
+        execution_manager.submit("job1", {})
+        execution_manager.start_execution(inline=True)
+
+        execution_manager.running = True
+        execution_manager.submit("job1", {}, force=True)
+        execution_manager.start_execution(inline=True)
+
+        # Then
+        self.assertEqual(execution_manager.executor.execute.call_count, 2)

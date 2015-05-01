@@ -3627,6 +3627,13 @@ class GraphTest(unittest.TestCase):
             "job2", {
                 "start_time": arrow.get(0),
                 "end_time": arrow.get(300*2),
+            }, force=False
+        )
+
+        build_update3 = build.add_job(
+            "job2", {
+                "start_time": arrow.get(300*3),
+                "end_time": arrow.get(300*3),
             }, force=True
         )
 
@@ -3634,7 +3641,7 @@ class GraphTest(unittest.TestCase):
         build_update2 = build.add_job(
             "job2", {
                 "start_time": arrow.get(0),
-                "end_time": arrow.get(300*3),
+                "end_time": arrow.get(300*4),
             }, force=True
         )
 
@@ -3642,7 +3649,7 @@ class GraphTest(unittest.TestCase):
         # Then
         self.assertEqual(len(build_update1.new_jobs), 4)
         self.assertEqual(len(build_update1.new_targets), 4)
-        self.assertEqual(len(build_update1.newly_forced), 2)
+        self.assertEqual(len(build_update1.newly_forced), 0)
         self.assertIn("job1_1970-01-01-00-00-00", build_update1.new_jobs)
         self.assertIn("job2_1970-01-01-00-00-00", build_update1.new_jobs)
         self.assertIn("job1_1970-01-01-00-05-00", build_update1.new_jobs)
@@ -3651,12 +3658,10 @@ class GraphTest(unittest.TestCase):
         self.assertIn("target2-1970-01-01-00-00", build_update1.new_targets)
         self.assertIn("target1-1970-01-01-00-05", build_update1.new_targets)
         self.assertIn("target2-1970-01-01-00-05", build_update1.new_targets)
-        self.assertIn("job2_1970-01-01-00-00-00", build_update1.newly_forced)
-        self.assertIn("job2_1970-01-01-00-05-00", build_update1.newly_forced)
 
         self.assertEqual(len(build_update1.jobs), 4)
         self.assertEqual(len(build_update1.targets), 4)
-        self.assertEqual(len(build_update1.forced), 2)
+        self.assertEqual(len(build_update1.forced), 0)
         self.assertIn("job1_1970-01-01-00-00-00", build_update1.jobs)
         self.assertIn("job2_1970-01-01-00-00-00", build_update1.jobs)
         self.assertIn("job1_1970-01-01-00-05-00", build_update1.jobs)
@@ -3665,32 +3670,55 @@ class GraphTest(unittest.TestCase):
         self.assertIn("target2-1970-01-01-00-00", build_update1.targets)
         self.assertIn("target1-1970-01-01-00-05", build_update1.targets)
         self.assertIn("target2-1970-01-01-00-05", build_update1.targets)
-        self.assertIn("job2_1970-01-01-00-00-00", build_update1.newly_forced)
-        self.assertIn("job2_1970-01-01-00-05-00", build_update1.newly_forced)
+
+        self.assertEqual(len(build_update3.new_jobs), 2)
+        self.assertEqual(len(build_update3.new_targets), 2)
+        self.assertEqual(len(build_update3.newly_forced), 1)
+        self.assertIn("job1_1970-01-01-00-15-00", build_update3.new_jobs)
+        self.assertIn("job2_1970-01-01-00-15-00", build_update3.new_jobs)
+        self.assertIn("target1-1970-01-01-00-15", build_update3.new_targets)
+        self.assertIn("target2-1970-01-01-00-15", build_update3.new_targets)
+        self.assertIn("job2_1970-01-01-00-15-00", build_update3.new_jobs)
+
+        self.assertEqual(len(build_update3.jobs), 2)
+        self.assertEqual(len(build_update3.targets), 2)
+        self.assertEqual(len(build_update3.forced), 1)
+        self.assertIn("job1_1970-01-01-00-15-00", build_update3.jobs)
+        self.assertIn("job2_1970-01-01-00-15-00", build_update3.jobs)
+        self.assertIn("target1-1970-01-01-00-15", build_update3.targets)
+        self.assertIn("target2-1970-01-01-00-15", build_update3.targets)
+        self.assertIn("job2_1970-01-01-00-15-00", build_update3.jobs)
 
         self.assertEqual(len(build_update2.new_jobs), 2)
         self.assertEqual(len(build_update2.new_targets), 2)
-        self.assertEqual(len(build_update2.newly_forced), 1)
+        self.assertEqual(len(build_update2.newly_forced), 3)
         self.assertIn("job1_1970-01-01-00-10-00", build_update2.new_jobs)
         self.assertIn("job2_1970-01-01-00-10-00", build_update2.new_jobs)
         self.assertIn("target1-1970-01-01-00-10", build_update2.new_targets)
         self.assertIn("target2-1970-01-01-00-10", build_update2.new_targets)
+        self.assertIn("job2_1970-01-01-00-00-00", build_update2.newly_forced)
+        self.assertIn("job2_1970-01-01-00-05-00", build_update2.newly_forced)
         self.assertIn("job2_1970-01-01-00-10-00", build_update2.newly_forced)
 
-        self.assertEqual(len(build_update2.jobs), 6)
-        self.assertEqual(len(build_update2.targets), 6)
-        self.assertEqual(len(build_update2.forced), 3)
+        self.assertEqual(len(build_update2.jobs), 8)
+        self.assertEqual(len(build_update2.targets), 8)
+        self.assertEqual(len(build_update2.forced), 4)
         self.assertIn("job1_1970-01-01-00-00-00", build_update2.jobs)
         self.assertIn("job2_1970-01-01-00-00-00", build_update2.jobs)
         self.assertIn("job1_1970-01-01-00-05-00", build_update2.jobs)
         self.assertIn("job2_1970-01-01-00-05-00", build_update2.jobs)
+        self.assertIn("job1_1970-01-01-00-15-00", build_update2.jobs)
+        self.assertIn("job2_1970-01-01-00-15-00", build_update2.jobs)
         self.assertIn("target1-1970-01-01-00-00", build_update2.targets)
         self.assertIn("target2-1970-01-01-00-00", build_update2.targets)
         self.assertIn("target1-1970-01-01-00-05", build_update2.targets)
         self.assertIn("target2-1970-01-01-00-05", build_update2.targets)
+        self.assertIn("target1-1970-01-01-00-15", build_update2.targets)
+        self.assertIn("target2-1970-01-01-00-15", build_update2.targets)
         self.assertIn("job2_1970-01-01-00-00-00", build_update2.forced)
         self.assertIn("job2_1970-01-01-00-05-00", build_update2.forced)
         self.assertIn("job2_1970-01-01-00-10-00", build_update2.forced)
+        self.assertIn("job2_1970-01-01-00-15-00", build_update2.forced)
 
 class RuleDependencyGraphTest(unittest.TestCase):
 

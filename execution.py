@@ -92,6 +92,7 @@ class Executor(object):
         job.last_run = arrow.now()
         job.retries += 1
         job.is_running = False
+        job.force = False
         if update_job_cache:
             target_ids = self.get_build_graph().get_target_ids(job.get_id())
             self._execution_manager.update_targets(target_ids)
@@ -471,13 +472,8 @@ def _submit_from_json(execution_manager, json_body):
     LOG.debug("build_context is {}".format(build_context))
 
     execution_manager.submit(**payload)
-    jobs_to_run = execution_manager.get_jobs_to_run()
-
-    map(execution_manager.add_to_work_queue, jobs_to_run)
-    LOG.debug("After submitting job, the following jobs should run: {}".format(jobs_to_run))
 
 def _update_from_json(execution_manager, json_body):
-    execution_manager.build.write_dot("graph.dot")
     payload = json.loads(json_body)
     LOG.debug("Updating target {}".format(payload))
 
