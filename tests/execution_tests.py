@@ -1322,10 +1322,12 @@ class ExecutionDaemonTests(unittest.TestCase):
         execution_manager.running = True
         execution_manager.submit("job1", {})
         self.assertEqual(execution_manager._work_queue.qsize(), 0)
+        execution_manager.start_execution(inline=True)
 
         execution_manager.running = True
         execution_manager.submit("job1", {}, force=True)
         self.assertEqual(execution_manager._work_queue.qsize(), 1)
+        execution_manager.start_execution(inline=True)
 
         # Then
         self.assertEqual(execution_manager.executor.execute.call_count, 2)
