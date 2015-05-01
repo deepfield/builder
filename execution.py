@@ -206,10 +206,6 @@ class ExecutionManager(object):
             LOG.debug("updating {} targets".format(len(build_update.new_targets)))
             self.update_targets(build_update.new_targets)
 
-            for newly_forced in build_update.newly_forced:
-                job = self.build.get_job(newly_forced)
-                job.invalidate()
-
             # Invalidate the build graph for all child nodes
             newly_invalidated_job_ids = build_update.new_jobs | build_update.newly_forced
             LOG.debug("updating {} jobs".format(len(newly_invalidated_job_ids)))
