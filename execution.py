@@ -1,8 +1,8 @@
 import threading
 import time
+import logging
 import signal
 import subprocess
-import deepy.log
 import Queue
 import arrow
 import collections
@@ -14,7 +14,7 @@ from tornado import gen
 from tornado import ioloop
 from tornado.web import asynchronous, RequestHandler, Application
 
-import deepy.log as LOG
+LOG = logging.getLogger(__name__)
 
 class ExecutionResult(object):
     def __init__(self, is_async, status=None, stdout=None, stderr=None):
