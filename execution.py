@@ -210,10 +210,12 @@ class ExecutionManager(object):
             newly_invalidated_job_ids = build_update.new_jobs | build_update.newly_forced
             LOG.debug("updating {} jobs".format(len(newly_invalidated_job_ids)))
             for newly_invalidated_job_id in newly_invalidated_job_ids:
+                LOG.debug("updating {}".format(newly_invalidated_job_id))
                 self.update_parents_should_run(newly_invalidated_job_id)
                 next_job_to_run_ids = self.get_next_jobs_to_run(
                         newly_invalidated_job_id)
                 for next_job_to_run_id in next_job_to_run_ids:
+                    LOG.debug("after updating, {}, {} should run".format(newly_invalidated_job_id, next_job_to_run_id))
                     self.add_to_work_queue(next_job_to_run_id)
 
         self._update_build(update_build_graph)
