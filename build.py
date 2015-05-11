@@ -1046,8 +1046,9 @@ class BuildGraph(BaseGraph):
         expanded_dependencies = self._expand_direction(job, "up", build_update)
         cache_set.add(job.unique_id)
 
+        current_depth = current_depth + 1
+        LOG.debug("Expanded to depth {}".format(current_depth))
         if depth is not None:
-            current_depth = current_depth + 1
             if current_depth >= depth:
                 return
 
