@@ -8,13 +8,13 @@ import networkx
 import tempfile
 import subprocess
 import time
+import logging
 
 import builder.dependencies
 import builder.jobs
 import builder.targets
 
-import deepy.log
-LOG = deepy.log
+LOG = logging.getLogger(__name__)
 
 class BuildUpdate(object):
     """Used to contain the results of a build update.

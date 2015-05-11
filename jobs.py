@@ -346,7 +346,7 @@ class Job(object):
         """Returns whether or not the node should run not caring about the
         ancestors should run status
         """
-        if self.force:
+        if self.force or self.job.get_always_force():
             return True
         if self.get_failed():
             return False
@@ -521,6 +521,9 @@ class JobDefinition(object):
             }
         """
         return self.targets
+
+    def get_always_force(self):
+        return False
 
     def __repr__(self):
         dependencies_dict = self.get_dependencies()
