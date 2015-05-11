@@ -1104,6 +1104,7 @@ class BuildGraph(BaseGraph):
             of this new job
         """
         LOG.debug("Adding job from job definition {} with build context {}".format(job_definition_id, build_context))
+        LOG.debug("Adding job with depth {}".format(depth))
         if direction is None:
             direction = set(["up"])
 
