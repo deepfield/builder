@@ -1047,7 +1047,6 @@ class BuildGraph(BaseGraph):
         cache_set.add(job.unique_id)
 
         current_depth = current_depth + 1
-        LOG.debug("Expanded to depth {}".format(current_depth))
         if depth is not None:
             if current_depth >= depth:
                 return
