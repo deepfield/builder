@@ -418,11 +418,7 @@ class TimestampExpandedJob(Job):
 
 
     def get_should_run(self):
-        start_time = self.build_context["start_time"]
-        if arrow.get() < start_time:
-            return False
-        else:
-            return super(TimestampExpandedJob, self).get_should_run()
+        return super(TimestampExpandedJob, self).get_should_run()
 
 class MetaJob(TimestampExpandedJob):
 
