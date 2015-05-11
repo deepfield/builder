@@ -417,9 +417,6 @@ class TimestampExpandedJob(Job):
         return curfew_time < arrow.get()
 
 
-    def get_should_run(self):
-        return super(TimestampExpandedJob, self).get_should_run()
-
 class MetaJob(TimestampExpandedJob):
 
     def get_should_run_immediate(self):
