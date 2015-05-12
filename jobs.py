@@ -482,7 +482,7 @@ class JobDefinition(object):
         expanded_node = job_type(self, expanded_id, build_graph, build_context)
         return expanded_node
 
-    def get_enable(self):
+    def get_enabled(self):
         """Used to determine if the node should end up in the build graph
         or not. For example, when the deployment doesn't have backbone
         no backbone node should be in the graph
@@ -601,7 +601,7 @@ class MetaTarget(object):
         """Returns the jobs that it should be pointing to."""
         return self.job_collection
 
-    def get_enable(self):
+    def get_enabled(self):
         """Returns whether or not the meta job should be inserted in the
         graph
         """

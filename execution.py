@@ -154,7 +154,7 @@ class PrintExecutor(Executor):
             for dependent_job_id in build_graph.get_dependent_ids(target_id):
                 dependent_job = build_graph.get_job(dependent_job_id)
                 dependent_job.invalidate()
-                dependent_job.set_should_run(True)
+                # dependent_job.set_should_run(True)
 
         return ExecutionResult(is_async=False, status=True, stdout='', stderr='')
 
