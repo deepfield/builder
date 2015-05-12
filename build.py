@@ -69,14 +69,14 @@ class BuildManager(object):
     """
 
     dependency_registery = {
-
         "depends": builder.dependencies.depends,
         "depends_one_or_more": builder.dependencies.depends_one_or_more,
     }
 
-    def __init__(self, jobs, metas, dependency_registery=None, config=None):
+    def __init__(self, jobs, metas=None, dependency_registery=None, config=None):
         super(BuildManager, self).__init__()
-
+        if metas is None:
+            metas = []
         if dependency_registery is None:
             dependency_registery = BuildManager.dependency_registery
         if config is None:
