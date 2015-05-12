@@ -145,8 +145,9 @@ class PrintExecutor(Executor):
         job.set_should_run(False)
 
         print "Simulation:", command
-        target_ids = build_graph.get_target_ids(job.get_id())
-        for target_id in target_ids:
+        target_relationships = build_graph.get_target_relationships(job.get_id())
+        produced_targets = target_relationships.get("produces", {})
+        for target_id in produced_targets:
             target = build_graph.get_target(target_id)
             target.exists = True
             target.mtime = arrow.get()
