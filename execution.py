@@ -175,6 +175,7 @@ class ExecutionManager(object):
         self._work_queue = Queue.Queue()
         self._complete_queue = Queue.Queue()
         self.executor = executor_factory(self, config=self.config)
+        self.execution_times = {}
 
         self.running = False
 
@@ -349,8 +350,9 @@ class ExecutionManager(object):
         # Start completed jobs consumer if not inline
         executor = None
         if not inline:
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
             executor.submit(self._consume_completed_jobs, block=True)
+            executor.submit(self._check_for_timeouts)
 
         jobs_executed = 0
         ONEYEAR = 365 * 24 * 60 * 60
@@ -398,12 +400,32 @@ class ExecutionManager(object):
             except Queue.Empty:
                 continue
 
+            try:
+                job = self.build.get_job(job_id)
+                del self.execution_times[job]
+            except KeyError:
+                pass
+
+
             LOG.debug("COMPLETION_LOOP =>  Completed job {}".format(job_id))
             next_jobs = self.get_next_jobs_to_run(job_id)
             next_jobs = filter(lambda job_id: not self.build.get_job(job_id).is_running, next_jobs)
             LOG.debug("COMPLETION_LOOP => Received completed job {}. Next jobs are {}".format(job_id, next_jobs))
             map(self.add_to_work_queue, next_jobs)
         LOG.debug("COMPLETION_LOOP => Done consuming completed jobs")
+
+    def _check_for_timeouts(self):
+
+        while self.running:
+            timed_out_jobs = []
+            now = arrow.get()
+            for job, timestamp in self.execution_times.iteritems():
+                if (now - timestamp).total_seconds() > self.job_timeout:
+                    timed_out_jobs.append(job)
+            for job in timed_out_jobs:
+                self.execution_times.pop(job)
+                self.executor.finish_job(job, ExecutionResult(is_async=False, status=False))
+            time.sleep(10)
 
     def get_next_jobs_to_run_recurse(self, job_id):
         next_job_ids = set()
@@ -436,6 +458,7 @@ class ExecutionManager(object):
         return result
 
     def _execute(self, job):
+        self.execution_times[job] = arrow.get()
         if callable(self.executor):
             return self.executor(job)
         else:
