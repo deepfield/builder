@@ -146,7 +146,11 @@ class PrintExecutor(Executor):
 
         print "Simulation:", command
         target_relationships = build_graph.get_target_relationships(job.get_id())
-        produced_targets = target_relationships.get("produces", {})
+        produced_targets = {}
+        for target_type, target_group in target_relationships.iteritems():
+            if target_type == "alternates":
+                continue
+            produced_targets.update(target_group)
         for target_id in produced_targets:
             target = build_graph.get_target(target_id)
             target.exists = True
