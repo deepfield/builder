@@ -63,7 +63,7 @@ class Executor(object):
             result = self.do_execute(job)
         finally:
             if result is not None and not isinstance(result, concurrent.futures.Future):
-                if not result.is_async:
+                if not result.is_async():
                     LOG.debug("Finishing job {}".format(job.get_id()))
                     self.get_execution_manager()._update_build(lambda: self.finish_job(job, result, self.should_update_build_graph))
 
@@ -100,7 +100,6 @@ class Executor(object):
             job_id = job.unique_id
             self.get_execution_manager().update_parents_should_run(job_id)
 
-            # updat all of it's targets
             # update all of it's dependents
             for target_id in target_ids:
                 dependent_ids = self.get_build_graph().get_dependent_ids(target_id)
@@ -145,12 +144,13 @@ class PrintExecutor(Executor):
         command = job.get_command()
         job.set_should_run(False)
 
-        print command
+        print "Simulation:", command
         target_ids = build_graph.get_target_ids(job.get_id())
         for target_id in target_ids:
             target = build_graph.get_target(target_id)
             target.exists = True
             target.mtime = arrow.get()
+            print "Simulation: Built target {}".format(target.get_id())
             for dependent_job_id in build_graph.get_dependent_ids(target_id):
                 dependent_job = build_graph.get_job(dependent_job_id)
                 dependent_job.invalidate()
@@ -336,7 +336,6 @@ class ExecutionManager(object):
         LOG.info("Starting execution")
         self.running = True
         self.executor.initialize()
-
         # Seed initial jobs
         work_queue = self._work_queue
         next_jobs = self.get_jobs_to_run()
