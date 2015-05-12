@@ -652,6 +652,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         execution_manager = ExecutionManager(build_manager, ExtendedMockExecutor)
         return execution_manager
 
+    @unit
     def test_submission(self):
         # Given
         execution_manager = self._get_execution_manager_with_effects()
@@ -669,6 +670,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         # Then
         self.assertTrue(execution_manager.get_build().is_job("A_2015-04-01-00-00-00"))
 
+    @unit
     def test_update_lower_nodes(self):
         """test_update_lower_nodes
         Add a node that should run that is above the nodes in the graph.
@@ -708,6 +710,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertIsNone(job2.parents_should_run)
         self.assertIsNone(job3.parents_should_run)
 
+    @unit
     def test_update_lower_nodes_connection(self):
         """test_update_lower_nodes_connection
         Add a node that shouldn't run but has parent's that should run.
@@ -747,6 +750,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertTrue(job2.parents_should_run)
         self.assertIsNone(job3.parents_should_run)
 
+    @unit
     def test_update_lower_nodes_cached(self):
         """test_update_lower_nodes_cached
         Add a node that should run. Update all lower nodes until you get to a
@@ -791,6 +795,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertTrue(job3.parents_should_run)
         self.assertFalse(job4.parents_should_run)
 
+    @unit
     def test_update_lower_exit_early(self):
         """test_update_lower_exit_early
         Add a node that should not run and it's parent's should not run.
@@ -822,6 +827,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         # Then
         self.assertFalse(job2.parents_should_run)
 
+    @unit
     def test_update_lower_nodes_ignore_parents(self):
         """test_update_lower_nodes_ignore_parents
         Add a node that should run. Update all lower nodes until you get to a
@@ -867,6 +873,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertFalse(job3.parents_should_run)
         self.assertFalse(job4.parents_should_run)
 
+    @unit
     def test_double_update_lower_nodes(self):
         """test_double_update_lower_nodes
         Update two nodes, make sure that all the things get iterated
@@ -923,6 +930,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertIsNone(job2_.parents_should_run)
         self.assertIsNone(job3_.parents_should_run)
 
+    @unit
     def test_update_lower_first_ignores_parents(self):
         """test_update_lower_first_ignores_parents
         A test where the first job ignores it's parents. Nothing should be
@@ -954,6 +962,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         # Then
         self.assertFalse(job2.parents_should_run)
 
+    @unit
     def test_update_lower_same_twice(self):
         """test_update_lower_same_twice
         A test that has two jobs updated that have the same dependant job
@@ -1296,6 +1305,7 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertTrue(job3.get_parents_should_run())
         self.assertTrue(execution_manager._work_queue.empty())
 
+    @unit
     def test_force_existing(self):
         # Given
         jobs = [

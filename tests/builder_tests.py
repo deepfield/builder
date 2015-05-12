@@ -3108,6 +3108,7 @@ class GraphTest(unittest.TestCase):
         self.assertIn(("job2", "job2"), job_id_matching)
         self.assertIn(("job3", "job3"), job_id_matching)
 
+    @testing.unit
     def test_cache_same_job(self):
         # Given
         job1 = SimpleTestJobDefinition(
@@ -3126,6 +3127,7 @@ class GraphTest(unittest.TestCase):
         # Then
         self.assertEqual(mock_expander.call_count, 2)
 
+    @testing.unit
     def test_get_targets(self):
         # Given
         job1 = SimpleTestJobDefinition(
@@ -3234,6 +3236,7 @@ class GraphTest(unittest.TestCase):
             False)
 
 
+    @testing.unit
     def test_get_dependencies(self):
         # Given
         job1 = SimpleTestJobDefinition(
@@ -3353,6 +3356,7 @@ class GraphTest(unittest.TestCase):
         self.assertTrue(target2_in)
         self.assertTrue(target4_in)
 
+    @testing.unit
     def test_get_creators(self):
         # Given
         job1 = SimpleTestJobDefinition(
@@ -3467,6 +3471,7 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(creator_relationships["alternates"]["job2"].get("ignore_mtime",False), False)
         self.assertEqual(creator_relationships["alternates"]["job3"].get("fake"), "fake")
 
+    @testing.unit
     def test_get_dependents(self):
         # Given
         job1 = SimpleTestJobDefinition(
@@ -3551,6 +3556,7 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(dependent_relationships1["depends_one_or_more"]["job2"].get("ignore_mtime", False), False)
         self.assertEqual(dependent_relationships1["depends"]["job3"]["fake"], "fake")
 
+    @testing.unit
     def test_should_run_failed(self):
         jobs = [
             SimpleTestJobDefinition("A", targets=["A-target1"],
@@ -3576,6 +3582,7 @@ class GraphTest(unittest.TestCase):
         job_A.should_run = None
         self.assertTrue(job_A.get_should_run())
 
+    @testing.unit
     def test_set_failed(self):
         jobs = [
             SimpleTestJobDefinition("A")
@@ -3592,6 +3599,7 @@ class GraphTest(unittest.TestCase):
         self.assertFalse(job_A.should_run)
         self.assertFalse(job_A.force)
 
+    @testing.unit
     def test_new_and_force_nodes_from_add(self):
         # Given
         jobs = [
@@ -3838,6 +3846,7 @@ class RuleDependencyGraphTest(unittest.TestCase):
         self.assertIn("job3", jobs)
 
 class UtilTest(unittest.TestCase):
+    @testing.unit
     def test_convert_to_timedelta(self):
         truths = [
             datetime.timedelta(0, 60*5),

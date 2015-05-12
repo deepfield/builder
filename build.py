@@ -124,7 +124,6 @@ class BaseGraph(networkx.DiGraph):
             dot = '/usr/bin/dot' if os.path.exists('/usr/bin/dot') else 'dot'
             subprocess.check_call([dot, '-Tpdf', f.name, file_name])
 
-
 class RuleDependencyGraph(BaseGraph):
     """The rule dependency graph holds all the information on how jobs relate
     to jobs and their targets. It also holds information on what their aliases
