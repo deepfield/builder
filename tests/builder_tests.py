@@ -2890,7 +2890,7 @@ class GraphTest(unittest.TestCase):
         build1 = build_manager.make_build()
         build2 = build_manager.make_build()
 
-        expected_should_run1 = False
+        expected_should_run1 = True
         expected_should_run2 = True
 
         build1.add_job("should_run_future", build_context1)

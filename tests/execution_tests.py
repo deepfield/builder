@@ -55,7 +55,6 @@ class ExtendedMockExecutor(Executor):
             print target_id, target.do_get_mtime()
 
         result = ExecutionResult(False, success, command, command)
-        self.finish_job(job, result, update_job_cache=True)
         return result
 
 
@@ -146,6 +145,7 @@ class ExecutionManagerTests1(unittest.TestCase):
 
         # When
         execution_manager.build.add_job('A', build_context)
+
         execution_manager.start_execution(inline=True)
 
         # Then
