@@ -229,12 +229,12 @@ class RuleDependencyGraph(BaseGraph):
         Adds all the jobs that are specified by the jobs keyword to the graph
         """
         for job in self.jobs:
-            if not job.get_enable():
+            if not job.get_enabled():
                 continue
             self.add_job_definition(job)
 
         for meta in self.metas:
-            if not meta.get_enable():
+            if not meta.get_enabled():
                 continue
             self.add_meta(meta)
 
