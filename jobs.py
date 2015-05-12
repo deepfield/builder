@@ -542,11 +542,12 @@ class TimestampExpandedJobDefinition(JobDefinition):
     """
     def __init__(self, unexpanded_id=None, cache_time=None,
                  curfew="10min", file_step="5min", targets=None,
-                 dependencies=None, config=None):
+                 dependencies=None, command=None, config=None):
         super(TimestampExpandedJobDefinition, self).__init__(unexpanded_id=unexpanded_id,
                                                    cache_time=cache_time,
                                                    targets=targets,
                                                    dependencies=dependencies,
+                                                   command=command,
                                                    config=config)
 
         self.curfew = curfew
