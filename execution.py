@@ -308,9 +308,6 @@ class ExecutionManager(object):
         for node_id in self.build:
             if self.build.in_degree(node_id) == 0:
                 if self.build.is_target(node_id):
-                    target = self.build.get_target(node_id)
-                    if target.get_mtime() is not None:
-                        continue
                     top_most.append(node_id)
         self.external_update_targets(top_most)
 
