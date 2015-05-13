@@ -294,6 +294,7 @@ class ExecutionManager(object):
 
         # Update the upper jobs that states depend on the target
         for update_job_id in update_job_ids:
+            LOG.debug("getting next jobs to run for {}".format(update_job_id))
             next_job_to_run_ids = self.get_next_jobs_to_run(update_job_id)
             for next_job_to_run_id in next_job_to_run_ids:
                 self.add_to_work_queue(next_job_to_run_id)
