@@ -327,11 +327,11 @@ class ExecutionManager(object):
             return
         job.is_running = True
         self._work_queue.put(job_id)
-        LOG.debug("Adding {} to ExecutionManager's work queue. There are now approximately {} jobs in the queue.".format(job_id, self._work_queue.qsize()))
+        LOG.info("Adding {} to ExecutionManager's work queue. There are now approximately {} jobs in the queue.".format(job_id, self._work_queue.qsize()))
 
 
     def add_to_complete_queue(self, job_id):
-        LOG.debug("Adding {} to ExecutionManager's complete queue".format(job_id))
+        LOG.info("Adding {} to ExecutionManager's complete queue".format(job_id))
         self._complete_queue.put(job_id)
 
     def start_execution(self, inline=True):
