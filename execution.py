@@ -288,6 +288,7 @@ class ExecutionManager(object):
             for add_id in add_ids:
                 update_job_ids.add(add_id)
 
+        LOG.debug("after updating targets, {} jobs are being updated".format(len(update_job_ids)))
         for update_job_id in update_job_ids:
             self.update_parents_should_run(update_job_id)
 
