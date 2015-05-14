@@ -484,7 +484,7 @@ class RuleDependencyGraph(BaseGraph):
         can point to other metas"""
         job_ids = []
         meta = self.get_meta(meta_id)
-        job_collection = meta.get_job_collection()
+        job_collection = meta.get_job_collection(self)
         for job_id in job_collection:
             if self.is_meta(job_id):
                 job_ids = job_ids + self.get_job_ids_from_meta(job_id)
