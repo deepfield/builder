@@ -597,9 +597,17 @@ class MetaTarget(object):
         self.job_collection = job_collection
         self.config = config
 
-    def get_job_collection(self):
-        """Returns the jobs that it should be pointing to."""
+    def do_get_job_collection(self):
         return self.job_collection
+
+    def get_job_collection(self, rule_dependency_graph):
+        """Returns the jobs that it should be pointing to."""
+        job_collection = self.do_get_job_collection()
+        enabled_job_collection = []
+        for job_id in job_collection:
+            if job_id in rule_dependency_graph:
+                enabled_job_collection.append(job_id)
+        return enabled_job_collection
 
     def get_enabled(self):
         """Returns whether or not the meta job should be inserted in the
