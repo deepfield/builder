@@ -564,3 +564,4 @@ class ExecutionDaemon(object):
         LOG.info("Shutting down")
         self.execution_manager.stop_execution()
         executor.shutdown()
+        LOG.info("Shutting down")
