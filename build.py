@@ -191,7 +191,7 @@ class RuleDependencyGraph(BaseGraph):
             meta: the meta target to add to the rule dependnecy graph
         """
         self.add_node(meta)
-        jobs = meta.get_job_collection()
+        jobs = meta.get_job_collection(self)
         for job in jobs:
             self.add_edge(job, meta.unexpanded_id, label="meta")
 
@@ -484,7 +484,7 @@ class RuleDependencyGraph(BaseGraph):
         can point to other metas"""
         job_ids = []
         meta = self.get_meta(meta_id)
-        job_collection = meta.get_job_collection()
+        job_collection = meta.get_job_collection(self)
         for job_id in job_collection:
             if self.is_meta(job_id):
                 job_ids = job_ids + self.get_job_ids_from_meta(job_id)
