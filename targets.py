@@ -141,9 +141,9 @@ class LocalFileSystemTarget(Target):
         try:
             mtime = os.stat(local_path).st_mtime
         except OSError as oserror:
-            if oserror.errno == errno.ENOENT:
+           if oserror.errno == errno.ENOENT:
                 mtime = None
-            else:
+           else:
                 raise oserror
         return mtime
 
