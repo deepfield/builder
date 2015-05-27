@@ -8,7 +8,6 @@ import numbers
 
 import builder
 from builder.jobs import JobDefinition, TimestampExpandedJobDefinition, Job
-import testing
 import builder.jobs
 import builder.targets
 import builder.expanders

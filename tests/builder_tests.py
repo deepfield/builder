@@ -10,8 +10,6 @@ import mock
 import networkx
 
 from builder.tests.tests_jobs import *
-import testing
-from testing import mock_mtime_generator
 import builder.jobs
 import builder.build
 import builder.util
@@ -21,7 +19,6 @@ import builder.targets
 class GraphTest(unittest.TestCase):
     """Used to test the general graph construction"""
 
-    @testing.unit
     def test_expand_10s(self):
         # Given
         build_manager = builder.build.BuildManager(
@@ -35,7 +32,6 @@ class GraphTest(unittest.TestCase):
         # Then
         self.assertEquals(len(build.node), 6)
 
-    @testing.unit
     def test_rule_dep_construction(self):
         # Given
         jobs = [
@@ -119,7 +115,6 @@ class GraphTest(unittest.TestCase):
                         False,
                         msg="{} is not in the graph".format(expected_edge))
 
-    @testing.unit
     def test_build_plan_construction(self):
         # Given
         jobs = [
@@ -275,7 +270,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(expected_number_of_targets5, number_of_targets5)
 
 
-    @testing.unit
     @unittest.skip("Need to fix a logic problem here, skipping for now")
     def test_diamond_redundancy(self):
         # Note: This test fails because multiple Expanders are being constructed during the graph expansion instead
@@ -364,7 +358,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(call_count4, expected_call_count4)
         self.assertEqual(call_count5, expected_call_count5)
 
-    @testing.unit
     def test_stale(self):
         # Given
         current_time = 600
@@ -774,7 +767,6 @@ class GraphTest(unittest.TestCase):
                     {'unexpanded_id': 'stale_alternate_bottom_target-%Y-%m-%d-%H-%M',
                      'file_step': '5min', 'type': 'alternates'}])
         ]
-    @testing.unit
     def test_stale_alternate(self):
         # Given
         jobs1 = self._get_stale_alternate_jobs()
@@ -1120,7 +1112,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(stale3, expected_stale3)
         self.assertEqual(stale4, expected_stale4)
 
-    @testing.unit
     def test_stale_alternate_update(self):
         # Given
         jobs1 = self._get_stale_alternate_jobs()
@@ -1497,7 +1488,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(stale3, expected_stale3)
         self.assertEqual(stale4, expected_stale4)
 
-    @testing.unit
     def test_buildable(self):
         # Given
         jobs1 = [
@@ -1866,7 +1856,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(buildable5, expected_buildable5)
         self.assertEqual(buildable6, expected_buildable6)
 
-    @testing.unit
     def test_past_cache_time(self):
         # Given
         current_time = 400
@@ -1982,7 +1971,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(past_cache_time2, expected_past_cache_time2)
         self.assertEqual(past_cache_time3, expected_past_cache_time3)
 
-    @testing.unit
     def test_all_dependencies(self):
         # Given
         jobs1 = [
@@ -2183,7 +2171,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(all_dependencies3, expected_all_dependencies3)
         self.assertEqual(all_dependencies4, expected_all_dependencies4)
 
-    @testing.unit
     def test_should_run_logic(self):
         # Given
         build_context = {}
@@ -2373,7 +2360,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(should_run13, expected_should_run13)
         self.assertEqual(should_run14, expected_should_run14)
 
-    @testing.unit
     def test_past_curfew(self):
         # Given
         PastCurfewTimestampJobTester = lambda: SimpleTimestampExpandedTestJob("past_curfew_timestamp_job")
@@ -2419,7 +2405,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(past_curfew2, expected_past_curfew2)
         self.assertEqual(past_curfew3, expected_past_curfew3)
 
-    @testing.unit
     def test_should_run_recurse(self):
         # Given
         expander_type = builder.expanders.TimestampExpander
@@ -2546,7 +2531,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(parents_should_run10,
                          expected_parents_should_run10)
 
-    @testing.unit
     def test_expand_exact(self):
         # Given
         jobs = [
@@ -2575,7 +2559,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(len(build.node), 4)
 
 
-    @testing.unit
     def test_force_build(self):
         # Given
         jobs = [
@@ -2632,7 +2615,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(count, 2)
 
 
-    @testing.unit
     def test_ignore_produce(self):
         # Given
         jobs = [
@@ -2698,7 +2680,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(actual_stale3, expected_stale3)
         self.assertEqual(actual_stale4, expected_stale4)
 
-    @testing.unit
     def test_stale_with_no_targets(self):
         # Given
         targets1 = {}
@@ -2759,7 +2740,6 @@ class GraphTest(unittest.TestCase):
         self.assertFalse(stale2)
         self.assertTrue(stale3)
 
-    @testing.unit
     def test_meta_in_rule_dependency_graph(self):
         # Given
         job1 = builder.jobs.JobDefinition(unexpanded_id="job1")
@@ -2778,7 +2758,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(len(rule_dependency_graph.edge["job2"]), 1)
         self.assertIn("meta", rule_dependency_graph)
 
-    @testing.unit
     def test_expand_meta(self):
         # Given
         job1 = builder.jobs.JobDefinition(unexpanded_id="job1")
@@ -2797,7 +2776,6 @@ class GraphTest(unittest.TestCase):
         self.assertIn("job1", build)
         self.assertIn("job2", build)
 
-    @testing.unit
     def test_new_nodes(self):
         # Given
         jobs = [
@@ -2871,7 +2849,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(len(new_nodes1), 4)
         self.assertEqual(len(new_nodes2), 2)
 
-    @testing.unit
     def test_should_run_future(self):
         # Given
         job1 = SimpleTimestampExpandedTestJob("should_run_future", file_step="5min")
@@ -2921,7 +2898,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(should_run1, expected_should_run1)
         self.assertEqual(should_run2, expected_should_run2)
 
-    @testing.unit
     def test_filter_target_ids(self):
         build_manager = builder.build.BuildManager([], [])
         build = build_manager.make_build()
@@ -2939,7 +2915,6 @@ class GraphTest(unittest.TestCase):
         self.assertIn("target2", id_list)
 
 
-    @testing.unit
     def test_expand(self):
         # Given
         target1 = builder.expanders.Expander(builder.targets.Target, "target1")
@@ -3069,7 +3044,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(job9.expand.call_count, 0)
         self.assertEqual(job10.expand.call_count, 0)
 
-    @testing.unit
     def test_job_state_iter(self):
         # Given
         job1 = SimpleTestJobDefinition(
@@ -3108,7 +3082,6 @@ class GraphTest(unittest.TestCase):
         self.assertIn(("job2", "job2"), job_id_matching)
         self.assertIn(("job3", "job3"), job_id_matching)
 
-    @testing.unit
     def test_cache_same_job(self):
         # Given
         job1 = SimpleTestJobDefinition(
@@ -3127,7 +3100,6 @@ class GraphTest(unittest.TestCase):
         # Then
         self.assertEqual(mock_expander.call_count, 2)
 
-    @testing.unit
     def test_get_targets(self):
         # Given
         job1 = SimpleTestJobDefinition(
@@ -3236,7 +3208,6 @@ class GraphTest(unittest.TestCase):
             False)
 
 
-    @testing.unit
     def test_get_dependencies(self):
         # Given
         job1 = SimpleTestJobDefinition(
@@ -3356,7 +3327,6 @@ class GraphTest(unittest.TestCase):
         self.assertTrue(target2_in)
         self.assertTrue(target4_in)
 
-    @testing.unit
     def test_get_creators(self):
         # Given
         job1 = SimpleTestJobDefinition(
@@ -3471,7 +3441,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(creator_relationships["alternates"]["job2"].get("ignore_mtime",False), False)
         self.assertEqual(creator_relationships["alternates"]["job3"].get("fake"), "fake")
 
-    @testing.unit
     def test_get_dependents(self):
         # Given
         job1 = SimpleTestJobDefinition(
@@ -3556,7 +3525,6 @@ class GraphTest(unittest.TestCase):
         self.assertEqual(dependent_relationships1["depends_one_or_more"]["job2"].get("ignore_mtime", False), False)
         self.assertEqual(dependent_relationships1["depends"]["job3"]["fake"], "fake")
 
-    @testing.unit
     def test_should_run_failed(self):
         jobs = [
             SimpleTestJobDefinition("A", targets=["A-target1"],
@@ -3582,7 +3550,6 @@ class GraphTest(unittest.TestCase):
         job_A.should_run = None
         self.assertTrue(job_A.get_should_run())
 
-    @testing.unit
     def test_set_failed(self):
         jobs = [
             SimpleTestJobDefinition("A")
@@ -3599,7 +3566,6 @@ class GraphTest(unittest.TestCase):
         self.assertFalse(job_A.should_run)
         self.assertFalse(job_A.force)
 
-    @testing.unit
     def test_new_and_force_nodes_from_add(self):
         # Given
         jobs = [
@@ -3757,7 +3723,6 @@ class RuleDependencyGraphTest(unittest.TestCase):
 
         return graph.rule_dependency_graph
 
-    @testing.unit
     def test_get_job(self):
         # Given
         graph = self._get_rdg()
@@ -3769,7 +3734,6 @@ class RuleDependencyGraphTest(unittest.TestCase):
         self.assertIsNotNone(job)
 
 
-    @testing.unit
     def test_get_all_jobs(self):
         # Given
         graph = self._get_rdg()
@@ -3780,7 +3744,6 @@ class RuleDependencyGraphTest(unittest.TestCase):
         # Then
         self.assertEquals(2, len(jobs))
 
-    @testing.unit
     def test_get_all_target_expanders(self):
         # Given
         graph = self._get_rdg()
@@ -3793,7 +3756,6 @@ class RuleDependencyGraphTest(unittest.TestCase):
         for target in targets:
             self.assertIsInstance(target, builder.expanders.Expander)
 
-    @testing.unit
     def test_get_job_from_meta(self):
         # Given
         meta1 = builder.jobs.MetaTarget(
@@ -3846,7 +3808,7 @@ class RuleDependencyGraphTest(unittest.TestCase):
         self.assertIn("job3", jobs)
 
 class UtilTest(unittest.TestCase):
-    @testing.unit
+
     def test_convert_to_timedelta(self):
         truths = [
             datetime.timedelta(0, 60*5),

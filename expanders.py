@@ -13,7 +13,8 @@ These strings can be used to implement them for different file types.
 """
 
 import copy
-import deepy.timerange
+
+import builder.util as util
 
 
 class Expander(object):
@@ -134,9 +135,9 @@ class TimestampExpander(Expander):
         start_time = build_context["start_time"]
         end_time = build_context.get("end_time") or start_time
 
-        start_time = deepy.timerange.floor_timestamp_given_time_step(
+        start_time = util.floor_timestamp_given_time_step(
                 start_time, file_step)
-        end_time = deepy.timerange.floor_timestamp_given_time_step(
+        end_time = util.floor_timestamp_given_time_step(
                 end_time, file_step)
 
         end_inclusive = False
@@ -144,10 +145,10 @@ class TimestampExpander(Expander):
             end_inclusive = True
 
         if past:
-            file_step_delta = deepy.timerange.convert_to_timedelta(file_step)
+            file_step_delta = util.convert_to_timedelta(file_step)
             start_time = start_time - past*file_step_delta
 
-        timestamps = deepy.timerange.PipedreamArrowFactory.range(
+        timestamps = util.BuilderArrowFactory.range(
                 file_step,
                 start_time,
                 end_time,
@@ -157,10 +158,9 @@ class TimestampExpander(Expander):
         new_build_context.pop("force", None)
         expanded_dict = {}
         for timestamp in timestamps:
-            expanded_id = deepy.timerange.substitute_timestamp(
-                    unexpanded_id, timestamp)
+            expanded_id = timestamp.strftime(unexpanded_id)
 
-            time_delta = deepy.timerange.convert_to_timedelta(file_step)
+            time_delta = util.convert_to_timedelta(file_step)
             new_build_context["start_time"] = timestamp
             new_build_context["end_time"] = timestamp + time_delta
             expanded_dict[expanded_id] = copy.copy(new_build_context)

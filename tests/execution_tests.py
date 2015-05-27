@@ -5,7 +5,6 @@ import unittest
 import copy
 import json
 
-import funcy
 
 import builder.build
 import builder.execution
@@ -14,10 +13,8 @@ from builder.build import BuildManager
 from builder.execution import Executor, ExecutionManager, ExecutionResult, _submit_from_json
 from builder.expanders import TimestampExpander
 
-import deepy.timerange
-arrow = deepy.timerange.arrow_factory
-
-from testing import unit, mock_mtime_generator
+import builder.util as util
+arrow = util.arrow_factory
 
 
 class ExtendedMockExecutor(Executor):
@@ -79,7 +76,6 @@ class ExecutionManagerTests1(unittest.TestCase):
                     {"unexpanded_id": "buildable_5_minute_target_02-%Y-%m-%d-%H-%M", "file_step": "5min",
                         "type": "depends_one_or_more"}])
 
-    @unit
     def test_submit(self):
         # Given
         execution_manager = self._get_execution_manager([self._get_buildable_job()])
@@ -95,7 +91,6 @@ class ExecutionManagerTests1(unittest.TestCase):
         self.assertIn('buildable_job', execution_manager.get_build())
 
 
-    @unit
     def test_start_excution_run_to_completion(self):
         # Given
         execution_manager = self._get_execution_manager([self._get_buildable_job()], executor=ExtendedMockExecutor)
@@ -111,7 +106,6 @@ class ExecutionManagerTests1(unittest.TestCase):
         # Then
         self.assertTrue(execution_manager.executor.execute.called)
 
-    @unit
     def test_inline_execution_simple_plan(self):
         # Given
         jobs = [
@@ -131,7 +125,6 @@ class ExecutionManagerTests1(unittest.TestCase):
         # Then
         self.assertEquals(execution_manager.executor.execute.call_count, 2)
 
-    @unit
     def test_inline_execution_retries(self):
         # Given
         jobs = [
@@ -163,7 +156,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         execution_manager = ExecutionManager(build_manager, ExtendedMockExecutor)
         return execution_manager
 
-    @testing.unit
     def test_get_starting_jobs(self):
         # given
         jobs = [SimpleTestJobDefinition('get_starting_jobs_01'),
@@ -214,7 +206,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         self.assertItemsEqual(starting_job_ids, expected_starting_job_ids)
 
 
-    @unit
     def test_no_depends_next_jobs(self):
         """tests_no_depends_next_jobs
         tests a situation where nothing depends on the job. When the job
@@ -237,7 +228,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         self.assertEquals(set([]), execution_manager.get_next_jobs_to_run("A"))
 
 
-    @unit
     def test_simple_get_next_jobs(self):
         """test_simple_get_next_jobs
         test a situation where a job depends on a target of another job. When
@@ -261,7 +251,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         # Then
         self.assertEquals(set(["B"]), execution_manager.get_next_jobs_to_run("A"))
 
-    @unit
     def test_simple_get_next_jobs_lower(self):
         # Given
         jobs = [
@@ -296,7 +285,6 @@ class ExecutionManagerTests2(unittest.TestCase):
                 print node_id, node["object"].get_mtime()
         self.assertEquals(set(["C"]), execution_manager.get_next_jobs_to_run("A"))
 
-    @unit
     def test_simple_get_next_jobs_failed_but_creates_targets(self):
         """test_simple_get_next_jobs_failed
         test a situation where a job depends on a target of another job. When
@@ -320,7 +308,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         # The
         self.assertEquals(set(["B"]), execution_manager.get_next_jobs_to_run("A"))
 
-    @unit
     def test_simple_get_next_jobs_failed_but_no_targets(self):
         """test_simple_get_next_jobs_failed
         test a situation where a job depends on a target of another job. When
@@ -345,7 +332,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         # The
         self.assertEquals(set(["A"]), execution_manager.get_next_jobs_to_run("A"))
 
-    @unit
     def test_simple_get_next_jobs_failed_max(self):
         """test_simple_get_next_jobs_failed_max
         test a situation where a job depends on a target of another job.
@@ -370,7 +356,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         # The
         self.assertEquals(set([]), execution_manager.get_next_jobs_to_run("A"))
 
-    @unit
     def test_multiple_get_next_jobs(self):
         """test_multiple_get_next_jobs
         test a situation where a job creates multiple targets where individual
@@ -398,7 +383,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         # Then
         self.assertEquals({"B", "C", "D"}, set(execution_manager.get_next_jobs_to_run("A")))
 
-    @unit
     def test_multiple_get_next_jobs_failed(self):
         """test_multiple_get_next_jobs_failed
         test a situation where a job creates multiple targets where individual
@@ -434,7 +418,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         # Then
         self.assertEquals({"A"}, set(execution_manager.get_next_jobs_to_run("A")))
 
-    @unit
     def test_multiple_get_next_jobs_failed_max(self):
         """test_multiple_get_next_jobs_failed_max
         test a situation where a job creates multiple targets where individual
@@ -468,7 +451,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         self.assertEquals(execution_manager.get_build().get_job("C").get_should_run(), True)
         self.assertEquals(execution_manager.get_build().get_job("D").get_should_run(), True)
 
-    @unit
     def test_depends_one_or_more_next_jobs(self):
         """test_depends_one_or_more_next_jobs
         test a situation where a job has a depends one or more dependency. It is
@@ -511,7 +493,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         self.assertEquals(execution_manager.get_build().get_job("B").get_should_run(), True)
 
 
-    @unit
     def test_depends_one_or_more_next_jobs_failed_max_lower(self):
         """test_depends_one_or_more_next_jobs_failed
         test a situation where a job has a depends one or more dependency. It
@@ -555,7 +536,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         self.assertEquals(execution_manager.get_build().get_job("C").get_should_run(), True)
 
 
-    @unit
     def test_upper_update(self):
         """tests situations where a job starts running and while it is running a
         job above it should run again, possibly due to a target being deleted
@@ -588,7 +568,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         # Then
         self.assertEquals(set(), set(execution_manager.get_next_jobs_to_run("B")))
 
-    @unit
     def test_multiple_targets_one_exists(self):
         # Given
         jobs = [
@@ -623,7 +602,6 @@ class ExecutionManagerTests2(unittest.TestCase):
         self.assertEquals(execution_manager.get_build().get_job("E").get_should_run(), True)
         self.assertEquals(execution_manager.get_build().get_job("D").get_should_run(), True)
 
-    @unit
     def test_effect_job(self):
         # Given
         jobs = [
@@ -652,7 +630,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         execution_manager = ExecutionManager(build_manager, ExtendedMockExecutor)
         return execution_manager
 
-    @unit
     def test_submission(self):
         # Given
         execution_manager = self._get_execution_manager_with_effects()
@@ -670,7 +647,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         # Then
         self.assertTrue(execution_manager.get_build().is_job("A_2015-04-01-00-00-00"))
 
-    @unit
     def test_update_lower_nodes(self):
         """test_update_lower_nodes
         Add a node that should run that is above the nodes in the graph.
@@ -710,7 +686,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertIsNone(job2.parents_should_run)
         self.assertIsNone(job3.parents_should_run)
 
-    @unit
     def test_update_lower_nodes_connection(self):
         """test_update_lower_nodes_connection
         Add a node that shouldn't run but has parent's that should run.
@@ -750,7 +725,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertTrue(job2.parents_should_run)
         self.assertIsNone(job3.parents_should_run)
 
-    @unit
     def test_update_lower_nodes_cached(self):
         """test_update_lower_nodes_cached
         Add a node that should run. Update all lower nodes until you get to a
@@ -795,7 +769,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertTrue(job3.parents_should_run)
         self.assertFalse(job4.parents_should_run)
 
-    @unit
     def test_update_lower_exit_early(self):
         """test_update_lower_exit_early
         Add a node that should not run and it's parent's should not run.
@@ -827,7 +800,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         # Then
         self.assertFalse(job2.parents_should_run)
 
-    @unit
     def test_update_lower_nodes_ignore_parents(self):
         """test_update_lower_nodes_ignore_parents
         Add a node that should run. Update all lower nodes until you get to a
@@ -873,7 +845,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertFalse(job3.parents_should_run)
         self.assertFalse(job4.parents_should_run)
 
-    @unit
     def test_double_update_lower_nodes(self):
         """test_double_update_lower_nodes
         Update two nodes, make sure that all the things get iterated
@@ -930,7 +901,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertIsNone(job2_.parents_should_run)
         self.assertIsNone(job3_.parents_should_run)
 
-    @unit
     def test_update_lower_first_ignores_parents(self):
         """test_update_lower_first_ignores_parents
         A test where the first job ignores it's parents. Nothing should be
@@ -962,7 +932,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         # Then
         self.assertFalse(job2.parents_should_run)
 
-    @unit
     def test_update_lower_same_twice(self):
         """test_update_lower_same_twice
         A test that has two jobs updated that have the same dependant job
@@ -1009,7 +978,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertTrue(job3.parents_should_run)
         self.assertIsNone(job4.parents_should_run)
 
-    @unit
     def test_addition_updates(self):
         """test_addition_updates
         This tests to make sure that when a job is added to the graph that the
@@ -1058,7 +1026,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertIsNone(job2.parents_should_run)
         self.assertIsNone(job3.parents_should_run)
 
-    @unit
     def test_update_target_no_creator_should_not_run(self):
         # Given
         jobs = [
@@ -1098,7 +1065,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertEqual(execution_manager._work_queue.get(False), 'job2')
         self.assertTrue(execution_manager._work_queue.empty())
 
-    @unit
     def test_update_target_no_creator_should_run(self):
         # Given
         jobs = [
@@ -1138,7 +1104,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertEqual(execution_manager._work_queue.get(False), 'job1')
         self.assertTrue(execution_manager._work_queue.empty())
 
-    @unit
     def test_update_target_no_creator_should_not_run_deep(self):
         # Given
         jobs = [
@@ -1185,7 +1150,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertEqual(execution_manager._work_queue.get(False), 'job3')
         self.assertTrue(execution_manager._work_queue.empty())
 
-    @unit
     def test_update_target_should_run(self):
         # Given
         jobs = [
@@ -1230,7 +1194,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertTrue(job3.get_parents_should_run())
         self.assertTrue(execution_manager._work_queue.empty())
 
-    @unit
     def test_update_target_multiple(self):
         # Given
         jobs = [
@@ -1305,7 +1268,6 @@ class ExecutionDaemonTests(unittest.TestCase):
         self.assertTrue(job3.get_parents_should_run())
         self.assertTrue(execution_manager._work_queue.empty())
 
-    @unit
     def test_force_existing(self):
         # Given
         jobs = [

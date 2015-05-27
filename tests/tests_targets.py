@@ -7,7 +7,6 @@ import unittest
 
 import mock
 
-import testing
 import builder.targets
 
 
@@ -36,7 +35,6 @@ class LocalFileSystemTargetTest(unittest.TestCase):
         return mock_mtime
 
 
-    @testing.unit
     def test_non_cached_mtime(self):
         # given
         path1 = "local_path/1"
@@ -64,7 +62,6 @@ class LocalFileSystemTargetTest(unittest.TestCase):
         self.assertEqual(mtime1, 1)
         self.assertIsNone(mtime2)
 
-    @testing.unit
     def test_get_exists(self):
         # given
         path1 = "local_path/1"
@@ -90,7 +87,6 @@ class LocalFileSystemTargetTest(unittest.TestCase):
         self.assertTrue(exists1)
         self.assertFalse(exists2)
 
-    @testing.unit
     def test_get_mtime(self):
         # given
         path1 = "local_path/1"
@@ -116,7 +112,6 @@ class LocalFileSystemTargetTest(unittest.TestCase):
         self.assertEqual(mtime1, 1)
         self.assertIsNone(mtime2)
 
-    @testing.unit
     def test_get_bulk_exists_mtime(self):
         # given
         path1_file = "local_path/1"
@@ -178,7 +173,6 @@ class GlobLocalFileSystemTargetTest(unittest.TestCase):
             return path_list
         return mock_glob_list
 
-    @testing.unit
     def test_get_exists(self):
         # given
         glob1 = "local_path/1/*.gz"
@@ -213,7 +207,6 @@ class GlobLocalFileSystemTargetTest(unittest.TestCase):
         self.assertTrue(exists1)
         self.assertFalse(exists2)
 
-    @testing.unit
     def test_get_mtime(self):
         # given
         glob1 = "local_path/1/*.gz"
@@ -247,7 +240,6 @@ class GlobLocalFileSystemTargetTest(unittest.TestCase):
         self.assertEqual(mtime1, 2)
         self.assertIsNone(mtime2)
 
-    @testing.unit
     def test_get_bulk_exists_mtime(self):
         # given
         glob1_pattern = "local_path/1/*.gz"
