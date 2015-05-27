@@ -3,9 +3,9 @@ import re
 import sys
 import itertools
 import datetime as dt
+
 import dateutil as du
 import arrow
-
 try:
     import pandas as pd
 except ImportError:

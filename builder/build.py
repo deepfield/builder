@@ -4,11 +4,12 @@ and the build graph
 
 import collections
 import os
-import networkx
 import tempfile
 import subprocess
 import time
 import logging
+
+import networkx
 
 import builder.dependencies
 import builder.jobs
