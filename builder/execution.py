@@ -530,26 +530,28 @@ def _update_from_json(execution_manager, json_body):
 
 
 class SubmitHandler(RequestHandler):
-    def initialize(self, execution_manager):
+    def initialize(self, execution_manager, work_queue):
         self.execution_manager = execution_manager
+        self.work_queue = work_queue
 
     def post(self):
         LOG.debug("{}".format(self.request.body))
-        _submit_from_json(self.execution_manager, self.request.body)
+        self.work_queue.submit(_submit_from_json, self.execution_manager, self.request.body)
 
 class UpdateHandler(RequestHandler):
-    def initialize(self, execution_manager):
+    def initialize(self, execution_manager, work_queue):
         self.execution_manager = execution_manager
+        self.work_queue = work_queue
 
     def post(self):
         LOG.debug("{}".format(self.request.body))
-        _update_from_json(self.execution_manager, self.request.body)
+        self.work_queue.submit(_update_from_json, self.execution_manager, self.request.body)
 
 class UpdateTopMostHandler(RequestHandler):
-    def initialize(self, execution_manager):
+    def initialize(self, execution_manager, work_queue):
         self.execution_manager = execution_manager
         self.updating = False
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self.executor = work_queue
 
     def post(self):
         if self.updating:
@@ -585,11 +587,13 @@ class StatusHandler(RequestHandler):
 class ExecutionDaemon(object):
 
     def __init__(self, execution_manager, port=20345):
+        work_queue = concurrent.futures.ThreadPoolExecutor(max_workers=2)
         self.execution_manager = execution_manager
         self.application = Application([
-            (r"/submit", SubmitHandler, {"execution_manager" : self.execution_manager}),
-            (r"/update", UpdateHandler, {"execution_manager" : self.execution_manager}),
-            (r"/update_top_most", UpdateTopMostHandler, {"execution_manager" : self.execution_manager}),
+            (r"/submit", SubmitHandler, {"execution_manager" : self.execution_manager, "work_queue": work_queue}),
+            (r"/update", UpdateHandler, {"execution_manager" : self.execution_manager, "work_queue": work_queue}),
+            (r"/update_top_most", UpdateTopMostHandler, {"execution_manager" : self.execution_manager,
+                                                         "work_queue": work_queue}),
             (r"/status", StatusHandler, {"execution_manager" : self.execution_manager}),
         ])
         self.port = port
