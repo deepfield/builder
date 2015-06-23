@@ -230,6 +230,7 @@ class ExecutionManager(object):
                 for next_job_to_run_id in next_job_to_run_ids:
                     self.add_to_work_queue(next_job_to_run_id)
             self.last_job_submitted_on = arrow.now()
+            self.submitted_jobs += 1
 
         self._update_build(update_build_graph)
 
@@ -315,6 +316,7 @@ class ExecutionManager(object):
             if self.build.in_degree(node_id) == 0:
                 if self.build.is_target(node_id):
                     top_most.append(node_id)
+        LOG.debug("TOP_MOST_JOBS => {}".format(top_most))
         self.external_update_targets(top_most)
 
     def update_targets(self, target_ids):
@@ -416,6 +418,7 @@ class ExecutionManager(object):
             except Queue.Empty:
                 continue
             self.last_job_completed_on = arrow.now()
+            self.completed_jobs += 1
 
             try:
                 job = self.build.get_job(job_id)
