@@ -221,10 +221,12 @@ class ExecutionManager(object):
 
             # Invalidate the build graph for all child nodes
             newly_invalidated_job_ids = build_update.new_jobs | build_update.newly_forced
+            LOG.debug("SUBMISSION => Newly invlidated job ids: {}".format(newly_invalidated_job_ids))
             for newly_invalidated_job_id in newly_invalidated_job_ids:
                 self.update_parents_should_run(newly_invalidated_job_id)
                 next_job_to_run_ids = self.get_next_jobs_to_run(
                         newly_invalidated_job_id)
+                LOG.debug("SUBMISSION => Next jobs {} -> {}".format(newly_invalidated_job_id, next_job_to_run_ids))
                 for next_job_to_run_id in next_job_to_run_ids:
                     self.add_to_work_queue(next_job_to_run_id)
             self.last_job_submitted_on = arrow.now()
