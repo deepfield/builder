@@ -176,6 +176,13 @@ class ExecutionManager(object):
         self._complete_queue = Queue.Queue()
         self.executor = executor_factory(self, config=self.config)
         self.execution_times = {}
+        self.submitted_jobs = 0
+        self.completed_jobs = 0
+        self.start_time = None
+        self.last_job_executed_on = None
+        self.last_job_completed_on = None
+        self.last_job_submitted_on = None
+        self.last_job_worked_on = None
 
         self.running = False
 
@@ -220,6 +227,7 @@ class ExecutionManager(object):
                         newly_invalidated_job_id)
                 for next_job_to_run_id in next_job_to_run_ids:
                     self.add_to_work_queue(next_job_to_run_id)
+            self.last_job_submitted_on = arrow.now()
 
         self._update_build(update_build_graph)
 
@@ -340,6 +348,7 @@ class ExecutionManager(object):
         """
         LOG.info("Starting execution")
         self.running = True
+        self.start_time = arrow.now()
         self.executor.initialize()
         # Seed initial jobs
         work_queue = self._work_queue
@@ -355,13 +364,16 @@ class ExecutionManager(object):
 
         jobs_executed = 0
         ONEYEAR = 365 * 24 * 60 * 60
+        tick = 0
         while (not work_queue.empty() or not inline) and self.running:
-            LOG.debug("EXECUTION_LOOP => Getting job from the work queue")
+            LOG.debug("EXECUTION_LOOP => Getting job from the work queue. Tick {}".format(tick))
+            tick += 1
 
             try:
                 job_id = work_queue.get(True, timeout=1)
             except Queue.Empty:
                 continue
+            self.last_job_worked_on = arrow.now()
 
             LOG.debug("EXECUTION_LOOP => Got job {} from work queue".format(job_id))
             result = self.execute(job_id)
@@ -380,7 +392,7 @@ class ExecutionManager(object):
             # thread add new jobs
             LOG.debug("EXECUTION_LOOP => Executed {} jobs".format(jobs_executed))
 
-        LOG.debug("EXECUTION_LOOP => Execution is exiting")
+        LOG.debug("EXECUTION_LOOP[work_queue] => Execution is exiting")
         if executor is not None:
             executor.shutdown(wait=True)
 
@@ -391,13 +403,17 @@ class ExecutionManager(object):
 
     def _consume_completed_jobs(self, block=False):
 
-        LOG.debug("EXECUTION_LOOP => Consuming completed jobs")
+        LOG.debug("COMPLETION_LOOP => Consuming completed jobs")
         complete_queue = self._complete_queue
+        tick = 0
         while (not complete_queue.empty() or block) and self.running:
+            LOG.debug("COMPLETION_LOOP => Getting job from the work queue. Tick {}".format(tick))
+            tick += 1
             try:
                 job_id = complete_queue.get(True, timeout=1)
             except Queue.Empty:
                 continue
+            self.last_job_completed_on = arrow.now()
 
             try:
                 job = self.build.get_job(job_id)
@@ -449,6 +465,7 @@ class ExecutionManager(object):
     def execute(self, job_id):
         # Don't run a job more than the configured max number of retries
         LOG.debug("ExecutionManager.execute({})".format(job_id))
+        self.last_job_executed_on = arrow.get()
         job = self.build.get_job(job_id)
 
         # Execute job
@@ -482,6 +499,13 @@ class ExecutionManager(object):
     def _update_build(self, f):
         with self._build_lock:
             return f()
+
+    def get_running_jobs(self):
+        running_jobs = []
+        for job, timestamp in self.execution_times.iteritems():
+            running_jobs.append((job.get_id(), timestamp))
+
+        return running_jobs
 
 
 def _submit_from_json(execution_manager, json_body):
@@ -529,6 +553,23 @@ class UpdateTopMostHandler(RequestHandler):
         LOG.debug("{}".format(self.request.body))
         self.execution_manager.update_top_most()
 
+class StatusHandler(RequestHandler):
+    def initialize(self, execution_manager):
+        self.execution_manager = execution_manager
+
+    def get(self):
+        status = {
+            'n_submitted_jobs': self.execution_manager.submitted_jobs,
+            'n_completed_jobs': self.execution_manager.completed_jobs,
+            'running_jobs': self.execution_manager.get_running_jobs(),
+            'last_job_executed_on': unicode(self.execution_manager.last_job_executed_on),
+            'last_job_submitted_on': unicode(self.execution_manager.last_job_submitted_on),
+            'last_job_completed_on': unicode(self.execution_manager.last_job_completed_on),
+            'last_job_worked_on': unicode(self.execution_manager.last_job_worked_on)
+        }
+
+        self.write(status)
+
 class ExecutionDaemon(object):
 
     def __init__(self, execution_manager, port=20345):
@@ -537,6 +578,7 @@ class ExecutionDaemon(object):
             (r"/submit", SubmitHandler, {"execution_manager" : self.execution_manager}),
             (r"/update", UpdateHandler, {"execution_manager" : self.execution_manager}),
             (r"/update_top_most", UpdateTopMostHandler, {"execution_manager" : self.execution_manager}),
+            (r"/status", StatusHandler, {"execution_manager" : self.execution_manager}),
         ])
         self.port = port
         self.is_closing = False
