@@ -548,10 +548,22 @@ class UpdateHandler(RequestHandler):
 class UpdateTopMostHandler(RequestHandler):
     def initialize(self, execution_manager):
         self.execution_manager = execution_manager
+        self.updating = False
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
     def post(self):
-        LOG.debug("{}".format(self.request.body))
+        if self.updating:
+            LOG.debug("Not updating; Update already in progress")
+            self.write({"status": False, "message": "Update in progress"})
+        self.updating = True
+        LOG.debug("Updating topmost")
+        self.executor.submit(self.update)
+        self.write({"status": True, "message": "Updating"})
+
+    def update(self):
         self.execution_manager.update_top_most()
+        LOG.debug("Updating topmost complete")
+        self.updating = False
 
 class StatusHandler(RequestHandler):
     def initialize(self, execution_manager):
