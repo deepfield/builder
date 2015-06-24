@@ -9,6 +9,7 @@ import collections
 import shlex
 import concurrent.futures
 import json
+import tempfile
 
 import networkx as nx
 from tornado import gen
@@ -590,7 +591,9 @@ class StatusHandler(RequestHandler):
             'last_job_executed_on': unicode(self.execution_manager.last_job_executed_on),
             'last_job_submitted_on': unicode(self.execution_manager.last_job_submitted_on),
             'last_job_completed_on': unicode(self.execution_manager.last_job_completed_on),
-            'last_job_worked_on': unicode(self.execution_manager.last_job_worked_on)
+            'last_job_worked_on': unicode(self.execution_manager.last_job_worked_on),
+            'n_build_graph_nodes': len(self.execution_manager.get_build().node),
+            'n_rdg_nodes': len(self.execution_manager.get_build_manager().get_rule_dependency_graph().node)
         }
 
         self.write(status)
@@ -612,11 +615,12 @@ class BuildGraphHandler(RequestHandler):
         self.execution_manager = execution_manager
         self.build_manager = self.execution_manager.get_build_manager()
 
+
     def get(self):
         LOG.info("Getting build graph as dot format")
         build_graph = self.execution_manager.get_build()
 
-        LOG.info("Updating graph display status")
+        LOG.debug("Updating graph display status")
 
         # Update colors based on existence
         for node_id, value in build_graph.node.iteritems():
@@ -629,8 +633,14 @@ class BuildGraphHandler(RequestHandler):
                 value['fillcolor'] = '#82FA58'
             else:
                 value['fillcolor'] = '#FE2E2E'
-        data = nx.to_agraph(build_graph).string()
+
+        LOG.debug("Finished updating graph display status")
+        tf = tempfile.TemporaryFile()
+        nx.write_dot(build_graph, tf)
+        tf.seek(0)
+        data = tf.read()
         self.write(data)
+
 
 class ExecutionDaemon(object):
 
