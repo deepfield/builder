@@ -601,6 +601,7 @@ class RDGHandler(RequestHandler):
         self.build_manager = self.execution_manager.get_build_manager()
 
     def get(self):
+        LOG.info("Getting RDG as dot format")
         rdg = self.build_manager.get_rule_dependency_graph()
         data = nx.to_agraph(rdg).string()
         self.write(data)
@@ -612,7 +613,10 @@ class BuildGraphHandler(RequestHandler):
         self.build_manager = self.execution_manager.get_build_manager()
 
     def get(self):
+        LOG.info("Getting build graph as dot format")
         build_graph = self.execution_manager.get_build()
+
+        LOG.info("Updating graph display status")
 
         # Update colors based on existence
         for node_id, value in build_graph.node.iteritems():
