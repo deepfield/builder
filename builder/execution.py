@@ -10,11 +10,14 @@ import shlex
 import concurrent.futures
 import json
 
+import networkx as nx
 from tornado import gen
 from tornado import ioloop
 from tornado.web import asynchronous, RequestHandler, Application
 
 LOG = logging.getLogger(__name__)
+PROCESSING_LOG = logging.getLogger("builder.execution.processing")
+TRANSITION_LOG = logging.getLogger("builder.execution.transition")
 
 class ExecutionResult(object):
     def __init__(self, is_async, status=None, stdout=None, stderr=None):
@@ -210,10 +213,12 @@ class ExecutionManager(object):
                                "isn't running")
         def update_build_graph():
             # Add the job
+            LOG.debug("SUBMISSION => Expanding build graph for submission {} {}".format(job_definition_id, build_context))
             if self.build.rule_dependency_graph.is_job_definition(job_definition_id):
                 build_update = self.build.add_job(job_definition_id, build_context, **kwargs)
             else:
                 build_update = self.build.add_meta(job_definition_id, build_context, **kwargs)
+            LOG.debug("SUBMISSION => Build graph expansion complete")
 
             # Refresh all uncached existences
             LOG.debug("updating {} targets".format(len(build_update.new_targets)))
@@ -370,7 +375,7 @@ class ExecutionManager(object):
         ONEYEAR = 365 * 24 * 60 * 60
         tick = 0
         while (not work_queue.empty() or not inline) and self.running:
-            LOG.debug("EXECUTION_LOOP => Getting job from the work queue. Tick {}".format(tick))
+            PROCESSING_LOG.debug("EXECUTION_LOOP => Getting job from the work queue. Tick {}".format(tick))
             tick += 1
 
             try:
@@ -379,7 +384,7 @@ class ExecutionManager(object):
                 continue
             self.last_job_worked_on = arrow.now()
 
-            LOG.debug("EXECUTION_LOOP => Got job {} from work queue".format(job_id))
+            TRANSITION_LOG.debug("EXECUTION_LOOP => Got job {} from work queue".format(job_id))
             result = self.execute(job_id)
             #LOG.debug("EXECUTION_LOOP => Finished job {} from work queue".format(job_id))
             jobs_executed += 1
@@ -388,10 +393,10 @@ class ExecutionManager(object):
                     raise NotImplementedError("Cannot run an async executor inline")
                 self._consume_completed_jobs(block=False)
             elif inline:
-                LOG.debug("EXECUTION_LOOP => Waiting on execution to complete")
+                TRANSITION_LOG.debug("EXECUTION_LOOP => Waiting on execution to complete")
                 result.result() # Wait for job to complete
                 self._consume_completed_jobs(block=False)
-            LOG.debug("EXECUTION_LOOP => Finished consuming completed jobs for {}".format(job_id))
+            TRANSITION_LOG.debug("EXECUTION_LOOP => Finished consuming completed jobs for {}".format(job_id))
             #else: It is an asynchronous result and we're running asynchronously, so let the _consume_completed_jobs
             # thread add new jobs
             LOG.debug("EXECUTION_LOOP => Executed {} jobs".format(jobs_executed))
@@ -407,11 +412,11 @@ class ExecutionManager(object):
 
     def _consume_completed_jobs(self, block=False):
 
-        LOG.debug("COMPLETION_LOOP => Consuming completed jobs")
+        LOG.info("COMPLETION_LOOP => Consuming completed jobs")
         complete_queue = self._complete_queue
         tick = 0
         while (not complete_queue.empty() or block) and self.running:
-            LOG.debug("COMPLETION_LOOP => Getting job from the work queue. Tick {}".format(tick))
+            PROCESSING_LOG.debug("COMPLETION_LOOP => Getting job from the work queue. Tick {}".format(tick))
             tick += 1
             try:
                 job_id = complete_queue.get(True, timeout=1)
@@ -427,16 +432,17 @@ class ExecutionManager(object):
                 pass
 
 
-            LOG.debug("COMPLETION_LOOP =>  Completed job {}".format(job_id))
+            TRANSITION_LOG.debug("COMPLETION_LOOP =>  Completed job {}".format(job_id))
             next_jobs = self.get_next_jobs_to_run(job_id)
             next_jobs = filter(lambda job_id: not self.build.get_job(job_id).is_running, next_jobs)
-            LOG.debug("COMPLETION_LOOP => Received completed job {}. Next jobs are {}".format(job_id, next_jobs))
+            TRANSITION_LOG.debug("COMPLETION_LOOP => Received completed job {}. Next jobs are {}".format(job_id, next_jobs))
             map(self.add_to_work_queue, next_jobs)
         LOG.debug("COMPLETION_LOOP => Done consuming completed jobs")
 
     def _check_for_timeouts(self):
 
         while self.running:
+            PROCESSING_LOG.debug("TIMEOUTS => Checking for timeouts")
             timed_out_jobs = []
             now = arrow.get()
             for job, timestamp in self.execution_times.iteritems():
@@ -469,7 +475,7 @@ class ExecutionManager(object):
 
     def execute(self, job_id):
         # Don't run a job more than the configured max number of retries
-        LOG.debug("ExecutionManager.execute({})".format(job_id))
+        TRANSITION_LOG.debug("EXECUTION => Executing {}".format(job_id))
         self.last_job_executed_on = arrow.get()
         job = self.build.get_job(job_id)
 
@@ -529,7 +535,7 @@ def _submit_from_json(execution_manager, json_body):
 
 def _update_from_json(execution_manager, json_body):
     payload = json.loads(json_body)
-    LOG.debug("Updating target {}".format(payload))
+    LOG.debug("Updating target(s) {}".format(payload))
 
     execution_manager.update_targets(payload["target_ids"])
 
@@ -589,6 +595,39 @@ class StatusHandler(RequestHandler):
 
         self.write(status)
 
+class RDGHandler(RequestHandler):
+    def initialize(self, execution_manager):
+        self.execution_manager = execution_manager
+        self.build_manager = self.execution_manager.get_build_manager()
+
+    def get(self):
+        rdg = self.build_manager.get_rule_dependency_graph()
+        data = nx.to_agraph(rdg).string()
+        self.write(data)
+
+
+class BuildGraphHandler(RequestHandler):
+    def initialize(self, execution_manager):
+        self.execution_manager = execution_manager
+        self.build_manager = self.execution_manager.get_build_manager()
+
+    def get(self):
+        build_graph = self.execution_manager.get_build()
+
+        # Update colors based on existence
+        for node_id, value in build_graph.node.iteritems():
+            if not build_graph.is_target(node_id):
+                continue
+            target = build_graph.get_target(node_id)
+            if not target.cached_mtime:
+                value['fillcolor'] = '#F7FE2E'
+            elif target.get_exists():
+                value['fillcolor'] = '#82FA58'
+            else:
+                value['fillcolor'] = '#FE2E2E'
+        data = nx.to_agraph(build_graph).string()
+        self.write(data)
+
 class ExecutionDaemon(object):
 
     def __init__(self, execution_manager, port=20345):
@@ -600,6 +639,8 @@ class ExecutionDaemon(object):
             (r"/update_top_most", UpdateTopMostHandler, {"execution_manager" : self.execution_manager,
                                                          "work_queue": work_queue}),
             (r"/status", StatusHandler, {"execution_manager" : self.execution_manager}),
+            (r"/rdg", RDGHandler, {"execution_manager" : self.execution_manager}),
+            (r"/build-graph", BuildGraphHandler, {"execution_manager" : self.execution_manager}),
         ])
         self.port = port
         self.is_closing = False

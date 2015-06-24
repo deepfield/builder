@@ -10,6 +10,10 @@ class Dependency(object):
         self.unique_id = unique_id
         self.kind = kind
 
+    def __repr__(self):
+        return "Dependency({}, {})".format(self.unique_id, self.kind)
+
+
 def get_dependencies(dependency_type):
     """Returns the function with the name of dependency_type"""
     return globals()[dependency_type]

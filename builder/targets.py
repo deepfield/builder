@@ -39,6 +39,12 @@ class Target(object):
 
         self.expanded_directions = {"up": False, "down": False}
 
+    def __repr__(self):
+        return "Target({unexpanded_id}, {unique_id}, mtime={mtime}, expanded_directions={expanded_directions}, cached={cached})".format(
+            unexpanded_id=self.unexpanded_id, cached=self.cached_mtime,
+            unique_id=self.unique_id, mtime=self.mtime, expanded_directions=self.expanded_directions
+        )
+
     def invalidate(self):
         """Sets the mtime value to not cached"""
         self.cached_mtime = False
