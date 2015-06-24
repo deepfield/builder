@@ -580,7 +580,7 @@ class StatusHandler(RequestHandler):
         status = {
             'n_submitted_jobs': self.execution_manager.submitted_jobs,
             'n_completed_jobs': self.execution_manager.completed_jobs,
-            'running_jobs': self.execution_manager.get_running_jobs(),
+            'running_jobs': [(k, v.isoformat()) for k, v in self.execution_manager.get_running_jobs()],
             'last_job_executed_on': unicode(self.execution_manager.last_job_executed_on),
             'last_job_submitted_on': unicode(self.execution_manager.last_job_submitted_on),
             'last_job_completed_on': unicode(self.execution_manager.last_job_completed_on),
