@@ -623,26 +623,29 @@ class BuildGraphHandler(RequestHandler):
         LOG.debug("Updating graph display status")
 
         # Update colors based on existence
-        data = collections.defaultdict(dict)
+        data = collections.defaultdict(lambda: collections.defaultdict(dict))
         for node_id, node_data in build_graph.node.iteritems():
-            if not build_graph.is_target(node_id):
-                continue
-            target = build_graph.get_target(node_id)
-            value = {}
-            if not target.cached_mtime:
-                value['fillcolor'] = '#F7FE2E'
-                value['exists'] = None
-                value['mtime'] = None
-            elif target.get_exists():
-                value['fillcolor'] = '#82FA58'
-                value['exists'] = True
-                value['mtime'] = target.get_mtime()
-            else:
-                value['fillcolor'] = '#FE2E2E'
-                value['mtime'] = target.get_mtime()
-                value['exists'] = False
-            node_data.update(value)
-            data[target.unexpanded_id][target.get_id()] = value
+            if build_graph.is_target(node_id):
+                target = build_graph.get_target(node_id)
+                value = {}
+                if not target.cached_mtime:
+                    value['fillcolor'] = '#F7FE2E'
+                    value['exists'] = None
+                    value['mtime'] = None
+                elif target.get_exists():
+                    value['fillcolor'] = '#82FA58'
+                    value['exists'] = True
+                    value['mtime'] = target.get_mtime()
+                else:
+                    value['fillcolor'] = '#FE2E2E'
+                    value['mtime'] = target.get_mtime()
+                    value['exists'] = False
+                node_data.update(value)
+                data['targets'][target.unexpanded_id][target.get_id()] = value
+            elif build_graph.is_job(node_id):
+                job = build_graph.get_job(node_id)
+                value = {'should_run': job.get_should_run(), 'should_run_immediate': job.get_should_run_immediate()}
+                data['jobs'][job.unexpanded_id][job.get_id()] = value
 
 
         LOG.debug("Finished updating graph display status")
