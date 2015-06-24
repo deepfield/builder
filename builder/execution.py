@@ -623,23 +623,37 @@ class BuildGraphHandler(RequestHandler):
         LOG.debug("Updating graph display status")
 
         # Update colors based on existence
-        for node_id, value in build_graph.node.iteritems():
+        data = collections.defaultdict(dict)
+        for node_id, node_data in build_graph.node.iteritems():
             if not build_graph.is_target(node_id):
                 continue
             target = build_graph.get_target(node_id)
+            value = {}
             if not target.cached_mtime:
                 value['fillcolor'] = '#F7FE2E'
+                value['exists'] = None
+                value['mtime'] = None
             elif target.get_exists():
                 value['fillcolor'] = '#82FA58'
+                value['exists'] = True
+                value['mtime'] = target.get_mtime()
             else:
                 value['fillcolor'] = '#FE2E2E'
+                value['mtime'] = target.get_mtime()
+                value['exists'] = False
+            node_data.update(value)
+            data[target.unexpanded_id][target.get_id()] = value
+
 
         LOG.debug("Finished updating graph display status")
-        tf = tempfile.TemporaryFile()
-        nx.write_dot(build_graph, tf)
-        tf.seek(0)
-        data = tf.read()
-        self.write(data)
+        if self.get_argument("dot", default=None):
+            tf = tempfile.TemporaryFile()
+            nx.write_dot(build_graph, tf)
+            tf.seek(0)
+            data = tf.read()
+            self.write(data)
+        else:
+            self.write(data)
 
 
 class ExecutionDaemon(object):
