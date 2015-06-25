@@ -172,7 +172,7 @@ class PrintExecutor(Executor):
 
 class ExecutionManager(object):
 
-    def __init__(self, build_manager, executor_factory, max_retries=5, config=None):
+    def __init__(self, build_manager, executor_factory, max_retries=5, job_timeout=30*60, config=None):
         self.build_manager = build_manager
         self.build = build_manager.make_build()
         self.max_retries = max_retries
@@ -189,6 +189,7 @@ class ExecutionManager(object):
         self.last_job_completed_on = None
         self.last_job_submitted_on = None
         self.last_job_worked_on = None
+        self.job_timeout = job_timeout
 
         self.running = False
 
