@@ -6,10 +6,12 @@ import subprocess
 import Queue
 import arrow
 import collections
-import shlex
 import concurrent.futures
+import shlex
 import json
 import tempfile
+
+import builder.futures
 
 import networkx as nx
 from tornado import gen
@@ -379,7 +381,7 @@ class ExecutionManager(object):
         # Start completed jobs consumer if not inline
         executor = None
         if not inline:
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+            executor = builder.futures.ThreadPoolExecutor(max_workers=3)
             executor.submit(self._consume_completed_jobs, block=True)
             executor.submit(self._check_for_timeouts)
             executor.submit(self._check_for_passed_curfews)
@@ -690,7 +692,7 @@ class BuildGraphHandler(RequestHandler):
 class ExecutionDaemon(object):
 
     def __init__(self, execution_manager, port=20345):
-        work_queue = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+        work_queue = builder.futures.ThreadPoolExecutor(max_workers=2)
         self.execution_manager = execution_manager
         self.application = Application([
             (r"/submit", SubmitHandler, {"execution_manager" : self.execution_manager, "work_queue": work_queue}),
@@ -718,7 +720,7 @@ class ExecutionDaemon(object):
         is_closing = False
 
         signal.signal(signal.SIGINT, self.signal_handler)
-        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        executor = builder.futures.ThreadPoolExecutor(max_workers=1)
         executor.submit(self.execution_manager.start_execution, inline=False)
         self.application.listen(self.port)
         LOG.info("Starting job listener")
