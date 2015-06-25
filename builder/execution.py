@@ -478,9 +478,11 @@ class ExecutionManager(object):
                 if not self.build.is_job(node_id):
                     continue
                 job = self.build.get_job(node_id)
-                if job.past_curfew() and job.get_stale()  and job.get_should_run():
-                    stale_jobs_past_curfew.append(job)
-                    self._work_queue.put(job.get_id())
+                if job.past_curfew() and job.get_stale() and job.get_buildable():
+                    job.invalidate()
+                    if job.get_should_run():
+                        stale_jobs_past_curfew.append(job)
+                        self._work_queue.put(job.get_id())
             PROCESSING_LOG.debug("CURFEWS => These jobs were stale, past curfew, and should run: {}".format(
                 stale_jobs_past_curfew))
             time.sleep(60)
