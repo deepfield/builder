@@ -4,7 +4,6 @@ import logging
 import signal
 import subprocess
 import Queue
-import arrow
 import collections
 import concurrent.futures
 import shlex
@@ -12,6 +11,7 @@ import json
 import tempfile
 
 import builder.futures
+from builder.util import arrow_factory as arrow
 
 import networkx as nx
 from tornado import gen
