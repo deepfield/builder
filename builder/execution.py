@@ -474,8 +474,9 @@ class ExecutionManager(object):
         while self.running:
             PROCESSING_LOG.debug("CURFEWS => Checking for stale jobs past curfew")
             stale_jobs_past_curfew = []
-            for node_id in self.build.node:
-                if not self.build.is_job(node_id):
+            for node_id in self.build.node.keys():
+
+                if (not node_id in self.build.node) or (not self.build.is_job(node_id)):
                     continue
                 job = self.build.get_job(node_id)
                 if job.past_curfew() and job.get_stale() and job.get_buildable():
