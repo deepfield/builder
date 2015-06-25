@@ -379,9 +379,10 @@ class ExecutionManager(object):
         # Start completed jobs consumer if not inline
         executor = None
         if not inline:
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+            executor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
             executor.submit(self._consume_completed_jobs, block=True)
             executor.submit(self._check_for_timeouts)
+            executor.submit(self._check_for_passed_curfews)
 
         jobs_executed = 0
         ONEYEAR = 365 * 24 * 60 * 60
@@ -465,6 +466,22 @@ class ExecutionManager(object):
                 self.executor.finish_job(job, ExecutionResult(is_async=False, status=False))
             time.sleep(10)
 
+    def _check_for_passed_curfews(self):
+
+        while self.running:
+            PROCESSING_LOG.debug("CURFEWS => Checking for stale jobs past curfew")
+            stale_jobs_past_curfew = []
+            for node_id in self.build.node:
+                if not self.build.is_job(node_id):
+                    continue
+                job = self.build.get_job(node_id)
+                if job.past_curfew() and job.get_stale()  and job.get_should_run():
+                    stale_jobs_past_curfew.append(job)
+                    self._work_queue.put(job.get_id())
+            PROCESSING_LOG.debug("CURFEWS => These jobs were stale, past curfew, and should run: {}".format(
+                stale_jobs_past_curfew))
+            time.sleep(60)
+
     def get_next_jobs_to_run_recurse(self, job_id):
         next_job_ids = set()
         job = self.build.get_job(job_id)
@@ -543,7 +560,7 @@ def _submit_from_json(execution_manager, json_body):
             build_context[k] = arrow.get(build_context[k])
     LOG.debug("build_context is {}".format(build_context))
 
-    execution_manager.submit(update_topmost=True, **payload)
+    execution_manager.submit(**payload)
 
 def _update_from_json(execution_manager, json_body):
     payload = json.loads(json_body)
