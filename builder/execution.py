@@ -652,11 +652,105 @@ class RDGHandler(RequestHandler):
         self.write(data)
 
 
+
 class BuildGraphHandler(RequestHandler):
+    ALL = object()
+
     def initialize(self, execution_manager, template_loader):
         self.execution_manager = execution_manager
         self.build_manager = self.execution_manager.get_build_manager()
         self.template_loader = template_loader
+
+
+    def _get_target_state(self, target):
+        value = {}
+        if not target.cached_mtime:
+            value['fillcolor'] = '#F7FE2E'
+            value['exists'] = None
+            value['mtime'] = None
+        elif target.get_exists():
+            value['fillcolor'] = '#82FA58'
+            value['exists'] = True
+            value['mtime'] = target.get_mtime()
+        else:
+            value['fillcolor'] = '#FE2E2E'
+            value['mtime'] = target.get_mtime()
+            value['exists'] = False
+        return value
+
+    def _get_job_state(self, job):
+        value = {'should_run': job.get_should_run(),
+                         'should_run_immediate': job.get_should_run_immediate(),
+                         'stale': job.get_stale(),
+                         'buildable': job.get_buildable()}
+        return value
+
+    def _get_selected_ids(self, build_graph, query):
+        jobs, targets = set(), set()
+        job_definition_ids = query.get('job_definition_ids') or []
+        expander_ids = query.get('expander_ids') or []
+
+        # If we didn't give any query params, return all
+        if not job_definition_ids or expander_ids:
+            return BuildGraphHandler.ALL, BuildGraphHandler.ALL
+
+        job_definition_ids = set(job_definition_ids)
+        expander_ids = set(expander_ids)
+
+        # Filter based on query params
+        for node_id, node_data in build_graph.node.iteritems():
+            if build_graph.is_target(node_id):
+
+                target = build_graph.get_target(node_id)
+                if not target.unexpanded_id in expander_ids:
+                    continue
+                targets.add(node_id)
+                creators = build_graph.get_creator_ids(node_id)
+                dependents = build_graph.get_dependent_ids(node_id)
+                jobs.update(creators)
+                jobs.update(dependents)
+            elif build_graph.is_job(node_id):
+                job = build_graph.get_job(node_id)
+                if not job.unexpanded_id in job_definition_ids:
+                    continue
+                jobs.add(node_id)
+                dependencies = build_graph.get_dependency_ids(node_id)
+                target_ids = build_graph.get_target_ids(node_id)
+                targets.update(dependencies)
+                targets.update(target_ids)
+
+        return jobs, targets
+
+    def _convert_graph_to_json_and_update(self, build_graph, include_edges=False, query={}):
+
+        data = collections.defaultdict(lambda: collections.defaultdict(dict))
+        job_ids, target_ids = self._get_selected_ids(build_graph, query)
+
+        # Make sure jobs and targets are in return data
+        data['jobs']
+        data['targets']
+        for node_id, node_data in build_graph.node.iteritems():
+            if build_graph.is_target(node_id) and (target_ids == BuildGraphHandler.ALL or node_id in target_ids):
+                target = build_graph.get_target(node_id)
+                value = self._get_target_state(target)
+
+                node_data.update(value)
+                if include_edges:
+                    value['creators'] = build_graph.get_creator_ids(node_id)
+                    value['dependents'] = build_graph.get_dependent_ids(node_id)
+                data['targets'][target.unexpanded_id][target.get_id()] = value
+                data['all_targets'][target.get_id()] = value
+            elif build_graph.is_job(node_id) and (job_ids == BuildGraphHandler.ALL or node_id in job_ids):
+                job = build_graph.get_job(node_id)
+                value = self._get_job_state(job)
+
+                if include_edges:
+                    value['targets'] = build_graph.get_target_ids(node_id)
+                    value['dependencies'] = build_graph.get_dependency_ids(node_id)
+                data['jobs'][job.unexpanded_id][job.get_id()] = value
+                #data['all_jobs'][job.get_id()] = value
+
+        return data
 
 
     def get(self, format='json'):
@@ -667,38 +761,11 @@ class BuildGraphHandler(RequestHandler):
 
         # Update colors based on existence
         include_edges = self.get_argument("edges", default=None)
-        data = collections.defaultdict(lambda: collections.defaultdict(dict))
-        data['jobs']
-        data['targets']
-        for node_id, node_data in build_graph.node.iteritems():
-            if build_graph.is_target(node_id):
-                target = build_graph.get_target(node_id)
-                value = {}
-                if not target.cached_mtime:
-                    value['fillcolor'] = '#F7FE2E'
-                    value['exists'] = None
-                    value['mtime'] = None
-                elif target.get_exists():
-                    value['fillcolor'] = '#82FA58'
-                    value['exists'] = True
-                    value['mtime'] = target.get_mtime()
-                else:
-                    value['fillcolor'] = '#FE2E2E'
-                    value['mtime'] = target.get_mtime()
-                    value['exists'] = False
-                node_data.update(value)
-                if include_edges:
-                    value['creators'] = build_graph.get_creator_ids(node_id)
-                    value['dependents'] = build_graph.get_dependent_ids(node_id)
-                data['targets'][target.unexpanded_id][target.get_id()] = value
-            elif build_graph.is_job(node_id):
-                job = build_graph.get_job(node_id)
-                value = {'should_run': job.get_should_run(), 'should_run_immediate': job.get_should_run_immediate()}
-                if include_edges:
-                    value['targets'] = build_graph.get_target_ids(node_id)
-                    value['dependencies'] = build_graph.get_dependency_ids(node_id)
-                data['jobs'][job.unexpanded_id][job.get_id()] = value
-
+        query = {
+            'job_definition_ids': self.get_arguments('job-definition'),
+            'expander_ids': self.get_arguments('expander')
+        }
+        data = self._convert_graph_to_json_and_update(build_graph, include_edges, query)
 
         LOG.debug("Finished updating graph display status")
         if format == 'dot':

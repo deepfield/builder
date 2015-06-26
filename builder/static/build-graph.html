@@ -12,23 +12,22 @@
     }
   </style>
     <div id="graph-container"></div>
+    <div id="selection"></div>
 </div>
 <script src="/static/js/jquery.min.js"></script>
-<script src="/static/js/d3.min.js"></script>
-<script src="/static/js/cola.min.js"></script>
+<script src="/static/js/vis.min.js"></script>
 <!--<script src="/static/js/sigma.min.js"></script>
 <script src="/static/js/sigma.layout.forceAtlas2.min.js"></script>-->
 <script>
-    console.log("Foo bar baz");
-    $.getJSON('/build-graph.json?edges=true', function(data) {
 
+    var constructGraph = function(data) {
         // Build up the graph
         var targets = data['targets'];
         var jobs = data['jobs'];
 
         // Add target nodes
         console.log(targets, jobs);
-        var g = {nodes: [], links: []};
+        var g = {nodes: [], edges: []};
         var targetIndexLookup = {};
         var i = 0;
         for (var unexpanded_id in targets) {
@@ -40,7 +39,7 @@
                  g.nodes.push({
                     id: expanded_id,
                     label: expanded_id,
-                    color: '#050',
+                    color: '#00FF00',
                     size: 40
                   });
 
@@ -59,69 +58,123 @@
                 g.nodes.push({
                     id: expanded_id,
                     label: expanded_id,
-                    color: '#050',
+                    color: '#FF0000',
                     size: 40
                   });
                 for(var j in job.dependencies) {
                     var dependency_id = job.dependencies[j];
-                    g.links.push({source: i, target: targetIndexLookup[dependency_id]});
+                    g.edges.push({from: expanded_id, to: dependency_id, arrows: 'to'});
+                }
+                for(var j in job.targets) {
+                    var target_id = job.targets[j];
+                    g.edges.push({from: expanded_id, to: target_id, arrows: 'from'});
                 }
                 i += 1;
             }
         }
-        g.links.push({source: 0, target:1});
+
+        return g;
+    }
+
+    function getScaleFreeNetwork(nodeCount) {
+      var nodes = [];
+      var edges = [];
+      var connectionCount = [];
+
+      // randomly create some nodes and edges
+      for (var i = 0; i < nodeCount; i++) {
+        nodes.push({
+          id: i,
+          label: String(i)
+        });
+
+        connectionCount[i] = 0;
+
+        // create edges in a scale-free-network way
+        if (i == 1) {
+          var from = i;
+          var to = 0;
+          edges.push({
+            from: from,
+            to: to
+          });
+          connectionCount[from]++;
+          connectionCount[to]++;
+        }
+        else if (i > 1) {
+          var conn = edges.length * 2;
+          var rand = Math.floor(Math.random() * conn);
+          var cum = 0;
+          var j = 0;
+          while (j < connectionCount.length && cum < rand) {
+            cum += connectionCount[j];
+            j++;
+          }
 
 
-        // Render it
-        var graph = g;
+          var from = i;
+          var to = j;
+          edges.push({
+            from: from,
+            to: to
+          });
+          connectionCount[from]++;
+          connectionCount[to]++;
+        }
+      }
+
+      return {nodes:nodes, edges:edges};
+    }
+
+    console.log(location.search);
+    var qs = location.search;
+    if(location.search[0] == '?') {
+        qs = location.search.slice(1);
+    }
+    $.getJSON('/build-graph.json?'+qs+'&edges=true' + location.search,  function(data) {
+
+
+        // Render graph
+        var graph = constructGraph(data);
         var width = 960,
         height = 500;
         var nodeRadius = 5;
 
 
-        var color = d3.scale.category20();
+        var nodes = null;
+        var edges = null;
+        var network = null;
+        function destroy() {
+            if (network !== null) {
+                network.destroy();
+                network = null;
+            }
+        }
+        function draw() {
+            destroy();
+            // randomly create some nodes and edges
+            //var nodeCount = 50;
+            //var graph = getScaleFreeNetwork(nodeCount)
+            console.log(graph);
+            // create a network
+            var container = document.getElementById('graph-container');
+            var directionInput = 'LR';
+            var options = {
+                layout: {
+                    hierarchical: {
+                        direction: directionInput,
+                        levelSeparation: 1000
+                    }
+                }
+            };
+            network = new vis.Network(container, graph, options);
+            // add event listeners
+            network.on('select', function (params) {
+                document.getElementById('selection').innerHTML = 'Selection: ' + params.nodes;
+            });
+        }
 
-        var d3cola = cola.d3adaptor()
-            .avoidOverlaps(true)
-            .size([width, height]);
-
-        console.log("graph", g);
-
-
-        var svg = d3.select("#graph-container").append("svg")
-        .attr("width", width)
-        .attr("height", height);
-
-        d3cola.nodes(graph.nodes).links(graph.links).flowLayout("y", 30).symmetricDiffLinkLengths(6).start(10,20,20);
-        //force.nodes(graph.nodes).links(graph.links).linkDistance(width/2).start();
-
-        // define arrow markers for graph links
-        svg.append('svg:defs').append('svg:marker')
-            .attr('id', 'end-arrow')
-            .attr('viewBox', '0 -5 10 10')
-            .attr('refX', 6)
-            .attr('markerWidth', 3)
-            .attr('markerHeight', 3)
-            .attr('orient', 'auto')
-          .append('svg:path')
-            .attr('d', 'M0,-5L10,0L0,5')
-            .attr('fill', '#000');
-
-        var path = svg.selectAll(".link")
-            .data(graph.links)
-          .enter().append('svg:path')
-            .attr('class', 'link');
-
-        var node = svg.selectAll(".node")
-            .data(graph.nodes)
-          .enter().append("circle")
-            .attr("class", "node")
-            .attr("r", nodeRadius)
-            .style("fill", function (d) { return color(d.group); })
-            .call(d3cola.drag);
-
-        node.append("title")
-            .text(function (d) { return d.name; });
+        draw();
 
 
 
