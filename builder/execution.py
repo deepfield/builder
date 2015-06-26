@@ -801,7 +801,7 @@ class ExecutionDaemon(object):
             (r"/build-graph\.?(?P<format>[^\/]+)?", BuildGraphHandler, {"execution_manager" : self.execution_manager,
                                                          "template_loader": self.template_loader}),
             (r'/static/(.*)', StaticFileHandler, {'path': os.path.join(os.path.dirname(__file__), 'static')}),
-        ], debug=True, cache_compiled_templates=False)
+        ])
         self.port = port
         self.is_closing = False
 
