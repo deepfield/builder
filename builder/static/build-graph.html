@@ -1,0 +1,44 @@
+<html>
+
+<h1>Build Graph!</h1>
+<div id="graph-container"></div>
+
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/sigma.min.js"></script>
+<script>
+
+    $.getJSON('/build-graph.json?edges=true', function(data) {
+        var targets = data['targets'];
+        var jobs = data['jobs'];
+
+        // Add target nodes
+        var g = {nodes: [], edges: []};
+        for (var unexpanded_id in targets) {
+            var target_ids = targets[unexpanded_id];
+            for(var expanded_id in target_ids) {
+                var target = target_ids[expanded_id];
+                 g.nodes.push({
+                    id: expanded_id,
+                    label: expanded_id,
+                    color: '#050'
+                  });
+            }
+        }
+
+        var s = new sigma({
+          graph: g,
+          container: 'graph-container'
+        });
+    });
+
+//        for (i = 0; i < E; i++)
+//          g.edges.push({
+//            id: 'e' + i,
+//            source: 'n' + (Math.random() * N | 0),
+//            target: 'n' + (Math.random() * N | 0),
+//            size: Math.random(),
+//            color: '#ccc'
+//          });
+
+</script>
+</html>

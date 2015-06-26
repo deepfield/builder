@@ -9,6 +9,7 @@ import concurrent.futures
 import shlex
 import json
 import tempfile
+import os
 
 import builder.futures
 from builder.util import arrow_factory as arrow
@@ -16,7 +17,8 @@ from builder.util import arrow_factory as arrow
 import networkx as nx
 from tornado import gen
 from tornado import ioloop
-from tornado.web import asynchronous, RequestHandler, Application
+from tornado.web import asynchronous, RequestHandler, Application, StaticFileHandler
+from tornado.template import Loader
 
 LOG = logging.getLogger(__name__)
 PROCESSING_LOG = logging.getLogger("builder.execution.processing")
@@ -645,9 +647,10 @@ class RDGHandler(RequestHandler):
 
 
 class BuildGraphHandler(RequestHandler):
-    def initialize(self, execution_manager):
+    def initialize(self, execution_manager, template_loader):
         self.execution_manager = execution_manager
         self.build_manager = self.execution_manager.get_build_manager()
+        self.template_loader = template_loader
 
 
     def get(self, format='json'):
@@ -696,6 +699,8 @@ class BuildGraphHandler(RequestHandler):
             tf.seek(0)
             data = tf.read()
             self.write(data)
+        elif format == 'html':
+            self.write(self.template_loader.load('build-graph.html').generate())
         else:
             self.write(data)
 
@@ -706,6 +711,7 @@ class ExecutionDaemon(object):
     def __init__(self, execution_manager, port=20345):
         work_queue = builder.futures.ThreadPoolExecutor(max_workers=2)
         self.execution_manager = execution_manager
+        self.template_loader = Loader(os.path.join(os.path.dirname(__file__), 'static'))
         self.application = Application([
             (r"/submit", SubmitHandler, {"execution_manager" : self.execution_manager, "work_queue": work_queue}),
             (r"/update", UpdateHandler, {"execution_manager" : self.execution_manager, "work_queue": work_queue}),
@@ -713,8 +719,10 @@ class ExecutionDaemon(object):
                                                          "work_queue": work_queue}),
             (r"/status", StatusHandler, {"execution_manager" : self.execution_manager}),
             (r"/rdg", RDGHandler, {"execution_manager" : self.execution_manager}),
-            (r"/build-graph.(?P<format>[^\/]+)", BuildGraphHandler, {"execution_manager" : self.execution_manager}),
-        ])
+            (r"/build-graph\.?(?P<format>[^\/]+)?", BuildGraphHandler, {"execution_manager" : self.execution_manager,
+                                                         "template_loader": self.template_loader}),
+            (r'/static/(.*)', StaticFileHandler, {'path': os.path.join(os.path.dirname(__file__), 'static')}),
+        ], debug=True, cache_compiled_templates=False)
         self.port = port
         self.is_closing = False
 
