@@ -18,11 +18,16 @@ import networkx as nx
 from tornado import gen
 from tornado import ioloop
 from tornado.web import asynchronous, RequestHandler, Application, StaticFileHandler
-from tornado.template import Loader
+from tornado.template import Loader, Template
 
 LOG = logging.getLogger(__name__)
 PROCESSING_LOG = logging.getLogger("builder.execution.processing")
 TRANSITION_LOG = logging.getLogger("builder.execution.transition")
+
+def _interruptable_sleep(seconds):
+    # Loop so it can be interrupted quickly (sleep does not pay attention to interrupt)
+    for i in xrange(min(int(seconds), 1)):
+        time.sleep(1)
 
 class ExecutionResult(object):
     def __init__(self, is_async, status=None, stdout=None, stderr=None):
@@ -469,7 +474,8 @@ class ExecutionManager(object):
             for job in timed_out_jobs:
                 self.execution_times.pop(job)
                 self.executor.finish_job(job, ExecutionResult(is_async=False, status=False))
-            time.sleep(10)
+
+            _interruptable_sleep(10)
 
     def _check_for_passed_curfews(self):
 
@@ -488,7 +494,7 @@ class ExecutionManager(object):
                         self._work_queue.put(job.get_id())
             PROCESSING_LOG.debug("CURFEWS => These jobs were stale, past curfew, and should run: {}".format(
                 stale_jobs_past_curfew))
-            time.sleep(60)
+            _interruptable_sleep(60)
 
     def get_next_jobs_to_run_recurse(self, job_id):
         next_job_ids = set()
@@ -662,6 +668,8 @@ class BuildGraphHandler(RequestHandler):
         # Update colors based on existence
         include_edges = self.get_argument("edges", default=None)
         data = collections.defaultdict(lambda: collections.defaultdict(dict))
+        data['jobs']
+        data['targets']
         for node_id, node_data in build_graph.node.iteritems():
             if build_graph.is_target(node_id):
                 target = build_graph.get_target(node_id)
@@ -700,7 +708,11 @@ class BuildGraphHandler(RequestHandler):
             data = tf.read()
             self.write(data)
         elif format == 'html':
-            self.write(self.template_loader.load('build-graph.html').generate())
+            #self.write(self.template_loader.load('build-graph.html').generate())
+            with open(os.path.join(os.path.dirname(__file__), 'static', 'build-graph.html')) as f:
+
+                tpl = Template(f.read())
+                self.write(tpl.generate())
         else:
             self.write(data)
 

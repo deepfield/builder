@@ -1,34 +1,131 @@
 <html>
 
 <h1>Build Graph!</h1>
-<div id="graph-container"></div>
-
+<div id=""container">
+    <style>
+    #graph-container {
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      position: absolute;
+    }
+  </style>
+    <div id="graph-container"></div>
+</div>
 <script src="/static/js/jquery.min.js"></script>
-<script src="/static/js/sigma.min.js"></script>
+<script src="/static/js/d3.min.js"></script>
+<script src="/static/js/cola.min.js"></script>
+<!--<script src="/static/js/sigma.min.js"></script>
+<script src="/static/js/sigma.layout.forceAtlas2.min.js"></script>-->
 <script>
-
+    console.log("Foo bar baz");
     $.getJSON('/build-graph.json?edges=true', function(data) {
+
+        // Build up the graph
         var targets = data['targets'];
         var jobs = data['jobs'];
 
         // Add target nodes
-        var g = {nodes: [], edges: []};
+        console.log(targets, jobs);
+        var g = {nodes: [], links: []};
+        var targetIndexLookup = {};
+        var i = 0;
         for (var unexpanded_id in targets) {
             var target_ids = targets[unexpanded_id];
+
             for(var expanded_id in target_ids) {
+
                 var target = target_ids[expanded_id];
                  g.nodes.push({
                     id: expanded_id,
                     label: expanded_id,
-                    color: '#050'
+                    color: '#050',
+                    size: 40
                   });
+
+                 targetIndexLookup[expanded_id] = i;
+                 i += 1;
             }
         }
 
-        var s = new sigma({
-          graph: g,
-          container: 'graph-container'
-        });
+        // Add job nodes and edges
+        i = 0;
+        console.log(targetIndexLookup);
+        for (var unexpanded_id in jobs) {
+            var job_ids = jobs[unexpanded_id];
+            for(var expanded_id in job_ids) {
+                var job = job_ids[expanded_id];
+                g.nodes.push({
+                    id: expanded_id,
+                    label: expanded_id,
+                    color: '#050',
+                    size: 40
+                  });
+                for(var j in job.dependencies) {
+                    var dependency_id = job.dependencies[j];
+                    g.links.push({source: i, target: targetIndexLookup[dependency_id]});
+                }
+                i += 1;
+            }
+        }
+        g.links.push({source: 0, target:1});
+
+
+        // Render it
+        var graph = g;
+        var width = 960,
+        height = 500;
+        var nodeRadius = 5;
+
+
+        var color = d3.scale.category20();
+
+        var d3cola = cola.d3adaptor()
+            .avoidOverlaps(true)
+            .size([width, height]);
+
+        console.log("graph", g);
+
+
+        var svg = d3.select("#graph-container").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+        d3cola.nodes(graph.nodes).links(graph.links).flowLayout("y", 30).symmetricDiffLinkLengths(6).start(10,20,20);
+        //force.nodes(graph.nodes).links(graph.links).linkDistance(width/2).start();
+
+        // define arrow markers for graph links
+        svg.append('svg:defs').append('svg:marker')
+            .attr('id', 'end-arrow')
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', 6)
+            .attr('markerWidth', 3)
+            .attr('markerHeight', 3)
+            .attr('orient', 'auto')
+          .append('svg:path')
+            .attr('d', 'M0,-5L10,0L0,5')
+            .attr('fill', '#000');
+
+        var path = svg.selectAll(".link")
+            .data(graph.links)
+          .enter().append('svg:path')
+            .attr('class', 'link');
+
+        var node = svg.selectAll(".node")
+            .data(graph.nodes)
+          .enter().append("circle")
+            .attr("class", "node")
+            .attr("r", nodeRadius)
+            .style("fill", function (d) { return color(d.group); })
+            .call(d3cola.drag);
+
+        node.append("title")
+            .text(function (d) { return d.name; });
+
+
+
+
     });
 
 //        for (i = 0; i < E; i++)
