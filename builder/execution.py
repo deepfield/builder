@@ -698,7 +698,7 @@ class BuildGraphHandler(RequestHandler):
         expander_ids = set(expander_ids)
 
         # Filter based on query params
-        for node_id, node_data in build_graph.node.iteritems():
+        for node_id, node_data in build_graph.node.items():
             if build_graph.is_target(node_id):
 
                 target = build_graph.get_target(node_id)
@@ -729,7 +729,7 @@ class BuildGraphHandler(RequestHandler):
         # Make sure jobs and targets are in return data
         data['jobs']
         data['targets']
-        for node_id, node_data in build_graph.node.iteritems():
+        for node_id, node_data in build_graph.node.items():
             if build_graph.is_target(node_id) and (target_ids == BuildGraphHandler.ALL or node_id in target_ids):
                 target = build_graph.get_target(node_id)
                 value = self._get_target_state(target)
@@ -739,7 +739,7 @@ class BuildGraphHandler(RequestHandler):
                     value['creators'] = build_graph.get_creator_ids(node_id)
                     value['dependents'] = build_graph.get_dependent_ids(node_id)
                 data['targets'][target.unexpanded_id][target.get_id()] = value
-                data['all_targets'][target.get_id()] = value
+                #data['all_targets'][target.get_id()] = value
             elif build_graph.is_job(node_id) and (job_ids == BuildGraphHandler.ALL or node_id in job_ids):
                 job = build_graph.get_job(node_id)
                 value = self._get_job_state(job)

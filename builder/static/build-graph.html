@@ -1,6 +1,5 @@
 <html>
 
-<h1>Build Graph!</h1>
 <div id=""container">
     <style>
     #graph-container {
@@ -36,12 +35,17 @@
             for(var expanded_id in target_ids) {
 
                 var target = target_ids[expanded_id];
-                 g.nodes.push({
+                 var node = {
                     id: expanded_id,
                     label: expanded_id,
                     color: '#00FF00',
-                    size: 40
-                  });
+                    size: 40,
+                    exists: target.exists,
+                    mtime: target.mtime,
+                    type: 'target'
+                 };
+                 setNodeColor(node);
+                 g.nodes.push(node);
 
                  targetIndexLookup[expanded_id] = i;
                  i += 1;
@@ -55,12 +59,19 @@
             var job_ids = jobs[unexpanded_id];
             for(var expanded_id in job_ids) {
                 var job = job_ids[expanded_id];
-                g.nodes.push({
+                var node = {
                     id: expanded_id,
                     label: expanded_id,
                     color: '#FF0000',
-                    size: 40
-                  });
+                    size: 40,
+                    shouldRunImmediate: job.should_run_immediate,
+                    shouldRun: job.should_run,
+                    buildable: job.buildable,
+                    stale: job.stale,
+                    type: 'job'
+                };
+                setNodeColor(node);
+                g.nodes.push(node);
                 for(var j in job.dependencies) {
                     var dependency_id = job.dependencies[j];
                     g.edges.push({from: expanded_id, to: dependency_id, arrows: 'to'});
@@ -126,12 +137,53 @@
       return {nodes:nodes, edges:edges};
     }
 
-    console.log(location.search);
+    function nodeToHTML(node) {
+        var html = '';
+        if(node.type == 'target') {
+           html += 'Target(';
+            html += node.label + ', ';
+            html += 'exists=' + node.exists + ', ';
+            html += 'mtime=' + node.mtime;
+            html += ')';
+        } else if(node.type == 'job') {
+            html += 'Job(';
+            html += node.label + ', ';
+            html += 'should_run=' + node.shouldRun + ', ';
+            html += 'should_run_immediate=' + node.shouldRunImmediate + ', ';
+            html += 'buildable=' + node.buildable + ', ';
+            html += 'stale=' + node.stale;
+            html += ')';
+        }
+
+        return html;
+    }
+
+    function setNodeColor(node) {
+        if(node.type == 'target') {
+            if(node.exists) {
+                node.color = '#00FF00';
+            } else {
+                node.color = '#FF0000';
+            }
+        } else if(node.type == 'job') {
+            if(node.shouldRun && node.stale) {
+                node.color = "#F4FA58";
+            } else if(!node.shouldRun && !node.stale) {
+                node.color = "#A9A9F5";
+            } else if(!node.shouldRun && !node.buildable) {
+                node.color = "#D8D8D8";
+            } else {
+                node.color = "#D8D8D8";
+            }
+        }
+
+    }
+
     var qs = location.search;
     if(location.search[0] == '?') {
         qs = location.search.slice(1);
     }
-    $.getJSON('/build-graph.json?'+qs+'&edges=true' + location.search,  function(data) {
+    $.getJSON('/build-graph.json?'+qs+'&edges=true',  function(data) {
 
 
         // Render graph
@@ -155,7 +207,6 @@
             // randomly create some nodes and edges
             //var nodeCount = 50;
             //var graph = getScaleFreeNetwork(nodeCount)
-            console.log(graph);
             // create a network
             var container = document.getElementById('graph-container');
             var directionInput = 'LR';
@@ -170,7 +221,14 @@
             network = new vis.Network(container, graph, options);
             // add event listeners
             network.on('select', function (params) {
-                document.getElementById('selection').innerHTML = 'Selection: ' + params.nodes;
+                var nodes = [];
+                for(var nid in params.nodes) {
+                    var nodeId = params.nodes[nid];
+                    var node = network.body.nodes[nodeId];
+
+                    nodes.push(nodeToHTML(node.options));
+                }
+                document.getElementById('selection').innerHTML = nodes;
             });
         }
 
