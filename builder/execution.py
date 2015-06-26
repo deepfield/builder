@@ -650,13 +650,14 @@ class BuildGraphHandler(RequestHandler):
         self.build_manager = self.execution_manager.get_build_manager()
 
 
-    def get(self):
+    def get(self, format='json'):
         LOG.info("Getting build graph as dot format")
         build_graph = self.execution_manager.get_build()
 
         LOG.debug("Updating graph display status")
 
         # Update colors based on existence
+        include_edges = self.get_argument("edges", default=None)
         data = collections.defaultdict(lambda: collections.defaultdict(dict))
         for node_id, node_data in build_graph.node.iteritems():
             if build_graph.is_target(node_id):
@@ -675,15 +676,21 @@ class BuildGraphHandler(RequestHandler):
                     value['mtime'] = target.get_mtime()
                     value['exists'] = False
                 node_data.update(value)
+                if include_edges:
+                    value['creators'] = build_graph.get_creator_ids(node_id)
+                    value['dependents'] = build_graph.get_dependent_ids(node_id)
                 data['targets'][target.unexpanded_id][target.get_id()] = value
             elif build_graph.is_job(node_id):
                 job = build_graph.get_job(node_id)
                 value = {'should_run': job.get_should_run(), 'should_run_immediate': job.get_should_run_immediate()}
+                if include_edges:
+                    value['targets'] = build_graph.get_target_ids(node_id)
+                    value['dependencies'] = build_graph.get_dependency_ids(node_id)
                 data['jobs'][job.unexpanded_id][job.get_id()] = value
 
 
         LOG.debug("Finished updating graph display status")
-        if self.get_argument("dot", default=None):
+        if format == 'dot':
             tf = tempfile.TemporaryFile()
             nx.write_dot(build_graph, tf)
             tf.seek(0)
@@ -691,6 +698,7 @@ class BuildGraphHandler(RequestHandler):
             self.write(data)
         else:
             self.write(data)
+
 
 
 class ExecutionDaemon(object):
@@ -705,7 +713,7 @@ class ExecutionDaemon(object):
                                                          "work_queue": work_queue}),
             (r"/status", StatusHandler, {"execution_manager" : self.execution_manager}),
             (r"/rdg", RDGHandler, {"execution_manager" : self.execution_manager}),
-            (r"/build-graph", BuildGraphHandler, {"execution_manager" : self.execution_manager}),
+            (r"/build-graph.(?P<format>[^\/]+)", BuildGraphHandler, {"execution_manager" : self.execution_manager}),
         ])
         self.port = port
         self.is_closing = False
