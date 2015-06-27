@@ -702,7 +702,7 @@ class BuildGraphHandler(RequestHandler):
             elif format == 'png':
                 mime_type = 'image/png'
             elif format == 'jpg':
-                mime_type = 'img/jpeg'
+                mime_type = 'image/jpeg'
             self.set_header('Content-Type', mime_type)
         else:
             data = transformer.to_json(include_edges, query)
