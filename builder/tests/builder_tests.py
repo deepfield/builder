@@ -3869,3 +3869,63 @@ class UtilTest(unittest.TestCase):
         # Then
         for truth, frequency in zip(truths, converted_frequencies):
             self.assertEquals(truth, frequency)
+
+
+class BuildGraphQueryTest(unittest.TestCase):
+
+    def test_simple_include_definition_query(self):
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A", targets=["A-target1"],
+                                    depends=["A-depends"])
+        ]
+
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
+        build.add_job("A", {})
+
+        # When
+        query = builder.build.BuildQuery(build, query={'job_definition_ids':['A']})
+
+        # Then
+        self.assertTrue(query.include_node("A"))
+        self.assertFalse(query.include_node("A-target1"))
+
+    def test_simple_include_target_query(self):
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A", targets=["A-target1"],
+                                    depends=["A-depends"])
+        ]
+
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
+        build.add_job("A", {})
+
+        # When
+        query = builder.build.BuildQuery(build, query={'expander_ids':['A-depends']})
+
+        # Then
+        self.assertFalse(query.include_node("A"))
+        self.assertFalse(query.include_node("A-target1"))
+        self.assertTrue(query.include_node("A-depends"))
+
+    def test_simple_exclude_query(self):
+
+        # Given
+        jobs = [
+            SimpleTestJobDefinition("A", targets=["A-target1"],
+                                    depends=["A-depends"])
+        ]
+
+        build_manager = builder.build.BuildManager(jobs, [])
+        build = build_manager.make_build()
+        build.add_job("A", {})
+
+        # When
+        query = builder.build.BuildQuery(build, query={'excludes':['A-target1']})
+
+        # Then
+        self.assertTrue(query.include_node("A"))
+        self.assertFalse(query.include_node("A-target1"))
+        self.assertTrue(query.include_node("A-depends"))

@@ -4,6 +4,7 @@ and the build graph
 
 import collections
 import os
+import re
 import tempfile
 import subprocess
 import time
@@ -1227,3 +1228,68 @@ class BuildGraph(BaseGraph):
                     continue
                 touched_target_ids.append(target_id)
                 target.set_mtime(state['mtime'])
+
+
+class BuildQuery(object):
+
+    def __init__(self, build_graph, query):
+        self.build_graph = build_graph
+        self.query = query
+        self.include_predicates = []
+        self.exclude_predicates = []
+
+        # Build predicates
+        job_definition_ids = query.get('job_definition_ids') or []
+        expander_ids = query.get('expander_ids') or []
+        includes = query.get('includes') or []
+        excludes = query.get('excludes') or []
+
+        include_patterns = []
+        exclude_patterns = []
+        for include in includes:
+            try:
+                include_patterns.append(re.compile(include))
+            except re.error:
+                LOG.warn("Invalid include expression: '{}'".format(include))
+        for exclude in excludes:
+            try:
+                exclude_patterns.append(re.compile(exclude))
+            except re.error:
+                LOG.warn("Invalid exclude expression: '{}'".format(include))
+
+        if job_definition_ids:
+            job_definition_ids = set(job_definition_ids)
+            self.include_predicates.append(
+                lambda x: self.build_graph.is_job(x) and self.build_graph.get_job(x).unexpanded_id in job_definition_ids)
+
+        if expander_ids:
+            expander_ids = set(expander_ids)
+            self.include_predicates.append(
+                lambda x: self.build_graph.is_target(x) and self.build_graph.get_target(x).unexpanded_id in expander_ids)
+
+        if includes:
+            self.include_predicates.append(lambda x: any([bool(p.match(x)) for p in include_patterns]))
+
+        if excludes:
+            self.exclude_predicates.append(lambda x: any([bool(p.match(x)) for p in exclude_patterns]))
+
+        if len(self.include_predicates) == 0 and len(self.exclude_predicates) == 0:
+            self.match_all = True
+        else:
+            self.match_all = False
+
+        if len(self.include_predicates) == 0:
+            self.include_predicates.append(lambda x: True)
+
+        if len(self.exclude_predicates) == 0:
+            self.exclude_predicates.append(lambda x: False)
+
+
+
+
+    def include_node(self, node_id):
+        if self.match_all:
+            return True
+        else:
+            return any([p(node_id) for p in self.include_predicates]) and not any([p(node_id) for p in self.exclude_predicates])
+

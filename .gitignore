@@ -2,3 +2,4 @@ build
 builder.egg-info
 dist
 *pyc
+.DS_Store
