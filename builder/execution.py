@@ -10,9 +10,11 @@ import shlex
 import json
 import tempfile
 import os
+import re
 
 import builder.futures
 from builder.util import arrow_factory as arrow
+import builder.build as build
 
 import networkx as nx
 from tornado import gen
@@ -167,7 +169,7 @@ class PrintExecutor(Executor):
         for target_id in produced_targets:
             target = build_graph.get_target(target_id)
             target.exists = True
-            target.mtime = arrow.get()
+            target.mtime = arrow.get().timestamp
             print "Simulation: Built target {}".format(target.get_id())
             for dependent_job_id in build_graph.get_dependent_ids(target_id):
                 dependent_job = build_graph.get_job(dependent_job_id)
@@ -686,37 +688,28 @@ class BuildGraphHandler(RequestHandler):
 
     def _get_selected_ids(self, build_graph, query):
         jobs, targets = set(), set()
-        job_definition_ids = query.get('job_definition_ids') or []
-        expander_ids = query.get('expander_ids') or []
-
-        # If we didn't give any query params, return all
-        if not job_definition_ids or expander_ids:
-            return BuildGraphHandler.ALL, BuildGraphHandler.ALL
-
-        job_definition_ids = set(job_definition_ids)
-        expander_ids = set(expander_ids)
+        include_neighbors = query.get('include_neighbors')
+        query = builder.build.BuildQuery(build_graph, query)
 
         # Filter based on query params
         for node_id, node_data in build_graph.node.items():
+            include_node = query.include_node(node_id)
+            if not include_node:
+                continue
             if build_graph.is_target(node_id):
-
-                target = build_graph.get_target(node_id)
-                if not target.unexpanded_id in expander_ids:
-                    continue
                 targets.add(node_id)
-                creators = build_graph.get_creator_ids(node_id)
-                dependents = build_graph.get_dependent_ids(node_id)
-                jobs.update(creators)
-                jobs.update(dependents)
+                if include_neighbors:
+                    creators = build_graph.get_creator_ids(node_id)
+                    dependents = build_graph.get_dependent_ids(node_id)
+                    jobs.update(creators)
+                    jobs.update(dependents)
             elif build_graph.is_job(node_id):
-                job = build_graph.get_job(node_id)
-                if not job.unexpanded_id in job_definition_ids:
-                    continue
                 jobs.add(node_id)
-                dependencies = build_graph.get_dependency_ids(node_id)
-                target_ids = build_graph.get_target_ids(node_id)
-                targets.update(dependencies)
-                targets.update(target_ids)
+                if include_neighbors:
+                    dependencies = build_graph.get_dependency_ids(node_id)
+                    target_ids = build_graph.get_target_ids(node_id)
+                    targets.update(dependencies)
+                    targets.update(target_ids)
 
         return jobs, targets
 
@@ -762,7 +755,10 @@ class BuildGraphHandler(RequestHandler):
         include_edges = self.get_argument("edges", default=None)
         query = {
             'job_definition_ids': self.get_arguments('job-definition'),
-            'expander_ids': self.get_arguments('expander')
+            'expander_ids': self.get_arguments('expander'),
+            'includes': self.get_arguments('include'),
+            'excludes': self.get_arguments('exclude'),
+            'include_neighbors': self.get_argument('neighbors', default=None)
         }
         data = self._convert_graph_to_json_and_update(build_graph, include_edges, query)
 
@@ -776,6 +772,7 @@ class BuildGraphHandler(RequestHandler):
         elif format == 'html':
             self.render('build-graph.html')
         else:
+            print data
             self.write(data)
 
 
