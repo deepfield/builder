@@ -656,10 +656,9 @@ class RDGHandler(RequestHandler):
 class BuildGraphHandler(RequestHandler):
     ALL = object()
 
-    def initialize(self, execution_manager, template_loader):
+    def initialize(self, execution_manager):
         self.execution_manager = execution_manager
         self.build_manager = self.execution_manager.get_build_manager()
-        self.template_loader = template_loader
 
 
     def _get_target_state(self, target):
@@ -775,11 +774,7 @@ class BuildGraphHandler(RequestHandler):
             data = tf.read()
             self.write(data)
         elif format == 'html':
-            #self.write(self.template_loader.load('build-graph.html').generate())
-            with open(os.path.join(os.path.dirname(__file__), 'static', 'build-graph.html')) as f:
-
-                tpl = Template(f.read())
-                self.write(tpl.generate())
+            self.render('build-graph.html')
         else:
             self.write(data)
 
@@ -787,10 +782,9 @@ class BuildGraphHandler(RequestHandler):
 
 class ExecutionDaemon(object):
 
-    def __init__(self, execution_manager, port=20345):
+    def __init__(self, execution_manager, port=20345, debug=False):
         work_queue = builder.futures.ThreadPoolExecutor(max_workers=2)
         self.execution_manager = execution_manager
-        self.template_loader = Loader(os.path.join(os.path.dirname(__file__), 'static'))
         self.application = Application([
             (r"/submit", SubmitHandler, {"execution_manager" : self.execution_manager, "work_queue": work_queue}),
             (r"/update", UpdateHandler, {"execution_manager" : self.execution_manager, "work_queue": work_queue}),
@@ -798,16 +792,18 @@ class ExecutionDaemon(object):
                                                          "work_queue": work_queue}),
             (r"/status", StatusHandler, {"execution_manager" : self.execution_manager}),
             (r"/rdg", RDGHandler, {"execution_manager" : self.execution_manager}),
-            (r"/build-graph\.?(?P<format>[^\/]+)?", BuildGraphHandler, {"execution_manager" : self.execution_manager,
-                                                         "template_loader": self.template_loader}),
+            (r"/build-graph\.?(?P<format>[^\/]+)?", BuildGraphHandler, {"execution_manager" : self.execution_manager}),
             (r'/static/(.*)', StaticFileHandler, {'path': os.path.join(os.path.dirname(__file__), 'static')}),
-        ])
+        ], template_path=os.path.join(os.path.dirname(__file__), 'static'), debug=debug)
         self.port = port
         self.is_closing = False
+        self.debug = debug
+
 
     def signal_handler(self, signum, frame):
             LOG.info('exiting...')
             self.is_closing = True
+
 
     def try_exit(self):
         if self.is_closing:
@@ -815,8 +811,9 @@ class ExecutionDaemon(object):
             ioloop.IOLoop.instance().stop()
             LOG.info('exit success')
 
+
     def start(self):
-        is_closing = False
+        self.is_closing = False
 
         signal.signal(signal.SIGINT, self.signal_handler)
         executor = builder.futures.ThreadPoolExecutor(max_workers=1)
