@@ -218,7 +218,7 @@ class ExecutionManager(object):
         for job_id in job_ids:
             self._recursive_invalidate_job(job_id)
 
-    def submit(self, job_definition_id, build_context, update_topmost=False, **kwargs):
+    def submit(self, job_definition_id, build_context, update_topmost=False, update_all=False, **kwargs):
         """
         Submit the provided job to be built
         """
@@ -232,15 +232,17 @@ class ExecutionManager(object):
                 build_update = self.build.add_job(job_definition_id, build_context, **kwargs)
             else:
                 build_update = self.build.add_meta(job_definition_id, build_context, **kwargs)
-            if update_topmost:
-                top_most = []
-                for node_id in build_update.targets:
-                    if self.build.in_degree(node_id) == 0:
-                        if self.build.is_target(node_id):
-                            top_most.append(node_id)
 
-                LOG.debug("UPDATE_SUBMITTED_TOP_MOST => {}".format(top_most))
-                self.external_update_targets(top_most)
+            update_nodes = set()
+            if update_topmost or update_all:
+                for node_id in build_update.targets:
+                    if self.build.in_degree(node_id) == 0 or update_all:
+                        if self.build.is_target(node_id):
+                            update_nodes.add(node_id)
+
+                LOG.debug("UPDATE_SUBMITTED => {}".format(update_nodes))
+                self.external_update_targets(update_nodes)
+
 
             LOG.debug("SUBMISSION => Build graph expansion complete")
 
