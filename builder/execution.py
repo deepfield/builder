@@ -651,7 +651,7 @@ class RDGHandler(RequestHandler):
         self.build_manager = self.execution_manager.get_build_manager()
 
     def get(self):
-        LOG.info("Getting RDG as dot format")
+        LOG.info("Getting RDG")
         rdg = self.build_manager.get_rule_dependency_graph()
         data = nx.to_agraph(rdg).string()
         self.write(data)
@@ -664,88 +664,6 @@ class BuildGraphHandler(RequestHandler):
     def initialize(self, execution_manager):
         self.execution_manager = execution_manager
         self.build_manager = self.execution_manager.get_build_manager()
-
-
-    def _get_target_state(self, target):
-        value = {}
-        if not target.cached_mtime:
-            value['fillcolor'] = '#F7FE2E'
-            value['exists'] = None
-            value['mtime'] = None
-        elif target.get_exists():
-            value['fillcolor'] = '#82FA58'
-            value['exists'] = True
-            value['mtime'] = target.get_mtime()
-        else:
-            value['fillcolor'] = '#FE2E2E'
-            value['mtime'] = target.get_mtime()
-            value['exists'] = False
-        return value
-
-    def _get_job_state(self, job):
-        value = {'should_run': job.get_should_run(),
-                         'should_run_immediate': job.get_should_run_immediate(),
-                         'stale': job.get_stale(),
-                         'buildable': job.get_buildable()}
-        return value
-
-    def _get_selected_ids(self, build_graph, query):
-        jobs, targets = set(), set()
-        include_neighbors = query.get('include_neighbors')
-        query = builder.build.BuildQuery(build_graph, query)
-
-        # Filter based on query params
-        for node_id, node_data in build_graph.node.items():
-            include_node = query.include_node(node_id)
-            if not include_node:
-                continue
-            if build_graph.is_target(node_id):
-                targets.add(node_id)
-                if include_neighbors:
-                    creators = build_graph.get_creator_ids(node_id)
-                    dependents = build_graph.get_dependent_ids(node_id)
-                    jobs.update(creators)
-                    jobs.update(dependents)
-            elif build_graph.is_job(node_id):
-                jobs.add(node_id)
-                if include_neighbors:
-                    dependencies = build_graph.get_dependency_ids(node_id)
-                    target_ids = build_graph.get_target_ids(node_id)
-                    targets.update(dependencies)
-                    targets.update(target_ids)
-
-        return jobs, targets
-
-    def _convert_graph_to_json_and_update(self, build_graph, include_edges=False, query={}):
-
-        data = collections.defaultdict(lambda: collections.defaultdict(dict))
-        job_ids, target_ids = self._get_selected_ids(build_graph, query)
-
-        # Make sure jobs and targets are in return data
-        data['jobs']
-        data['targets']
-        for node_id, node_data in build_graph.node.items():
-            if build_graph.is_target(node_id) and (target_ids == BuildGraphHandler.ALL or node_id in target_ids):
-                target = build_graph.get_target(node_id)
-                value = self._get_target_state(target)
-
-                node_data.update(value)
-                if include_edges:
-                    value['creators'] = build_graph.get_creator_ids(node_id)
-                    value['dependents'] = build_graph.get_dependent_ids(node_id)
-                data['targets'][target.unexpanded_id][target.get_id()] = value
-                #data['all_targets'][target.get_id()] = value
-            elif build_graph.is_job(node_id) and (job_ids == BuildGraphHandler.ALL or node_id in job_ids):
-                job = build_graph.get_job(node_id)
-                value = self._get_job_state(job)
-
-                if include_edges:
-                    value['targets'] = build_graph.get_target_ids(node_id)
-                    value['dependencies'] = build_graph.get_dependency_ids(node_id)
-                data['jobs'][job.unexpanded_id][job.get_id()] = value
-                #data['all_jobs'][job.get_id()] = value
-
-        return data
 
 
     def get(self, format='json'):
@@ -763,18 +681,31 @@ class BuildGraphHandler(RequestHandler):
             'excludes': self.get_arguments('exclude'),
             'include_neighbors': self.get_argument('neighbors', default=None)
         }
-        data = self._convert_graph_to_json_and_update(build_graph, include_edges, query)
+        transformer = builder.build.BuildGraphTransformer(build_graph)
+        #data = self._convert_graph_to_json_and_update(build_graph, include_edges, query)
 
         LOG.debug("Finished updating graph display status")
         if format == 'dot':
-            tf = tempfile.TemporaryFile()
-            nx.write_dot(build_graph, tf)
-            tf.seek(0)
-            data = tf.read()
+            data = transformer.to_dot(query)
             self.write(data)
         elif format == 'html':
             self.render('build-graph.html')
+        elif format in {'pdf', 'png', 'jpg'}:
+            dot_file = tempfile.NamedTemporaryFile()
+            transformer.write_dot(dot_file.name, query)
+            pdf_file = tempfile.NamedTemporaryFile()
+            subprocess.call(['/usr/bin/dot', '-T'+format, dot_file.name, '-o', pdf_file.name])
+            pdf_file.seek(0)
+            self.write(pdf_file.read())
+            if format == 'pdf':
+                mime_type = 'application/pdf'
+            elif format == 'png':
+                mime_type = 'image/png'
+            elif format == 'jpg':
+                mime_type = 'img/jpeg'
+            self.set_header('Content-Type', mime_type)
         else:
+            data = transformer.to_json(include_edges, query)
             self.write(data)
 
 

@@ -499,7 +499,7 @@ class RuleDependencyGraph(BaseGraph):
 class BuildGraph(BaseGraph):
     """The build object will control the rule dependency graph and the
     build graph"""
-    def __init__(self, rule_dependency_graph, dependency_registery=None, config=None):
+    def __init__(self, rule_dependency_graph=None, dependency_registery=None, config=None):
         super(BuildGraph, self).__init__()
         if dependency_registery is None:
             dependency_registery = {}
@@ -1237,6 +1237,7 @@ class BuildQuery(object):
         self.query = query
         self.include_predicates = []
         self.exclude_predicates = []
+        self.include_neighbors = query.get('include_neighbors')
 
         # Build predicates
         job_definition_ids = query.get('job_definition_ids') or []
@@ -1285,11 +1286,162 @@ class BuildQuery(object):
             self.exclude_predicates.append(lambda x: False)
 
 
-
-
     def include_node(self, node_id):
         if self.match_all:
             return True
         else:
             return any([p(node_id) for p in self.include_predicates]) and not any([p(node_id) for p in self.exclude_predicates])
 
+
+class BuildGraphTransformer(object):
+
+    def __init__(self, build_graph):
+        self.build_graph = build_graph
+
+
+    def to_json(self, include_edges=False, build_query=None):
+        build_query = self._get_build_query(build_query)
+        selected_jobs, selected_targets, selected_dependency_ids = self._get_selected_ids(build_query)
+        data = self._convert_graph_to_json_and_update(include_edges=include_edges, query=build_query)
+        return data
+
+    def write_dot(self, output, build_query=None):
+        if isinstance(output, str):
+            output = open(output, 'w')
+
+        build_query = self._get_build_query(build_query)
+        job_ids, target_ids, dependency_ids = self._get_selected_ids(build_query)
+
+        # Update selected nodes
+        for job_id in job_ids:
+            job = self.build_graph.get_job(job_id)
+            state = self._get_job_state(job)
+            self.build_graph.node[job_id].update(state)
+        for target_id in target_ids:
+            target = self.build_graph.get_target(target_id)
+            state = self._get_target_state(target)
+            self.build_graph.node[target_id].update(state)
+
+        # Get subgraph from selection
+        selected_nodes = tuple(job_ids) + tuple(target_ids) + tuple(dependency_ids)
+        subgraph = self.build_graph.subgraph(selected_nodes)
+        #subgraph = self.build_graph
+
+        # Write dot
+        networkx.write_dot(subgraph, output)
+
+
+    def to_dot(self, build_query=None):
+        tf = tempfile.TemporaryFile()
+        self.write_dot(tf, build_query)
+        tf.seek(0)
+        data = tf.read()
+        return data
+
+
+    def _get_target_state(self, target):
+        value = {}
+        if not target.cached_mtime:
+            value['fillcolor'] = '#F7FE2E'
+            value['exists'] = None
+            value['mtime'] = None
+        elif target.get_exists():
+            value['fillcolor'] = '#82FA58'
+            value['exists'] = True
+            value['mtime'] = target.get_mtime()
+        else:
+            value['fillcolor'] = '#FE2E2E'
+            value['mtime'] = target.get_mtime()
+            value['exists'] = False
+
+        return value
+
+
+    def _get_job_state(self, job):
+        value = {
+            'should_run': job.get_should_run(),
+             'should_run_immediate': job.get_should_run_immediate(),
+             'stale': job.get_stale(),
+             'buildable': job.get_buildable(),
+        }
+
+        # Update color for dot purposes
+        if (job.get_should_run() and job.get_stale()):
+            value["fillcolor"] = "#F4FA58"
+        elif not job.get_should_run() and not job.get_stale():
+            value["fillcolor"] = "#2E9AFE"
+        elif not job.get_should_run() and not job.get_buildable():
+            value["fillcolor"] = "#D8D8D8"
+        else:
+            value["fillcolor"] = "#D8D8D8"
+        value["style"] = "filled"
+        return value
+
+
+    def _get_build_query(self, build_query):
+        if build_query is None:
+            build_query = BuildQuery(self.build_graph, {})
+        elif isinstance(build_query, dict):
+            build_query = BuildQuery(self.build_graph, build_query)
+
+        return build_query
+
+
+    def _get_selected_ids(self, query):
+        jobs, targets, links = set(), set(), set()
+
+        # Filter based on query params
+        for node_id, node_data in self.build_graph.node.items():
+            include_node = query.include_node(node_id)
+            if not include_node:
+                continue
+            if self.build_graph.is_target(node_id):
+                targets.add(node_id)
+                if query.include_neighbors:
+                    creators = self.build_graph.get_creator_ids(node_id)
+                    dependents = self.build_graph.get_dependent_ids(node_id)
+                    jobs.update(creators)
+                    jobs.update(dependents)
+            elif self.build_graph.is_job(node_id):
+                jobs.add(node_id)
+                if query.include_neighbors:
+                    dependencies = self.build_graph.get_dependency_ids(node_id)
+                    target_ids = self.build_graph.get_target_ids(node_id)
+                    targets.update(dependencies)
+                    targets.update(target_ids)
+            elif self.build_graph.is_dependency_type(node_id):
+                links.add(node_id)
+
+        return jobs, targets, links
+
+
+    def _convert_graph_to_json_and_update(self, include_edges=False, query={}):
+
+        data = collections.defaultdict(lambda: collections.defaultdict(dict))
+        job_ids, target_ids, dependency_ids = self._get_selected_ids(query)
+
+        # Make sure jobs and targets are in return data
+        data['jobs']
+        data['targets']
+        for node_id, node_data in self.build_graph.node.items():
+            if self.build_graph.is_target(node_id) and node_id in target_ids:
+                target = self.build_graph.get_target(node_id)
+                value = self._get_target_state(target)
+
+                node_data.update(value)
+                if include_edges:
+                    value['creators'] = self.build_graph.get_creator_ids(node_id)
+                    value['dependents'] = self.build_graph.get_dependent_ids(node_id)
+                data['targets'][target.unexpanded_id][target.get_id()] = value
+                #data['all_targets'][target.get_id()] = value
+            elif self.build_graph.is_job(node_id) and node_id in job_ids:
+                job = self.build_graph.get_job(node_id)
+                value = self._get_job_state(job)
+
+                if include_edges:
+                    value['targets'] = self.build_graph.get_target_ids(node_id)
+                    value['dependencies'] = self.build_graph.get_dependency_ids(node_id)
+                data['jobs'][job.unexpanded_id][job.get_id()] = value
+                #data['all_jobs'][job.get_id()] = value
+
+        return data
