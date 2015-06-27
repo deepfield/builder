@@ -158,6 +158,7 @@ class PrintExecutor(Executor):
         build_graph = self.get_build_graph()
         command = job.get_command()
         job.set_should_run(False)
+        job.set_stale(False)
 
         print "Simulation:", command
         target_relationships = build_graph.get_target_relationships(job.get_id())
@@ -772,7 +773,6 @@ class BuildGraphHandler(RequestHandler):
         elif format == 'html':
             self.render('build-graph.html')
         else:
-            print data
             self.write(data)
 
 
