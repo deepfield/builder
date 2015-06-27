@@ -143,7 +143,7 @@
            html += 'Target(';
             html += node.label + ', ';
             html += 'exists=' + node.exists + ', ';
-            html += 'mtime=' + node.mtime;
+            html += 'mtime=' + new Date(node.mtime*1000);
             html += ')';
         } else if(node.type == 'job') {
             html += 'Job(';
@@ -218,6 +218,13 @@
                     }
                 }
             };
+            var container = document.getElementById('graph-container');
+
+            // Handle blank data
+            if(graph.nodes.length == 0) {
+                container.innerHTML = "<h1>No data</h1>";
+                return;
+            }
             network = new vis.Network(container, graph, options);
             // add event listeners
             network.on('select', function (params) {
@@ -239,14 +246,6 @@
 
     });
 
-//        for (i = 0; i < E; i++)
-//          g.edges.push({
-//            id: 'e' + i,
-//            source: 'n' + (Math.random() * N | 0),
-//            target: 'n' + (Math.random() * N | 0),
-//            size: Math.random(),
-//            color: '#ccc'
-//          });
 
 </script>
 </html>

@@ -520,9 +520,9 @@ class ExecutionManager(object):
 
     def execute(self, job_id):
         # Don't run a job more than the configured max number of retries
-        TRANSITION_LOG.debug("EXECUTION => Executing {}".format(job_id))
         self.last_job_executed_on = arrow.get()
         job = self.build.get_job(job_id)
+        TRANSITION_LOG.info("EXECUTION => Executing {} ({})".format(job_id, job.get_command()))
 
         # Execute job
         result = self._execute(job)
