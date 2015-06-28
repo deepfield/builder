@@ -693,6 +693,11 @@ class BuildGraphHandler(RequestHandler):
         elif format in {'pdf', 'png', 'jpg'}:
             dot_file = tempfile.NamedTemporaryFile()
             transformer.write_dot(dot_file.name, query)
+            with open(dot_file.name) as f:
+                length = len(f.read())
+                if length > 4e6:
+                    self.write("Error: Graph is too big, not converting")
+                    return
             pdf_file = tempfile.NamedTemporaryFile()
             subprocess.call(['/usr/bin/dot', '-T'+format, dot_file.name, '-o', pdf_file.name])
             pdf_file.seek(0)
