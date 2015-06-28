@@ -1301,7 +1301,6 @@ class BuildGraphTransformer(object):
 
     def to_json(self, include_edges=False, build_query=None):
         build_query = self._get_build_query(build_query)
-        selected_jobs, selected_targets, selected_dependency_ids = self._get_selected_ids(build_query)
         data = self._convert_graph_to_json_and_update(include_edges=include_edges, query=build_query)
         return data
 
@@ -1329,6 +1328,8 @@ class BuildGraphTransformer(object):
 
         # Write dot
         networkx.write_dot(subgraph, output)
+
+        return job_ids, target_ids, dependency_ids
 
 
     def to_dot(self, build_query=None):
@@ -1444,4 +1445,8 @@ class BuildGraphTransformer(object):
                 data['jobs'][job.unexpanded_id][job.get_id()] = value
                 #data['all_jobs'][job.get_id()] = value
 
+        data['n_selected_jobs'] = len(job_ids)
+        data['n_selected_targets'] = len(target_ids)
+        data['n_selected_links'] = len(dependency_ids)
+        data['total_nodes'] = data['n_selected_jobs'] + data['n_selected_targets'] + data['n_selected_links']
         return data
