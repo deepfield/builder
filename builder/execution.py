@@ -28,7 +28,7 @@ TRANSITION_LOG = logging.getLogger("builder.execution.transition")
 
 def _interruptable_sleep(seconds):
     # Loop so it can be interrupted quickly (sleep does not pay attention to interrupt)
-    for i in xrange(min(int(seconds), 1)):
+    for i in xrange(max(int(seconds), 1)):
         time.sleep(1)
 
 class ExecutionResult(object):
