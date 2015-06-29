@@ -473,7 +473,7 @@ class ExecutionManager(object):
             PROCESSING_LOG.debug("TIMEOUTS => Checking for timeouts")
             timed_out_jobs = []
             now = arrow.get()
-            for job, timestamp in self.execution_times.iteritems():
+            for job, timestamp in self.execution_times.items():
                 if (now - timestamp).total_seconds() > self.job_timeout:
                     timed_out_jobs.append(job)
             for job in timed_out_jobs:
@@ -525,7 +525,6 @@ class ExecutionManager(object):
         # Don't run a job more than the configured max number of retries
         self.last_job_executed_on = arrow.get()
         job = self.build.get_job(job_id)
-        TRANSITION_LOG.info("EXECUTION => Executing {} ({})".format(job_id, job.get_command()))
 
         # Execute job
         result = self._execute(job)
@@ -533,7 +532,13 @@ class ExecutionManager(object):
         return result
 
     def _execute(self, job):
+        # Don't allow the same job to execute multiple times
+        if job in self.execution_times:
+            TRANSITION_LOG.info("EXECUTION => Not executing already running job {} ({})".format(job.get_id(), job.get_command()))
+            return
+
         self.execution_times[job] = arrow.get()
+        TRANSITION_LOG.info("EXECUTION => Executing {} ({})".format(job.get_id(), job.get_command()))
         if callable(self.executor):
             return self.executor(job)
         else:
