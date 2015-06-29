@@ -1361,9 +1361,11 @@ class BuildGraphTransformer(object):
     def _get_job_state(self, job):
         value = {
             'should_run': job.get_should_run(),
-             'should_run_immediate': job.get_should_run_immediate(),
-             'stale': job.get_stale(),
-             'buildable': job.get_buildable(),
+            'should_run_immediate': job.get_should_run_immediate(),
+            'stale': job.get_stale(),
+            'buildable': job.get_buildable(),
+            'failed': job.failed,
+            'retries': job.retries
         }
 
         # Update color for dot purposes
